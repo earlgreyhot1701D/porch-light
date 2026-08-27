@@ -1,0 +1,55 @@
+# Porch Light
+
+An agent that watches a city's public meeting agendas on behalf of one person, summarizes matches in English and Spanish with a receipt on every claim, and drafts the structure of a public comment that only the human can finish and send.
+
+**Hackathon:** AWS Agents for Humans (Good Neighbor track). Submission deadline: Sep 13, 2026.
+
+## Disclosure
+
+A prior weekend prototype of this idea exists at github.com/earlgreyhot1701D/civiq; none of its code is used here.
+
+## Stack
+
+- **Language:** Python
+- **Agent framework:** Strands Agents SDK — version: 1.53.0
+- **Deployment:** Bedrock AgentCore (direct code deploy, .zip, no container)
+- **Database:** Neon Postgres + pgvector (production), local pgvector via docker-compose (dev)
+- **Frontend:** Vercel (plain HTML/CSS/JS, no framework)
+- **Schedule:** EventBridge
+
+## Model
+
+Spec 0 proved invocation on: Amazon Nova Lite (`amazon.nova-lite-v1:0`), us-east-1, Aug 24 2026.
+
+Production model selection is deferred to Spec 3 and will be decided by two numbers: verifier rejection rate on the same real packets, and measured cost per packet. Later specs must not assume a model provider that was never proven at invocation time.
+
+## Setup
+
+```bash
+# Clone and start the local database
+cp .env.example .env
+docker compose up -d
+
+# Install Python dependencies
+uv sync
+```
+
+Use `uv add <package>` to add a dependency, never `pip install` — pip installs work but do not update uv.lock, and the deploy build fails on the resulting drift.
+
+## Local development
+
+`docker compose up -d` brings up Postgres with pgvector. This is for local development only and is never the deployment path.
+
+## Verifying a clean clone
+
+```bash
+make smoke
+```
+
+Runs live smoke tests against AWS. Makes real AWS calls and writes real CloudWatch log entries. Costs < $0.01 per run (one Converse call + one AgentCore invoke).
+
+Tests skip (not fail) if credentials or endpoint are absent. A skip means "not proven on this machine." A failure means "the live system is broken or unreachable."
+
+## License
+
+MIT

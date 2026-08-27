@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#14120E">
+  <title>Porch Light</title>
+  <meta name="description" content="A calm, privacy first watcher for public meeting agendas.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiA5NiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJQb3JjaCBMaWdodCI+CiAgPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiByeD0iMTgiIGZpbGw9IiMxNDEyMEUiLz4KICA8cGF0aCBkPSJNMTcgMjVoMTlNNjAgMjVoMTRsMTAgMTB2NDZIMTdWMjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y3RjJFNyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNzQgMjV2MTBoMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y3RjJFNyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNDggN3YxMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxyZWN0IHg9IjQzIiB5PSIxNyIgd2lkdGg9IjEwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjNUVEM0I0Ii8+CiAgPGNpcmNsZSBjeD0iNDgiIGN5PSIyOSIgcj0iOCIgZmlsbD0iI0Y3RjJFNyIvPgogIDxwYXRoIGQ9Ik00OCA0MXY0TTM4LjUgMzguNWwtMy41IDMuNU01Ny41IDM4LjVsMy41IDMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOSA1MmgzOE0yOSA3MmgzOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjdGMkU3IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOCA2Mmg0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ground: #14120E;
+      --surface: #1F1B15;
+      --paper: #F4EEE2;
+      --paper-ink: #1A1714;
+      --ink: #F7F2E7;
+      --muted: #B6AB98;
+      --primary: #5ED3B4;
+      --link: #8FD8FF;
+      --deadline: #F5B942;
+      --line: #3A3226;
+      --serif: "Fraunces", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--ground); scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: radial-gradient(circle at 48% 30%, rgba(94, 211, 180, .035), transparent 34rem), var(--ground);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    button, input, select, textarea { font: inherit; }
+    button, a, input, textarea, summary { min-height: 44px; }
+    button, a, summary { -webkit-tap-highlight-color: transparent; }
+    a { color: var(--link); text-underline-offset: .2em; }
+    a:hover { text-decoration-thickness: 2px; }
+    :focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
+    .packet :focus-visible, .receipt-mobile :focus-visible { outline-color: #175f87; }
+    [hidden] { display: none !important; }
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+    .scroll-region {
+      scrollbar-width: thin;
+      scrollbar-color: var(--line) transparent;
+    }
+    .scroll-region::-webkit-scrollbar { width: 10px; }
+    .scroll-region::-webkit-scrollbar-track { background: transparent; }
+    .scroll-region::-webkit-scrollbar-thumb { background: var(--line); border: 2px solid transparent; border-radius: 10px; background-clip: padding-box; }
+    .skip-link {
+      position: fixed;
+      top: .75rem;
+      left: .75rem;
+      z-index: 100;
+      padding: .7rem 1rem;
+      background: var(--paper);
+      color: var(--paper-ink);
+      border-radius: .35rem;
+      transform: translateY(-150%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .shell { width: min(1536px, 100%); margin: 0 auto; padding: 0 20px 24px; }
+    .topbar {
+      display: grid;
+      grid-template-columns: 205px 1fr auto;
+      align-items: center;
+      min-height: 76px;
+      border-bottom: 1px solid var(--line);
+      gap: 1.5rem;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .brand-mark { width: 30px; height: 34px; border: 2px solid var(--primary); border-radius: 2px; position: relative; }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      left: 4px;
+      bottom: -6px;
+      background: var(--ground);
+      border-left: 2px solid var(--primary);
+      transform: rotate(-42deg);
+    }
+    nav ul { display: flex; flex-wrap: wrap; gap: .5rem clamp(.75rem, 2.5vw, 2.3rem); list-style: none; padding: 0; margin: 0; }
+    nav a, nav button, .nav-disabled {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      color: var(--ink);
+      text-decoration: none;
+      padding: .8rem .1rem .65rem;
+      border-bottom: 2px solid transparent;
+    }
+    nav button { border-top: 0; border-right: 0; border-left: 0; background: transparent; font: inherit; cursor: pointer; }
+    nav a[aria-current="true"], nav button[aria-current="true"] { color: var(--primary); border-color: var(--primary); }
+    .nav-disabled { color: var(--muted); opacity: .68; cursor: not-allowed; }
+    .top-actions { display: flex; align-items: center; }
+    .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: .55rem; overflow: hidden; }
+    .toggle button { min-width: 48px; padding: .6rem .75rem; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+    .toggle button[aria-pressed="true"] { color: var(--ink); background: rgba(94,211,180,.1); }
+    .sample-notice {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      width: max-content;
+      max-width: 100%;
+      margin: 0 0 .65rem;
+      padding: .32rem .65rem;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: .45rem;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .notice-i { display: inline-grid; place-items: center; flex: 0 0 20px; width: 20px; height: 20px; border: 1px solid currentColor; border-radius: 50%; font: 600 .75rem var(--serif); }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px 365px;
+      grid-template-rows: auto auto auto;
+      gap: 14px;
+    }
+    .page-head {
+      display: grid;
+      grid-column: 1 / 3;
+      grid-row: 1;
+      grid-template-columns: minmax(0, 1fr) 365px;
+      gap: 2rem;
+      align-items: center;
+      min-height: 158px;
+      padding: .75rem .45rem .25rem;
+    }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 500; }
+    h1, h2, h3, p { overflow-wrap: anywhere; }
+    h1 { margin: 0; font-size: clamp(2.55rem, 4vw, 3.75rem); line-height: 1.03; letter-spacing: -.035em; }
+    h2 { margin: 0; font-size: clamp(1.5rem, 2.4vw, 2.2rem); line-height: 1.12; }
+    h3 { margin: 0; font-size: 1.25rem; }
+    .greeting { margin: 0; color: var(--muted); font-size: 1.05rem; line-height: 1.4; }
+    .heartbeat { display: grid; gap: .2rem; padding: .4rem 0; }
+    .heartbeat-row { display: flex; align-items: flex-start; gap: .75rem; min-height: 34px; }
+    .status-shape { flex: 0 0 auto; display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--primary); font-size: .8rem; margin-top: .1rem; }
+    .status-shape.book { position: relative; width: 26px; height: 22px; }
+    .status-shape.book::before, .status-shape.book::after { content: ""; position: absolute; top: 3px; width: 10px; height: 14px; border: 1.5px solid currentColor; }
+    .status-shape.book::before { left: 2px; border-radius: 5px 1px 1px 2px; transform: skewY(8deg); }
+    .status-shape.book::after { right: 2px; border-radius: 1px 5px 2px 1px; transform: skewY(-8deg); }
+    .status-shape.clock { border: 2px solid var(--link); color: var(--link); border-radius: 50%; }
+    .status-shape.clock::before { content: ""; width: 5px; height: 7px; border-left: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translate(1px,-1px); }
+    .status-shape.neutral { width: 18px; height: 18px; margin: .25rem .2rem 0; border: 1.5px solid var(--muted); border-radius: 2px; color: var(--muted); }
+    .heartbeat strong { display: block; font-weight: 500; }
+    .heartbeat small { display: block; color: var(--muted); }
+    .dashboard { display: contents; }
+    .panel { background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97)); border: 1px solid var(--line); border-radius: .7rem; }
+    .main-panel {
+      grid-column: 1;
+      grid-row: 3;
+      display: grid;
+      grid-template-rows: auto auto;
+      min-height: 736px;
+    }
+    .quiet-state {
+      display: grid;
+      grid-template-columns: 245px 1fr;
+      gap: 2.2rem;
+      padding: 1.05rem 1.35rem .95rem;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+    }
+    .paper-stack { position: relative; min-height: 230px; display: grid; place-items: center; }
+    .paper-mini {
+      position: relative;
+      width: 228px;
+      min-height: 226px;
+      padding: 1.8rem 1.3rem 1.15rem;
+      background: var(--paper);
+      color: var(--paper-ink);
+      box-shadow: -10px -8px 0 rgba(244,238,226,.8), -18px -14px 0 rgba(244,238,226,.55), 0 14px 25px rgba(0,0,0,.22);
+      transform: rotate(-1.4deg);
+      clip-path: polygon(0 0,100% 0,100% 96%,96% 98%,90% 97%,84% 99%,78% 97%,70% 99%,63% 97%,55% 100%,46% 98%,37% 100%,30% 97%,21% 99%,13% 97%,6% 98%,0 96%);
+      font-family: Georgia, serif;
+      font-size: .66rem;
+      line-height: 1.25;
+    }
+    .paper-mini .doc-title { text-align: center; font-weight: 700; font-size: .68rem; }
+    .paper-mini hr { border: 0; border-top: 1px solid var(--paper-ink); margin: .65rem 0; }
+    .paper-mini mark, .packet mark { background: #D6E8F5; color: inherit; padding: .08rem .15rem; }
+    .quiet-copy > p { margin: .75rem 0 0; max-width: 54ch; color: var(--ink); }
+    .quiet-copy .scale-note { color: var(--muted); font-size: .9rem; }
+    .changed-state { padding: 1.2rem 1.25rem 1.35rem; }
+    .changed-intro { margin-bottom: 1rem; }
+    .changed-intro p { margin: .45rem 0 0; color: var(--muted); }
+    .change-list { display: grid; gap: 1rem; }
+    .change-card {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: .6rem;
+      background: rgba(20, 18, 14, .36);
+    }
+    .change-card.calm { border-color: var(--muted); }
+    .change-card.calm .watch-match { border-color: var(--link); background: rgba(143, 216, 255, .04); }
+    .change-card h2 { margin-top: .8rem; font-size: clamp(1.35rem, 2vw, 1.8rem); }
+    .change-status { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; }
+    .status-chip { display: inline-flex; align-items: center; gap: .45rem; min-height: 32px; padding: .25rem .55rem; border: 1px solid var(--muted); border-radius: 999px; font-size: .78rem; font-weight: 600; }
+    .status-mark { position: relative; display: inline-block; flex: 0 0 16px; width: 16px; height: 16px; border: 1.5px solid currentColor; border-radius: 2px; }
+    .status-mark.added::before, .status-mark.added::after { content: ""; position: absolute; background: currentColor; }
+    .status-mark.added::before { width: 8px; height: 1.5px; left: 2.5px; top: 5.75px; }
+    .status-mark.added::after { width: 1.5px; height: 8px; left: 5.75px; top: 2.5px; }
+    .status-mark.off::after { content: ""; position: absolute; width: 12px; border-top: 1.5px solid currentColor; left: 1px; top: 6px; transform: rotate(-45deg); }
+    .official-term { color: var(--muted); font-size: .78rem; }
+    .watch-match { margin: .8rem 0 0; padding: .75rem .8rem; border-left: 3px solid var(--primary); background: rgba(94, 211, 180, .06); }
+    .change-scale, .helpful-line { color: var(--muted); }
+    .change-scale { margin: .7rem 0; font-size: .88rem; }
+    .change-receipt { margin-top: .8rem; padding-top: .75rem; border-top: 1px dashed var(--muted); font: .72rem/1.55 var(--mono); }
+    .change-receipt a { display: inline-flex; align-items: center; margin-top: .35rem; }
+    .deadline-line, .neutral-deadline { display: flex; align-items: center; gap: .55rem; margin: .85rem 0 0; font-weight: 600; }
+    .change-card.hot .deadline-line { color: var(--deadline); }
+    .neutral-deadline { color: var(--muted); font-weight: 500; }
+    .deadline-shape { position: relative; display: inline-block; flex: 0 0 20px; width: 20px; height: 20px; border: 2px solid currentColor; border-radius: 50%; }
+    .deadline-shape::before { content: ""; position: absolute; width: 5px; height: 6px; left: 7px; top: 3px; border-left: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; }
+    .card-action { width: auto; min-width: 150px; padding-inline: 1.1rem; }
+    .next-link { display: inline-flex; align-items: center; margin-top: .55rem; }
+    .scaffold { margin-top: 1rem; padding: 1rem; border: 1px solid var(--primary); border-radius: .55rem; background: rgba(94, 211, 180, .035); }
+    .scaffold > p { margin: .4rem 0 1rem; color: var(--muted); }
+    .scaffold-group { padding: .9rem; border-radius: .45rem; }
+    .scaffold-group + .scaffold-group { margin-top: .8rem; }
+    .scaffold-filled { border: 1px solid var(--line); background: rgba(182, 171, 152, .045); }
+    .scaffold-yours { border: 1px dashed var(--primary); }
+    .scaffold-group h4 { margin: 0 0 .7rem; font: 600 .95rem var(--sans); }
+    .fact-list { display: grid; gap: .65rem; margin: 0; }
+    .fact-list div { display: grid; grid-template-columns: minmax(120px, .7fr) 1.5fr; gap: .75rem; }
+    .fact-list dt { color: var(--muted); }
+    .fact-list dd { margin: 0; }
+    .field-group + .field-group { margin-top: .75rem; }
+    .field-group label { display: block; margin-bottom: .3rem; font-weight: 500; }
+    .field-group textarea { width: 100%; min-height: 96px; resize: vertical; padding: .7rem; border: 1px solid var(--muted); border-radius: .4rem; background: #181711; color: var(--ink); }
+    .scaffold-note { margin: .9rem 0 0; color: var(--muted); }
+    .scaffold-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .8rem; }
+    .scaffold-actions button { width: auto; min-width: 120px; margin-top: 0; padding-inline: 1rem; }
+    .section-body { padding: .8rem 1.25rem; overflow-y: auto; max-height: 560px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .55rem; }
+    .section-head h2 { font: 500 1.05rem var(--sans); }
+    .check-list { list-style: none; padding: 0; margin: 0; }
+    .check-row {
+      display: grid;
+      grid-template-columns: 168px 20px minmax(180px, 1fr) auto;
+      gap: .6rem;
+      align-items: start;
+      min-height: 64px;
+      padding: .48rem 0;
+      border-top: 1px solid var(--line);
+      font-size: .76rem;
+    }
+    .check-when { display: flex; gap: .65rem; padding-top: .15rem; }
+    .check-detail { padding-top: .15rem; }
+    .check-detail small { display: block; color: var(--muted); margin-top: .2rem; }
+    .text-link { display: inline-flex; align-items: center; padding: .15rem 0; min-height: 44px; white-space: nowrap; }
+    .pause-row {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: .8rem;
+      align-items: center;
+      margin-top: .55rem;
+      padding: .68rem .8rem;
+      border: 1px dashed #7B705F;
+      border-radius: .5rem;
+      color: var(--ink);
+      background: rgba(182,171,152,.035);
+    }
+    .pause-symbol { width: 24px; height: 24px; border: 1.5px solid var(--muted); border-radius: 3px; }
+    .history-extra p { margin: .7rem 0; color: var(--muted); font-size: .8rem; }
+    .history-toggle { margin-top: .2rem; padding: .35rem 0; background: transparent; border: 0; color: var(--primary); cursor: pointer; }
+    .history-toggle::after { content: "⌄"; display: inline-block; margin-left: .6rem; }
+    .history-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
+    .packet-wrap { grid-column: 2; grid-row: 3; min-width: 0; min-height: 736px; }
+    .packet-heading { margin: 0 0 .25rem; padding: 0 .2rem; color: var(--ink); font: 500 1.05rem var(--sans); }
+    .source-label { margin: 0 0 .55rem; padding: 0 .2rem; color: var(--muted); font-size: .75rem; }
+    .packet-details { min-height: 680px; }
+    .packet-details summary { display: none; }
+    .packet {
+      display: flex;
+      flex-direction: column;
+      min-height: 680px;
+      padding: 2rem 1.35rem 1.45rem;
+      background: var(--paper);
+      color: var(--paper-ink);
+      font-family: Georgia, serif;
+      clip-path: polygon(0 0,100% 0,100% 97%,97% 99%,92% 98%,87% 100%,80% 98%,74% 99%,67% 97.5%,61% 100%,54% 98%,47% 99%,40% 97%,34% 100%,28% 98%,21% 99%,14% 97%,8% 99%,0 97%);
+      box-shadow: 0 14px 28px rgba(0,0,0,.28);
+      font-size: .74rem;
+      line-height: 1.3;
+    }
+    .packet header { text-align: center; margin-bottom: .75rem; }
+    .packet .doc-title { font-weight: 700; }
+    .packet hr { border: 0; border-top: 1px solid currentColor; margin: .75rem 0; }
+    .packet-item { display: grid; grid-template-columns: 25px 1fr; gap: .35rem; margin: .7rem 0; }
+    .packet-item b { grid-column: 1; }
+    .packet-item div { grid-column: 2; }
+    .receipt, .receipt-mobile { font: .72rem/1.5 var(--mono); }
+    .receipt { border-top: 1px dashed #8b806f; margin-top: auto; padding-top: .75rem; }
+    .receipt a { color: #175f87; display: inline-flex; align-items: center; margin-top: .45rem; }
+    .receipt-mobile { display: none; padding: .85rem; border: 1px solid var(--line); border-radius: .5rem; color: var(--ink); }
+    .receipt-mobile a { display: inline-flex; align-items: center; margin-top: .45rem; }
+    .side {
+      grid-column: 3;
+      grid-row: 1 / 4;
+      display: grid;
+      grid-template-rows: auto auto;
+      align-content: start;
+      gap: 14px;
+      min-height: 0;
+    }
+    .side-panel { padding: 1.05rem 1.15rem; overflow-y: auto; }
+    .watch-strip {
+      grid-column: 1 / 3;
+      grid-row: 2;
+      display: grid;
+      grid-template-columns: minmax(220px, .85fr) minmax(360px, 1.35fr) minmax(250px, 1fr);
+      gap: 1rem 1.25rem;
+      align-items: start;
+      padding: 1.05rem 1.2rem;
+      overflow-y: auto;
+      max-height: 330px;
+    }
+    .watch-lead h2 { font-size: clamp(1.55rem, 2.2vw, 2.15rem); }
+    .watch-lead > p:last-child { margin: .45rem 0 0; color: var(--muted); font-size: .88rem; max-width: 45ch; }
+    .watch-kicker { margin: 0 0 .25rem; color: var(--primary); font: 600 .7rem/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    .watch-current { min-width: 0; }
+    .draft-panel { max-height: 430px; }
+    .side-panel .section-head h2 { font: 500 1.45rem/1.1 var(--serif); }
+    .watch-form label { display: block; margin: .6rem 0 .4rem; font-size: .9rem; }
+    .watch-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; align-items: stretch; }
+    .watch-entry .primary-button { width: auto; min-width: 145px; margin-top: 0; padding-inline: 1rem; }
+    .input-wrap { position: relative; }
+    .input-wrap::before { content: ""; position: absolute; left: .95rem; top: 1.05rem; width: 14px; height: 14px; border: 2px solid var(--ink); border-radius: 50%; }
+    .input-wrap::after { content: ""; position: absolute; left: 1.78rem; top: 2rem; width: 8px; border-top: 2px solid var(--ink); transform: rotate(45deg); transform-origin: left center; }
+    .watch-form input { width: 100%; min-height: 62px; padding: .75rem .8rem .75rem 2.75rem; border: 1px solid var(--link); border-radius: .45rem; background: #181711; color: var(--ink); }
+    .primary-button {
+      width: 100%;
+      min-height: 48px;
+      margin-top: .7rem;
+      border: 0;
+      border-radius: .4rem;
+      background: var(--primary);
+      color: #09251e;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .primary-button:hover { filter: brightness(1.07); }
+    .helper { margin: .35rem 0 .2rem; color: var(--muted); font-size: .74rem; }
+    .saved-title { margin: 0 0 .45rem; font-size: .88rem; }
+    .watch-empty { margin: .6rem 0; padding: .85rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); }
+    .watch-empty strong { display: block; margin-bottom: .25rem; color: var(--ink); }
+    .watch-list, .draft-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .55rem; }
+    .watch-strip .watch-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .watch-item, .draft-item {
+      display: grid;
+      grid-template-columns: 1fr 44px;
+      align-items: center;
+      gap: .55rem;
+      min-height: 54px;
+      padding: .35rem .45rem .35rem .75rem;
+      border: 1px solid var(--line);
+      border-radius: .45rem;
+      color: var(--ink);
+    }
+    .remove-watch { border: 0; background: transparent; color: var(--ink); cursor: pointer; font-size: 1.25rem; }
+    .watch-strip .watch-item { width: auto; max-width: 100%; grid-template-columns: minmax(0, 1fr) 44px; background: rgba(94, 211, 180, .035); }
+    .privacy { display: grid; grid-template-columns: 30px 1fr; gap: .7rem; align-items: center; margin: .7rem 0 0; padding-top: .7rem; border-top: 1px solid var(--line); color: var(--primary); font-size: .78rem; }
+    .lock { width: 18px; height: 17px; border: 1.7px solid currentColor; border-radius: 3px; position: relative; margin-left: 4px; }
+    .lock::before { content: ""; position: absolute; width: 9px; height: 8px; border: 1.7px solid currentColor; border-bottom: 0; border-radius: 8px 8px 0 0; left: 2.6px; top: -8px; }
+    .draft-list { margin-top: .75rem; }
+    .draft-explainer { margin: .15rem 0 .75rem; color: var(--muted); font-size: .8rem; }
+    .draft-item { grid-template-columns: 26px 1fr; min-height: 62px; }
+    .draft-item small { display: block; color: var(--muted); }
+    .doc-icon { display: inline-block; width: 18px; height: 22px; border: 1.5px solid var(--ink); border-radius: 2px; position: relative; }
+    .doc-icon::before, .doc-icon::after { content: ""; position: absolute; left: 4px; width: 8px; border-top: 1px solid var(--muted); }
+    .doc-icon::before { top: 8px; }
+    .doc-icon::after { top: 13px; }
+    .secondary-button { width: 100%; margin-top: .75rem; background: transparent; color: var(--ink); border: 1px dashed #766c5c; border-radius: .4rem; cursor: pointer; }
+    .form-status { min-height: 24px; margin: .35rem 0 0; color: var(--primary); font-size: .82rem; }
+    .about-footer {
+      display: grid;
+      grid-template-columns: 1.15fr 1.2fr 1fr;
+      gap: 1.5rem 2.5rem;
+      margin-top: 14px;
+      padding: 2rem;
+      background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97));
+      border: 1px solid var(--line);
+      border-radius: .7rem;
+    }
+    .about-footer h2 { font-size: 2rem; }
+    .about-footer h3 { margin-bottom: .45rem; }
+    .about-footer p { margin: .35rem 0; color: var(--muted); }
+    .about-footer ul { margin: .35rem 0; padding-left: 1.2rem; color: var(--muted); }
+    .about-footer li + li { margin-top: .45rem; }
+    .about-intro { grid-row: span 2; }
+    .about-closing { grid-column: 1 / -1; padding-top: 1rem; border-top: 1px solid var(--line); font-family: var(--mono); font-size: .8rem; color: var(--primary) !important; }
+    .link-pending { color: var(--muted); }
+
+    @media (max-width: 1400px) {
+      main { grid-template-columns: minmax(0, 1fr) 285px 320px; }
+      .page-head { grid-template-columns: minmax(0, 1fr) 330px; }
+      .quiet-state { grid-template-columns: 225px 1fr; gap: 1.6rem; }
+      .paper-mini { width: 210px; }
+      .side-panel { padding-inline: 1rem; }
+    }
+    @media (max-width: 1120px) {
+      main { grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: auto auto auto auto; }
+      .page-head { grid-column: 1; grid-row: 1; grid-template-columns: 1fr; min-height: 230px; }
+      .watch-strip { grid-column: 1; grid-row: 2; grid-template-columns: 1fr; max-height: 520px; }
+      .main-panel { grid-column: 1; grid-row: 3; min-height: 736px; }
+      .packet-wrap { grid-column: 1; grid-row: 4; width: min(420px, 100%); justify-self: center; }
+      .side { grid-column: 2; grid-row: 1 / 4; }
+    }
+    @media (max-width: 820px) {
+      .shell { padding-inline: .9rem; }
+      .topbar { grid-template-columns: 1fr auto; padding-block: .55rem; }
+      nav { grid-column: 1 / -1; grid-row: 2; }
+      nav ul { min-width: 0; gap: .35rem 1rem; }
+      .top-actions { grid-column: 2; grid-row: 1; }
+      main { display: flex; flex-direction: column; gap: 14px; }
+      .page-head, .dashboard, .main-panel, .quiet-state, .side { display: contents; }
+      .greeting-block { order: 1; padding: 1rem .15rem 0; }
+      .watch-strip { order: 2; grid-template-columns: 1fr; max-height: 640px; padding: 1rem; }
+      .quiet-copy { order: 3; padding: 1.15rem; background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97)); border: 1px solid var(--line); border-radius: .7rem; }
+      .changed-state { order: 3; padding: 1rem; background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97)); border: 1px solid var(--line); border-radius: .7rem; }
+      .heartbeat { order: 4; padding: 1rem; background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97)); border: 1px solid var(--line); border-radius: .7rem; }
+      .section-body { order: 5; max-height: 560px; background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97)); border: 1px solid var(--line); border-radius: .7rem; }
+      .packet-wrap { order: 6; width: 100%; min-height: 0; }
+      .draft-panel { order: 7; max-height: 430px; }
+      .paper-stack { display: none; }
+      .packet-details { min-height: 0; }
+      .packet-details summary {
+        display: flex;
+        align-items: center;
+        padding: .7rem .85rem;
+        margin-bottom: .6rem;
+        border: 1px solid var(--line);
+        border-radius: .45rem;
+        color: var(--link);
+        cursor: pointer;
+      }
+      .packet { min-height: 0; font-size: .9rem; line-height: 1.45; padding: 1.5rem 1.15rem 2rem; }
+      .packet .receipt { display: none; }
+      .receipt-mobile { display: block; margin-top: .7rem; }
+      .about-footer { grid-template-columns: 1fr 1fr; }
+      .about-intro { grid-row: auto; }
+    }
+    @media (max-width: 640px) {
+      .watch-entry { grid-template-columns: 1fr; }
+      .watch-entry .primary-button { width: 100%; }
+      .change-card { padding: .85rem; }
+      .fact-list div { grid-template-columns: 1fr; gap: .15rem; }
+      .scaffold-group { padding: .75rem; }
+      .scaffold-actions { display: grid; grid-template-columns: 1fr; gap: .65rem; }
+      .scaffold-actions button, .card-action { width: 100%; }
+      .check-row { grid-template-columns: 20px minmax(0, 1fr); gap: .35rem .65rem; padding: .75rem 0; }
+      .check-when { grid-column: 1 / -1; grid-row: 1; justify-content: space-between; gap: 1rem; }
+      .check-row > .status-shape { grid-column: 1; grid-row: 2; }
+      .check-detail { grid-column: 2; grid-row: 2; }
+      .check-row > a { grid-column: 2; grid-row: 3; justify-self: start; margin-top: .15rem; }
+      .pause-row { grid-template-columns: 28px 1fr; }
+      .pause-row > a { grid-column: 2; justify-self: start; }
+      .about-footer { grid-template-columns: 1fr; padding: 1.25rem; }
+      .about-closing { grid-column: 1; }
+    }
+    @media (max-width: 375px) {
+      .shell { padding-inline: .6rem; }
+      .brand { font-size: 1rem; }
+      .brand-mark { width: 25px; height: 28px; }
+      nav a, nav button, .nav-disabled { font-size: .82rem; }
+      h1 { font-size: 2.45rem; }
+      .section-body, .side-panel, .quiet-copy, .heartbeat, .watch-strip { padding-inline: .85rem; }
+      .packet { padding-inline: .9rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to main content</a>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#main" aria-label="Porch Light home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>PORCH LIGHT</span>
+      </a>
+      <nav aria-label="Primary navigation" data-aria-i18n="navLabel">
+        <ul>
+          <li><button type="button" id="state-quiet" aria-current="true" data-i18n="navQuiet">Quiet week</button></li>
+          <li><button type="button" id="state-changed" data-i18n="navChanges">Changed</button></li>
+          <li><span class="nav-disabled" aria-disabled="true"><span data-i18n="navCalendar">Calendar</span>&nbsp;<span class="visually-hidden" data-i18n="navUnavailable">(not available in this preview)</span></span></li>
+          <li><span class="nav-disabled" aria-disabled="true"><span data-i18n="navBodies">All bodies</span>&nbsp;<span class="visually-hidden" data-i18n="navUnavailable">(not available in this preview)</span></span></li>
+          <li><a href="#about" data-i18n="navHow">How it works</a></li>
+        </ul>
+      </nav>
+      <div class="top-actions">
+        <div class="toggle" role="group" aria-label="Language" data-aria-i18n="languageLabel">
+          <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
+          <button type="button" id="lang-es" aria-pressed="false" lang="es">ES</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="page-head">
+        <div class="greeting-block">
+          <div class="sample-notice" role="note">
+            <span class="notice-i" aria-hidden="true">i</span>
+            <span data-i18n="sample">Sample data. Nothing on this page is a real city record.</span>
+          </div>
+          <p class="greeting" id="greeting" data-i18n="greeting">Good afternoon, neighbor.</p>
+        </div>
+        <section class="heartbeat" aria-labelledby="heartbeat-title" aria-live="polite">
+          <span id="heartbeat-title" class="visually-hidden" data-i18n="heartbeatTitle">System heartbeat</span>
+          <div class="heartbeat-row"><span class="status-shape book" aria-hidden="true"></span><div><strong data-i18n="cityRead">City read 10:42 AM</strong><small data-i18n="readCount">20 of 21 bodies read</small></div></div>
+          <div class="heartbeat-row"><span class="status-shape neutral" aria-hidden="true"></span><div><strong data-i18n="pausedShort">Planning Commission is paused</strong></div></div>
+          <div class="heartbeat-row"><span class="status-shape clock" aria-hidden="true"></span><div><strong data-i18n="nextCheck">Next check: Tuesday, 8:00 AM PT</strong></div></div>
+        </section>
+      </div>
+
+      <section class="panel watch-strip scroll-region" tabindex="0" role="region" aria-labelledby="watch-title">
+        <div class="watch-lead">
+          <p class="watch-kicker" data-i18n="watchKicker">Start here</p>
+          <h2 id="watch-title" data-i18n="watchTitle">Tell Porch Light what matters.</h2>
+          <p data-i18n="watchIntro">Describe a project, place, concern, or question in your own words. Porch Light checks the public record and brings back relevant changes.</p>
+        </div>
+        <form class="watch-form" id="watch-form">
+          <label for="watch-input" data-i18n="watchLabel">What should Porch Light watch for?</label>
+          <div class="watch-entry">
+            <div class="input-wrap"><input id="watch-input" name="watch" type="text" maxlength="120" required autocomplete="off" placeholder="Can they put a bar next to my house?" data-placeholder-i18n="watchPlaceholder"></div>
+            <button class="primary-button" type="submit" data-i18n="startWatching">Start watching</button>
+          </div>
+          <p class="helper" data-i18n="helper">Use your own words. Porch Light keeps checking.</p>
+          <p class="form-status" id="watch-status" aria-live="polite"></p>
+        </form>
+        <div class="watch-current">
+          <p class="saved-title" id="saved-title" data-i18n="saved">Currently watching</p>
+          <div class="watch-empty" id="watch-empty" hidden>
+            <strong data-i18n="firstRunTitle">Start with one thing you care about.</strong>
+            <span data-i18n="firstRunBody">A watch is a phrase Porch Light checks against new agenda items. For example: “street trees on Juniper Avenue.” Type your own words above.</span>
+          </div>
+          <ul class="watch-list" id="watch-list"></ul>
+          <p class="privacy"><span class="lock" aria-hidden="true"></span><span data-i18n="privacy">Your list stays on your device. We use it to answer, and never store it.</span></p>
+        </div>
+      </section>
+
+      <div class="dashboard">
+        <section class="panel main-panel" id="quiet" aria-labelledby="quiet-title">
+          <p class="visually-hidden" id="state-status" aria-live="polite"></p>
+          <div class="quiet-state" id="quiet-state">
+            <div class="paper-stack" aria-hidden="true" lang="en">
+              <div class="paper-mini">
+                <div class="doc-title">CITY OF RIVERDALE<br>PLANNING COMMISSION AGENDA</div>
+                <div style="text-align:center">AUGUST 16, 2026 · 7:00 PM<br>COUNCIL CHAMBERS</div>
+                <hr>
+                <b>7. PUBLIC HEARINGS</b>
+                <p><b>7.A.</b> Use Permit 24-07 · 123 Elm Street</p>
+                <p><mark>Request to allow a neighborhood wine bar with outdoor seating in the Mixed Use District.</mark></p>
+              </div>
+            </div>
+            <div class="quiet-copy">
+              <h1 id="quiet-title" data-i18n="quietTitle">Nothing new for you this week.</h1>
+              <p data-i18n="quietBody">We checked 20 boards, commissions, and committees. Planning Commission remains paused.</p>
+              <p class="scale-note" data-i18n="scaleNote">This packet is 312 pages. The item shown here is 13 pages.</p>
+            </div>
+          </div>
+
+          <div class="section-body scroll-region" id="checks" tabindex="0" role="region" aria-label="Recent checks and source status" data-aria-i18n="checksRegion">
+            <div class="section-head"><h2 data-i18n="recentChecks">Recent checks</h2></div>
+            <ul class="check-list" id="check-list"></ul>
+            <div class="pause-row" role="status" aria-live="polite">
+              <span class="pause-symbol" aria-hidden="true"></span>
+              <span data-i18n="pausedLong">Planning Commission is paused. We stopped checking after three days of not reaching it. Here is the city’s page.</span>
+              <a class="text-link" href="https://city.gov/planning" target="_blank" rel="noreferrer" data-i18n="openCity" data-aria-i18n="openCityPause">Open city page</a>
+            </div>
+            <div class="history-extra" id="history-extra" hidden></div>
+            <button class="history-toggle" id="history-toggle" type="button" aria-expanded="false" aria-controls="history-extra" data-i18n="history">See full check history</button>
+          </div>
+
+          <div class="changed-state" id="changed-state" role="region" aria-labelledby="changed-title" hidden>
+            <div class="changed-intro">
+              <h1 id="changed-title" data-i18n="changedTitle">2 things landed for you.</h1>
+              <p data-i18n="changedIntro">New material since you last looked, matched to what you are watching.</p>
+            </div>
+            <div class="change-list" id="change-list" aria-label="Two changes matched to your watches" data-aria-i18n="changesRegion"></div>
+          </div>
+        </section>
+
+        <section class="packet-wrap" id="packet" aria-labelledby="packet-section-title">
+          <h2 class="packet-heading" id="packet-section-title" data-i18n="packetHeading">The last thing we read</h2>
+          <p class="source-label" data-i18n="sourceLabel">Original source document as published by the city.</p>
+          <details class="packet-details" id="packet-details" open>
+            <summary data-i18n="packetSummary">Open the source document</summary>
+            <article class="packet" lang="en" aria-labelledby="packet-title">
+              <header>
+                <div class="doc-title" id="packet-title">CITY OF RIVERDALE<br>PLANNING COMMISSION AGENDA</div>
+                <div>AUGUST 16, 2026 · 7:00 PM<br>COUNCIL CHAMBERS<br>100 MAIN STREET, RIVERDALE, CA</div>
+              </header>
+              <hr>
+              <div class="packet-item"><b>7.</b><div><strong>PUBLIC HEARINGS</strong></div></div>
+              <div class="packet-item"><b>7.A.</b><div><strong>Use Permit 24-07 · 123 Elm Street</strong><p><mark>Request to allow a neighborhood wine bar with outdoor seating in the Mixed Use District.</mark></p><p><mark>Staff recommends that the Planning Commission find the project exempt from further environmental review under CEQA Guidelines Section 15301 and approve Use Permit 24-07 subject to the conditions in Attachment 1.</mark></p></div></div>
+              <div class="packet-item"><b>7.B.</b><div><strong>General Plan Annual Progress Report</strong><p>Receive and file the 2025 General Plan Annual Progress Report.</p></div></div>
+              <footer class="receipt">
+                <div>Planning Commission · 16 Aug 2026 · Item 7.A · pages 118–130 · posted 4 Aug 2026, 5:10 PM PT</div>
+                <a href="https://city.gov/planning#page=118" target="_blank" rel="noreferrer">open the packet at page 118</a>
+              </footer>
+            </article>
+          </details>
+          <div class="receipt-mobile" lang="en">
+            <div>Planning Commission · 16 Aug 2026 · Item 7.A · pages 118–130 · posted 4 Aug 2026, 5:10 PM PT</div>
+            <a href="https://city.gov/planning#page=118" target="_blank" rel="noreferrer">open the packet at page 118</a>
+          </div>
+        </section>
+
+        <aside class="side" aria-label="Your Porch Light tools" data-aria-i18n="toolsRegion">
+          <section class="panel side-panel draft-panel scroll-region" tabindex="0" role="region" aria-labelledby="draft-title">
+            <div class="section-head"><h2 id="draft-title" data-i18n="draftTitle">Drafts are yours to finish and send.</h2></div>
+            <p class="draft-explainer" data-i18n="draftExplainer">Porch Light fills in the facts and the deadline from the source. The opinion is yours to write, and only you can send it.</p>
+            <ul class="draft-list" id="draft-list"></ul>
+            <button class="secondary-button" id="start-draft" type="button" data-i18n="startDraft">＋ Start a draft</button>
+            <p class="form-status" id="draft-status" aria-live="polite"></p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="about-footer" id="about">
+      <section class="about-intro" aria-labelledby="about-title">
+        <h2 id="about-title" data-i18n="aboutTitle">What this is</h2>
+        <p data-i18n="aboutBody">Porch Light reads the public agenda packets your city posts, breaks them into individual items, and watches for the things you care about. Every summary points back to the page it came from. It drafts. You write your position, and you decide whether to send it.</p>
+      </section>
+      <section aria-labelledby="limits-title">
+        <h3 id="limits-title" data-i18n="limitsTitle">What it does not do</h3>
+        <ul>
+          <li data-i18n="limitOne">It never scores, grades, or ranks a public body.</li>
+          <li data-i18n="limitTwo">It never sends anything to a government office. There is no send button anywhere in the code.</li>
+          <li data-i18n="limitThree">It never generates a date, a deadline, an item number, or a page range. Those are copied from the source or not shown.</li>
+          <li data-i18n="limitFour">It never stores your watch list. That list lives on your device.</li>
+        </ul>
+      </section>
+      <section aria-labelledby="disclaimer-title">
+        <h3 id="disclaimer-title" data-i18n="disclaimerTitle">Independent project</h3>
+        <p data-i18n="disclaimer">Porch Light is an independent project. It is not affiliated with, endorsed by, or operated by any city or public agency. Always confirm dates and deadlines against the city's own posting.</p>
+      </section>
+      <section aria-labelledby="built-title">
+        <h3 id="built-title" data-i18n="builtTitle">Built by</h3>
+        <p data-i18n="built">Built by Shara Cordero. AI assisted. Human approved. Powered by NLP.</p>
+      </section>
+      <section aria-labelledby="links-title">
+        <h3 id="links-title" data-i18n="linksTitle">Links</h3>
+        <ul>
+          <li><span class="link-pending" data-i18n="linkedinPending">LinkedIn · URL to be supplied</span></li>
+          <li><a href="https://earlgreyhot1701d.github.io/Clew-Labs/" target="_blank" rel="noreferrer">Clew Labs</a></li>
+          <li><span class="link-pending" data-i18n="sourcePending">Source code · URL to be supplied</span></li>
+          <li><a href="https://city.gov/planning" target="_blank" rel="noreferrer" data-i18n="cityAgenda">The city's own agenda page</a></li>
+        </ul>
+      </section>
+      <p class="about-closing" data-i18n="sample">Sample data. Nothing on this page is a real city record.</p>
+    </footer>
+  </div>
+
+  <script>
+    const DATA = [
+      {
+        datetime: "2026-08-16",
+        date: { en: "Fri, Aug 16", es: "Vie, 16 ago" },
+        time: "10:42 AM PT",
+        body: { en: "Planning Commission could not be read", es: "No se pudo leer la Comisión de Planificación" },
+        evidence: {
+          en: "not located at city.gov/planning as of Aug 16, 10:42 AM PT",
+          es: "no se localizó en city.gov/planning al 16 de agosto, 10:42 AM PT"
+        }
+      },
+      {
+        datetime: "2026-08-15",
+        date: { en: "Thu, Aug 15", es: "Jue, 15 ago" },
+        time: "10:42 AM PT",
+        body: { en: "Planning Commission could not be read", es: "No se pudo leer la Comisión de Planificación" },
+        evidence: {
+          en: "not located at city.gov/planning as of Aug 15, 10:42 AM PT",
+          es: "no se localizó en city.gov/planning al 15 de agosto, 10:42 AM PT"
+        }
+      },
+      {
+        datetime: "2026-08-14",
+        date: { en: "Wed, Aug 14", es: "Mié, 14 ago" },
+        time: "10:42 AM PT",
+        body: { en: "Planning Commission could not be read", es: "No se pudo leer la Comisión de Planificación" },
+        evidence: {
+          en: "not located at city.gov/planning as of Aug 14, 10:42 AM PT",
+          es: "no se localizó en city.gov/planning al 14 de agosto, 10:42 AM PT"
+        }
+      }
+    ];
+
+    const CHANGED_DATA = [
+      {
+        id: "supplemental-packet",
+        tone: "hot",
+        mark: "added",
+        statusKey: "hotStatus",
+        officialKey: "hotOfficial",
+        headingKey: "hotHeading",
+        matchKey: "hotMatch",
+        scaleKey: "hotScale",
+        receiptKey: "hotReceipt",
+        sourceKey: "hotSource",
+        sourceHref: "https://city.gov/planning#page=118",
+        deadlineKey: "hotDeadline",
+        actionKey: "startComment"
+      },
+      {
+        id: "cancelled-meeting",
+        tone: "calm",
+        mark: "off",
+        statusKey: "calmStatus",
+        officialKey: "calmOfficial",
+        headingKey: "calmHeading",
+        matchKey: "calmMatch",
+        helpfulKey: "calmHelpful",
+        receiptKey: "calmReceipt",
+        sourceKey: "calmSource",
+        sourceHref: "https://city.gov/historic-preservation",
+        deadlineKey: "calmDeadline",
+        nextKey: "calmNext"
+      }
+    ];
+
+    let watches = [
+      { text: "Can they put a bar next to my house?", lang: "en" },
+      { text: "Street trees on Juniper Avenue", lang: "en" }
+    ];
+    let drafts = [
+      {
+        title: { en: "Comment on Short-Term Rentals Ordinance", es: "Comentario sobre la ordenanza de alquileres a corto plazo" },
+        edited: { en: "Edited Aug 14", es: "Editado el 14 de agosto" }
+      },
+      {
+        title: { en: "Feedback on Downtown Mobility Plan", es: "Comentarios sobre el Plan de Movilidad del Centro" },
+        edited: { en: "Edited Aug 10", es: "Editado el 10 de agosto" }
+      }
+    ];
+    let language = "en";
+    let activeState = "quiet";
+    let scaffoldOpen = false;
+    let commentDraftSaved = false;
+    const commentDraft = { position: "", matters: "", ask: "" };
+
+    const COPY = {
+      en: {
+        skip: "Skip to main content", navLabel: "Primary navigation", languageLabel: "Language",
+        navQuiet: "Quiet week", navChanges: "Changed", navCalendar: "Calendar", navBodies: "All bodies", navHow: "How it works",
+        navUnavailable: "(not available in this preview)",
+        sample: "Sample data. Nothing on this page is a real city record.",
+        greeting: "Good afternoon, neighbor.", heartbeatTitle: "System heartbeat", cityRead: "City read 10:42 AM", readCount: "20 of 21 bodies read",
+        pausedShort: "Planning Commission is paused", nextCheck: "Next check: Tuesday, 8:00 AM PT",
+        quietTitle: "Nothing new for you this week.", quietBody: "We checked 20 boards, commissions, and committees. Planning Commission remains paused.",
+        scaleNote: "This packet is 312 pages. The item shown here is 13 pages.",
+        quietStateLoaded: "Quiet week view shown.", changedStateLoaded: "Changed view shown.",
+        changedTitle: "2 things landed for you.", changedIntro: "New material since you last looked, matched to what you are watching.",
+        changesRegion: "Two changes matched to your watches",
+        hotStatus: "New material added", hotOfficial: "Official term: Supplemental packet",
+        hotHeading: "Extra documents were added about the wine bar proposed at 123 Elm Street, including parking and noise conditions.",
+        hotMatch: "You're watching: Can they put a bar next to my house? This landed this morning.",
+        hotScale: "This packet is 312 pages. Your item is 13 of them.",
+        hotReceipt: "Planning Commission · 16 Aug 2026 · Item 7.A · pages 118–130 · posted 4 Aug 2026, 5:10 PM PT",
+        hotSource: "open the packet at page 118", hotDeadline: "Comment closes tomorrow at 5:00 PM · Pacific, city local time.",
+        startComment: "Start a comment",
+        calmStatus: "Meeting is off", calmOfficial: "Official term: Cancelled",
+        calmHeading: "Thursday's Historic Preservation Committee meeting is not happening.",
+        calmMatch: "You're watching: Street trees on Juniper Avenue. An item about street tree removal was on this agenda.",
+        calmHelpful: "Saving you the trip. We'll tell you if the item is rescheduled.",
+        calmReceipt: "Historic Preservation Committee · 21 Aug 2026 · Item 4 · pages 9–14 · notice posted 15 Aug 2026, 9:02 AM PT",
+        calmSource: "Open the cancellation notice", calmDeadline: "No comment period.", calmNext: "See what happens next",
+        scaffoldRegion: "Comment draft scaffold", scaffoldTitle: "Porch Light fills in the facts. The words are yours.",
+        scaffoldIntro: "Review the sourced facts, then write only the parts that belong to you.", filledTitle: "Filled in for you, from the source",
+        factAboutLabel: "What this is about", factAboutValue: "Extra documents were added about the wine bar proposed at 123 Elm Street, including parking and noise conditions.",
+        factMeetingLabel: "Which meeting", factMeetingValue: "Planning Commission, 16 Aug 2026, 7:00 PM, Council Chambers",
+        factHowLabel: "How to comment", factHowValue: "Email comments to planning@city.gov by 17 Aug 2026, 5:00 PM, Pacific, city local time.",
+        factReceiptLabel: "Receipt", yoursTitle: "Yours to write", positionLabel: "Your position", mattersLabel: "Why this matters to you", askLabel: "What you are asking for",
+        scaffoldNote: "Porch Light never writes your opinion and cannot send anything. When you're done, you copy this and send it yourself.",
+        saveDraft: "Save draft", closeScaffold: "Close", draftSavedFromChange: "Draft saved in your drafts panel.", draftUpdated: "Draft updated.",
+        commentDraftTitle: "Comment on the supplemental packet for 123 Elm Street", commentDraftEdited: "Edited now",
+        recentChecks: "Recent checks", checksRegion: "Recent checks and source status",
+        pausedLong: "Planning Commission is paused. We stopped checking after three days of not reaching it. Here is the city’s page.",
+        openCity: "Open city page", openCityPause: "Open city page: Planning Commission, paused",
+        history: "See full check history", historyClose: "Hide full check history",
+        historyLines: ["Mon, Aug 10 · 21 bodies read · No changes matched your watches.", "Fri, Aug 7 · 21 bodies read · No changes matched your watches."],
+        packetHeading: "The last thing we read", sourceLabel: "Original source document as published by the city.", packetSummary: "Open the source document",
+        toolsRegion: "Your drafts and writing tools", watchRegion: "Start and manage watches",
+        watchKicker: "Start here", watchTitle: "Tell Porch Light what matters.",
+        watchIntro: "Describe a project, place, concern, or question in your own words. Porch Light checks the public record and brings back relevant changes.",
+        watchLabel: "What should Porch Light watch for?", watchPlaceholder: "Can they put a bar next to my house?",
+        startWatching: "Start watching", helper: "Use your own words. Porch Light keeps checking.", saved: "Currently watching",
+        firstRunTitle: "Start with one thing you care about.",
+        firstRunBody: "A watch is a phrase Porch Light checks against new agenda items. For example: “street trees on Juniper Avenue.” Type your own words above.",
+        privacy: "Your list stays on your device. We use it to answer, and never store it.",
+        draftRegion: "Your drafts", draftTitle: "Drafts are yours to finish and send.",
+        draftExplainer: "Porch Light fills in the facts and the deadline from the source. The opinion is yours to write, and only you can send it.", startDraft: "＋ Start a draft",
+        remove: "Remove watch", added: "Watch added.", empty: "Enter something you want Porch Light to watch.",
+        draftAdded: "A blank draft was added.", untitledDraft: "Untitled public comment", editedNow: "Edited now",
+        aboutTitle: "What this is",
+        aboutBody: "Porch Light reads the public agenda packets your city posts, breaks them into individual items, and watches for the things you care about. Every summary points back to the page it came from. It drafts. You write your position, and you decide whether to send it.",
+        limitsTitle: "What it does not do",
+        limitOne: "It never scores, grades, or ranks a public body.",
+        limitTwo: "It never sends anything to a government office. There is no send button anywhere in the code.",
+        limitThree: "It never generates a date, a deadline, an item number, or a page range. Those are copied from the source or not shown.",
+        limitFour: "It never stores your watch list. That list lives on your device.",
+        disclaimerTitle: "Independent project",
+        disclaimer: "Porch Light is an independent project. It is not affiliated with, endorsed by, or operated by any city or public agency. Always confirm dates and deadlines against the city's own posting.",
+        builtTitle: "Built by", built: "Built by Shara Cordero. AI assisted. Human approved. Powered by NLP.",
+        linksTitle: "Links", linkedinPending: "LinkedIn · URL to be supplied", sourcePending: "Source code · URL to be supplied",
+        cityAgenda: "The city's own agenda page"
+      },
+      es: {
+        skip: "Saltar al contenido principal", navLabel: "Navegación principal", languageLabel: "Idioma",
+        navQuiet: "Semana tranquila", navChanges: "Cambios", navCalendar: "Calendario", navBodies: "Todos los organismos", navHow: "Cómo funciona",
+        navUnavailable: "(no disponible en esta vista previa)",
+        sample: "Datos de muestra. Nada en esta página es un registro municipal real.",
+        greeting: "Buenas tardes, vecindad.", heartbeatTitle: "Estado del sistema", cityRead: "Ciudad revisada a las 10:42 AM", readCount: "20 de 21 organismos leídos",
+        pausedShort: "La Comisión de Planificación está en pausa", nextCheck: "Próxima revisión: martes, 8:00 AM PT",
+        quietTitle: "Nada nuevo para usted esta semana.", quietBody: "Revisamos 20 juntas, comisiones y comités. La Comisión de Planificación sigue en pausa.",
+        scaleNote: "Este paquete tiene 312 páginas. El asunto que se muestra aquí ocupa 13 páginas.",
+        quietStateLoaded: "Se muestra la vista de semana tranquila.", changedStateLoaded: "Se muestra la vista de cambios.",
+        changedTitle: "2 novedades llegaron para usted.", changedIntro: "Material nuevo desde su última visita, relacionado con lo que está siguiendo.",
+        changesRegion: "Dos cambios relacionados con sus temas",
+        hotStatus: "Se agregó material nuevo", hotOfficial: "Término oficial: Paquete suplementario",
+        hotHeading: "Se agregaron documentos sobre el bar propuesto en 123 Elm Street, incluidas condiciones de estacionamiento y ruido.",
+        hotMatch: "Usted está siguiendo: ¿Pueden poner un bar al lado de mi casa? Esto llegó esta mañana.",
+        hotScale: "Este paquete tiene 312 páginas. Su asunto ocupa 13 de ellas.",
+        hotReceipt: "Comisión de Planificación · 16 ago 2026 · Asunto 7.A · páginas 118–130 · publicado 4 ago 2026, 5:10 PM PT",
+        hotSource: "abrir el paquete en la página 118", hotDeadline: "Los comentarios cierran mañana a las 5:00 PM · hora del Pacífico, hora local de la ciudad.",
+        startComment: "Iniciar un comentario",
+        calmStatus: "La reunión no se realizará", calmOfficial: "Término oficial: Cancelada",
+        calmHeading: "La reunión del jueves del Comité de Preservación Histórica no se realizará.",
+        calmMatch: "Usted está siguiendo: Árboles en la avenida Juniper. Esta agenda incluía un asunto sobre la remoción de árboles de la calle.",
+        calmHelpful: "Le ahorramos el viaje. Le avisaremos si el asunto se reprograma.",
+        calmReceipt: "Comité de Preservación Histórica · 21 ago 2026 · Asunto 4 · páginas 9–14 · aviso publicado 15 ago 2026, 9:02 AM PT",
+        calmSource: "Abrir el aviso de cancelación", calmDeadline: "Sin período para comentarios.", calmNext: "Ver qué sucede después",
+        scaffoldRegion: "Estructura del borrador de comentario", scaffoldTitle: "Porch Light completa los hechos. Las palabras son suyas.",
+        scaffoldIntro: "Revise los hechos obtenidos de la fuente y luego escriba solamente las partes que le corresponden.", filledTitle: "Completado para usted, a partir de la fuente",
+        factAboutLabel: "De qué se trata", factAboutValue: "Se agregaron documentos sobre el bar propuesto en 123 Elm Street, incluidas condiciones de estacionamiento y ruido.",
+        factMeetingLabel: "Qué reunión", factMeetingValue: "Comisión de Planificación, 16 ago 2026, 7:00 PM, Sala del Concejo",
+        factHowLabel: "Cómo comentar", factHowValue: "Envíe sus comentarios a planning@city.gov antes del 17 ago 2026, 5:00 PM, hora del Pacífico, hora local de la ciudad.",
+        factReceiptLabel: "Comprobante", yoursTitle: "Para que usted lo escriba", positionLabel: "Su posición", mattersLabel: "Por qué esto le importa", askLabel: "Lo que está solicitando",
+        scaffoldNote: "Porch Light nunca escribe su opinión y no puede enviar nada. Cuando termine, copie el texto y envíelo usted mismo.",
+        saveDraft: "Guardar borrador", closeScaffold: "Cerrar", draftSavedFromChange: "El borrador se guardó en su panel de borradores.", draftUpdated: "Borrador actualizado.",
+        commentDraftTitle: "Comentario sobre el paquete suplementario de 123 Elm Street", commentDraftEdited: "Editado ahora",
+        recentChecks: "Revisiones recientes", checksRegion: "Revisiones recientes y estado de las fuentes",
+        pausedLong: "La Comisión de Planificación está en pausa. Dejamos de revisarla después de tres días sin poder acceder. Aquí está la página de la ciudad.",
+        openCity: "Abrir página municipal", openCityPause: "Abrir página municipal: Comisión de Planificación, en pausa",
+        history: "Ver historial completo", historyClose: "Ocultar historial completo",
+        historyLines: ["Lun, 10 ago · 21 organismos leídos · Ningún cambio coincidió con sus temas.", "Vie, 7 ago · 21 organismos leídos · Ningún cambio coincidió con sus temas."],
+        packetHeading: "Lo último que leímos", sourceLabel: "Documento fuente original tal como lo publicó la ciudad.", packetSummary: "Abrir el documento fuente",
+        toolsRegion: "Sus borradores y herramientas de escritura", watchRegion: "Iniciar y administrar temas de seguimiento",
+        watchKicker: "Empiece aquí", watchTitle: "Dígale a Porch Light lo que le importa.",
+        watchIntro: "Describa un proyecto, lugar, inquietud o pregunta con sus propias palabras. Porch Light revisa el registro público y le presenta los cambios pertinentes.",
+        watchLabel: "¿Qué debe vigilar Porch Light?", watchPlaceholder: "¿Pueden poner un bar al lado de mi casa?",
+        startWatching: "Empezar a vigilar", helper: "Use sus propias palabras. Porch Light sigue revisando.", saved: "En seguimiento",
+        firstRunTitle: "Empiece con algo que le importe.",
+        firstRunBody: "Un tema es una frase que Porch Light compara con nuevos asuntos de las agendas. Por ejemplo: “árboles en la avenida Juniper”. Escriba sus propias palabras arriba.",
+        privacy: "Su lista permanece en su dispositivo. La usamos para responderle y nunca la guardamos.",
+        draftRegion: "Sus borradores", draftTitle: "Usted termina y envía sus borradores.",
+        draftExplainer: "Porch Light completa los hechos y el plazo a partir de la fuente. La opinión la escribe usted y solamente usted puede enviarla.", startDraft: "＋ Iniciar un borrador",
+        remove: "Eliminar tema", added: "Tema agregado.", empty: "Escriba algo que desea que Porch Light vigile.",
+        draftAdded: "Se agregó un borrador en blanco.", untitledDraft: "Comentario público sin título", editedNow: "Editado ahora",
+        aboutTitle: "Qué es esto",
+        aboutBody: "Porch Light lee los paquetes de agendas públicas que publica su ciudad, los divide en asuntos individuales y vigila lo que a usted le importa. Cada resumen remite a la página de la que proviene. Prepara borradores. Usted escribe su posición y decide si desea enviarla.",
+        limitsTitle: "Qué no hace",
+        limitOne: "Nunca puntúa, califica ni clasifica a un organismo público.",
+        limitTwo: "Nunca envía nada a una oficina gubernamental. No hay ningún botón para enviar en el código.",
+        limitThree: "Nunca genera una fecha, un plazo, un número de asunto ni un rango de páginas. Esos datos se copian de la fuente o no se muestran.",
+        limitFour: "Nunca almacena su lista de temas. Esa lista vive en su dispositivo.",
+        disclaimerTitle: "Proyecto independiente",
+        disclaimer: "Porch Light es un proyecto independiente. No está afiliado, respaldado ni operado por ninguna ciudad ni organismo público. Confirme siempre las fechas y los plazos en la publicación oficial de la ciudad.",
+        builtTitle: "Creado por", built: "Creado por Shara Cordero. Con asistencia de IA. Aprobado por una persona. Impulsado por PLN.",
+        linksTitle: "Enlaces", linkedinPending: "LinkedIn · URL pendiente", sourcePending: "Código fuente · URL pendiente",
+        cityAgenda: "Página oficial de agendas de la ciudad"
+      }
+    };
+
+    function setNodeLanguage(node) {
+      node.lang = language;
+    }
+
+    function createCopyNode(tagName, className, key) {
+      const node = document.createElement(tagName);
+      if (className) node.className = className;
+      node.textContent = COPY[language][key];
+      setNodeLanguage(node);
+      return node;
+    }
+
+    function createChangeReceipt(item) {
+      const receipt = document.createElement("div");
+      receipt.className = "change-receipt";
+      setNodeLanguage(receipt);
+      const line = document.createElement("div");
+      line.textContent = COPY[language][item.receiptKey];
+      const link = document.createElement("a");
+      link.href = item.sourceHref;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = COPY[language][item.sourceKey];
+      receipt.append(line, link);
+      return receipt;
+    }
+
+    function createFactRow(labelKey, valueKey) {
+      const row = document.createElement("div");
+      const term = createCopyNode("dt", "", labelKey);
+      const value = createCopyNode("dd", "", valueKey);
+      row.append(term, value);
+      return row;
+    }
+
+    function createScaffoldField(id, labelKey, stateKey) {
+      const group = document.createElement("div");
+      group.className = "field-group";
+      const label = createCopyNode("label", "", labelKey);
+      label.htmlFor = id;
+      const textarea = document.createElement("textarea");
+      textarea.id = id;
+      textarea.name = stateKey;
+      textarea.value = commentDraft[stateKey];
+      textarea.lang = language;
+      textarea.addEventListener("input", () => {
+        commentDraft[stateKey] = textarea.value;
+      });
+      group.append(label, textarea);
+      return group;
+    }
+
+    function createCommentScaffold() {
+      const scaffold = document.createElement("section");
+      scaffold.className = "scaffold";
+      scaffold.id = "comment-scaffold";
+      scaffold.setAttribute("role", "region");
+      scaffold.setAttribute("aria-label", COPY[language].scaffoldRegion);
+      setNodeLanguage(scaffold);
+
+      const title = createCopyNode("h3", "", "scaffoldTitle");
+      title.id = "scaffold-title";
+      title.tabIndex = -1;
+      const intro = createCopyNode("p", "", "scaffoldIntro");
+
+      const filled = document.createElement("section");
+      filled.className = "scaffold-group scaffold-filled";
+      const filledTitle = createCopyNode("h4", "", "filledTitle");
+      const facts = document.createElement("dl");
+      facts.className = "fact-list";
+      facts.append(
+        createFactRow("factAboutLabel", "factAboutValue"),
+        createFactRow("factMeetingLabel", "factMeetingValue"),
+        createFactRow("factHowLabel", "factHowValue")
+      );
+      const receiptRow = document.createElement("div");
+      const receiptTerm = createCopyNode("dt", "", "factReceiptLabel");
+      const receiptValue = document.createElement("dd");
+      receiptValue.className = "change-receipt";
+      receiptValue.textContent = COPY[language].hotReceipt;
+      setNodeLanguage(receiptValue);
+      const receiptLink = document.createElement("a");
+      receiptLink.href = CHANGED_DATA[0].sourceHref;
+      receiptLink.target = "_blank";
+      receiptLink.rel = "noreferrer";
+      receiptLink.textContent = COPY[language].hotSource;
+      receiptValue.append(document.createElement("br"), receiptLink);
+      receiptRow.append(receiptTerm, receiptValue);
+      facts.appendChild(receiptRow);
+      filled.append(filledTitle, facts);
+
+      const yours = document.createElement("section");
+      yours.className = "scaffold-group scaffold-yours";
+      const yoursTitle = createCopyNode("h4", "", "yoursTitle");
+      yours.append(
+        yoursTitle,
+        createScaffoldField("draft-position", "positionLabel", "position"),
+        createScaffoldField("draft-matters", "mattersLabel", "matters"),
+        createScaffoldField("draft-ask", "askLabel", "ask")
+      );
+
+      const note = createCopyNode("p", "scaffold-note", "scaffoldNote");
+      const actions = document.createElement("div");
+      actions.className = "scaffold-actions";
+      const save = createCopyNode("button", "primary-button", "saveDraft");
+      save.type = "button";
+      save.addEventListener("click", saveCommentDraft);
+      const close = createCopyNode("button", "secondary-button", "closeScaffold");
+      close.type = "button";
+      close.addEventListener("click", () => {
+        scaffoldOpen = false;
+        renderChangedCards();
+        document.getElementById("start-comment").focus();
+      });
+      actions.append(save, close);
+      const status = document.createElement("p");
+      status.className = "form-status";
+      status.id = "scaffold-status";
+      status.setAttribute("aria-live", "polite");
+      status.lang = language;
+      scaffold.append(title, intro, filled, yours, note, actions, status);
+      return scaffold;
+    }
+
+    function saveCommentDraft() {
+      const draftStatus = document.getElementById("draft-status");
+      const scaffoldStatus = document.getElementById("scaffold-status");
+      if (!commentDraftSaved) {
+        drafts.push({
+          id: "supplemental-comment",
+          title: { en: COPY.en.commentDraftTitle, es: COPY.es.commentDraftTitle },
+          edited: { en: COPY.en.commentDraftEdited, es: COPY.es.commentDraftEdited }
+        });
+        commentDraftSaved = true;
+        scaffoldStatus.textContent = COPY[language].draftSavedFromChange;
+        draftStatus.textContent = COPY[language].draftSavedFromChange;
+      } else {
+        scaffoldStatus.textContent = COPY[language].draftUpdated;
+        draftStatus.textContent = COPY[language].draftUpdated;
+      }
+      scaffoldStatus.lang = language;
+      draftStatus.lang = language;
+      renderDrafts();
+    }
+
+    function createChangeCard(item, index) {
+      const card = document.createElement("article");
+      card.className = "change-card " + item.tone;
+      const headingId = "change-heading-" + index;
+      card.setAttribute("aria-labelledby", headingId);
+      setNodeLanguage(card);
+
+      const status = document.createElement("div");
+      status.className = "change-status";
+      const chip = document.createElement("span");
+      chip.className = "status-chip";
+      const mark = document.createElement("span");
+      mark.className = "status-mark " + item.mark;
+      mark.setAttribute("aria-hidden", "true");
+      const chipText = document.createElement("span");
+      chipText.textContent = COPY[language][item.statusKey];
+      chip.append(mark, chipText);
+      const official = createCopyNode("span", "official-term", item.officialKey);
+      status.append(chip, official);
+
+      const heading = createCopyNode("h2", "", item.headingKey);
+      heading.id = headingId;
+      const match = createCopyNode("p", "watch-match", item.matchKey);
+      card.append(status, heading, match);
+
+      if (item.scaleKey) card.appendChild(createCopyNode("p", "change-scale", item.scaleKey));
+      if (item.helpfulKey) card.appendChild(createCopyNode("p", "helpful-line", item.helpfulKey));
+      card.appendChild(createChangeReceipt(item));
+
+      const deadline = createCopyNode("p", item.tone === "hot" ? "deadline-line" : "neutral-deadline", item.deadlineKey);
+      const deadlineShape = document.createElement("span");
+      deadlineShape.className = "deadline-shape";
+      deadlineShape.setAttribute("aria-hidden", "true");
+      deadline.prepend(deadlineShape);
+      card.appendChild(deadline);
+
+      if (item.actionKey) {
+        const action = createCopyNode("button", "primary-button card-action", item.actionKey);
+        action.type = "button";
+        action.id = "start-comment";
+        action.setAttribute("aria-expanded", String(scaffoldOpen));
+        action.setAttribute("aria-controls", "comment-scaffold");
+        action.addEventListener("click", () => {
+          scaffoldOpen = true;
+          renderChangedCards();
+          document.getElementById("scaffold-title").focus();
+        });
+        card.appendChild(action);
+        if (scaffoldOpen) card.appendChild(createCommentScaffold());
+      } else {
+        const next = createCopyNode("a", "next-link", item.nextKey);
+        next.href = item.sourceHref;
+        next.target = "_blank";
+        next.rel = "noreferrer";
+        card.appendChild(next);
+      }
+      return card;
+    }
+
+    function renderChangedCards() {
+      const list = document.getElementById("change-list");
+      list.setAttribute("aria-label", COPY[language].changesRegion);
+      list.replaceChildren(...CHANGED_DATA.map(createChangeCard));
+    }
+
+    function setMainState(nextState, announce = true) {
+      activeState = nextState;
+      const quiet = nextState === "quiet";
+      document.getElementById("quiet-state").hidden = !quiet;
+      document.getElementById("checks").hidden = !quiet;
+      document.getElementById("changed-state").hidden = quiet;
+      const quietButton = document.getElementById("state-quiet");
+      const changedButton = document.getElementById("state-changed");
+      quietButton.removeAttribute("aria-current");
+      changedButton.removeAttribute("aria-current");
+      (quiet ? quietButton : changedButton).setAttribute("aria-current", "true");
+      document.getElementById("quiet").setAttribute("aria-labelledby", quiet ? "quiet-title" : "changed-title");
+      if (!quiet) renderChangedCards();
+      if (announce) {
+        const status = document.getElementById("state-status");
+        status.textContent = COPY[language][quiet ? "quietStateLoaded" : "changedStateLoaded"];
+        status.lang = language;
+      }
+    }
+
+    function createCheckRow(item) {
+      const li = document.createElement("li");
+      li.className = "check-row";
+      setNodeLanguage(li);
+
+      const when = document.createElement("span");
+      when.className = "check-when";
+      const date = document.createElement("time");
+      date.dateTime = item.datetime;
+      date.textContent = item.date[language];
+      const time = document.createElement("span");
+      time.textContent = item.time;
+      when.append(date, time);
+
+      const shape = document.createElement("span");
+      shape.className = "status-shape neutral";
+      shape.setAttribute("aria-hidden", "true");
+      const detail = document.createElement("span");
+      detail.className = "check-detail";
+      detail.textContent = item.body[language];
+      const evidence = document.createElement("small");
+      evidence.textContent = item.evidence[language];
+      detail.appendChild(evidence);
+      const link = document.createElement("a");
+      link.className = "text-link";
+      link.href = "https://city.gov/planning";
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = COPY[language].openCity;
+      link.setAttribute("aria-label", COPY[language].openCity + ": " + item.body[language] + ", " + item.date[language]);
+      li.append(when, shape, detail, link);
+      return li;
+    }
+
+    function renderChecks() {
+      document.getElementById("check-list").replaceChildren(...DATA.map(createCheckRow));
+    }
+
+    function renderHistory() {
+      const nodes = COPY[language].historyLines.map((line) => {
+        const p = document.createElement("p");
+        p.textContent = line;
+        setNodeLanguage(p);
+        return p;
+      });
+      document.getElementById("history-extra").replaceChildren(...nodes);
+    }
+
+    function renderWatches() {
+      const list = document.getElementById("watch-list");
+      const nodes = watches.map((watch, index) => {
+        const li = document.createElement("li");
+        li.className = "watch-item";
+        const watchText = document.createElement("span");
+        watchText.textContent = watch.text;
+        watchText.lang = watch.lang;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "remove-watch";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", COPY[language].remove + ": " + watch.text);
+        remove.addEventListener("click", () => {
+          watches.splice(index, 1);
+          renderWatches();
+        });
+        li.append(watchText, remove);
+        return li;
+      });
+      list.replaceChildren(...nodes);
+      const empty = watches.length === 0;
+      document.getElementById("watch-empty").hidden = !empty;
+      document.getElementById("saved-title").hidden = empty;
+    }
+
+    function renderDrafts() {
+      const nodes = drafts.map((draft) => {
+        const li = document.createElement("li");
+        li.className = "draft-item";
+        setNodeLanguage(li);
+        const icon = document.createElement("span");
+        icon.className = "doc-icon";
+        icon.setAttribute("aria-hidden", "true");
+        const text = document.createElement("span");
+        text.textContent = draft.title[language];
+        const edited = document.createElement("small");
+        edited.textContent = draft.edited[language];
+        text.appendChild(edited);
+        li.append(icon, text);
+        return li;
+      });
+      document.getElementById("draft-list").replaceChildren(...nodes);
+    }
+
+    function setLanguage(nextLanguage) {
+      language = nextLanguage;
+      document.documentElement.lang = language;
+      document.getElementById("lang-en").setAttribute("aria-pressed", String(language === "en"));
+      document.getElementById("lang-es").setAttribute("aria-pressed", String(language === "es"));
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-i18n");
+        if (COPY[language][key]) {
+          node.textContent = COPY[language][key];
+          setNodeLanguage(node);
+        }
+      });
+      document.querySelectorAll("[data-aria-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-aria-i18n");
+        if (COPY[language][key]) node.setAttribute("aria-label", COPY[language][key]);
+      });
+      document.querySelectorAll("[data-placeholder-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-placeholder-i18n");
+        if (COPY[language][key]) node.placeholder = COPY[language][key];
+      });
+      const expanded = document.getElementById("history-toggle").getAttribute("aria-expanded") === "true";
+      document.getElementById("history-toggle").textContent = expanded ? COPY[language].historyClose : COPY[language].history;
+      renderChecks();
+      renderHistory();
+      renderWatches();
+      renderDrafts();
+      renderChangedCards();
+      document.getElementById("watch-status").textContent = "";
+      document.getElementById("watch-status").lang = language;
+      document.getElementById("draft-status").textContent = "";
+      document.getElementById("draft-status").lang = language;
+    }
+
+    document.getElementById("watch-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = document.getElementById("watch-input");
+      const status = document.getElementById("watch-status");
+      const value = input.value.trim();
+      if (!value) {
+        status.textContent = COPY[language].empty;
+        status.lang = language;
+        input.focus();
+        return;
+      }
+      watches.push({ text: value, lang: language });
+      input.value = "";
+      status.textContent = COPY[language].added;
+      status.lang = language;
+      renderWatches();
+    });
+
+    document.getElementById("history-toggle").addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!expanded));
+      document.getElementById("history-extra").hidden = expanded;
+      button.textContent = expanded ? COPY[language].history : COPY[language].historyClose;
+    });
+
+    document.getElementById("start-draft").addEventListener("click", () => {
+      drafts.push({
+        title: { en: COPY.en.untitledDraft, es: COPY.es.untitledDraft },
+        edited: { en: COPY.en.editedNow, es: COPY.es.editedNow }
+      });
+      document.getElementById("draft-status").textContent = COPY[language].draftAdded;
+      document.getElementById("draft-status").lang = language;
+      renderDrafts();
+    });
+
+    let wasMobile = window.innerWidth <= 820;
+    function syncPacketDisclosure() {
+      const isMobile = window.innerWidth <= 820;
+      if (isMobile !== wasMobile) {
+        document.getElementById("packet-details").open = !isMobile;
+        wasMobile = isMobile;
+      }
+    }
+
+    document.getElementById("lang-en").addEventListener("click", () => setLanguage("en"));
+    document.getElementById("lang-es").addEventListener("click", () => setLanguage("es"));
+    document.getElementById("state-quiet").addEventListener("click", () => setMainState("quiet"));
+    document.getElementById("state-changed").addEventListener("click", () => setMainState("changed"));
+    window.addEventListener("resize", syncPacketDisclosure);
+
+    if (window.innerWidth <= 820) document.getElementById("packet-details").open = false;
+    setLanguage("en");
+    setMainState("quiet", false);
+  </script>
+</body>
+</html>

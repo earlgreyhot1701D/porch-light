@@ -1,0 +1,36 @@
+# Porch Light — local development only.
+# This is NOT the deployment path. Agents deploy to Bedrock AgentCore via
+# direct code deployment (a .zip, no container). Production Postgres is Neon.
+# This file exists so anyone can clone the repo and get a working database
+# in one command:  docker compose up -d
+#
+# See docs/agenda-watch-decisions.md §26 for the full deployment topology.
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: porchlight-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: porchlight
+      POSTGRES_PASSWORD: porchlight_local_only
+      POSTGRES_DB: porchlight
+      # Deterministic time handling matters in this project (§2). Keep the
+      # container in UTC; city-local rendering is done in application code.
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - porchlight_pgdata:/var/lib/postgresql/data
+      # Anything in here runs once, in filename order, on first boot.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U porchlight -d porchlight"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  porchlight_pgdata:

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "porchlight_spike"
+version = "0.1.0"
+description = "Porch Light Spike B — AgentCore deployment proof"
+requires-python = ">=3.14"
+dependencies = [
+    "bedrock-agentcore >= 1.9.1",
+    "strands-agents >= 1.50.0",
+    "structlog >= 24.4.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

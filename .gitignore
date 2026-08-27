@@ -1,0 +1,27 @@
+# Secrets — never commit
+.env
+*.pem
+*.key
+credentials*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+.venv/
+.hypothesis/
+.pytest_cache/
+
+# Build artifacts
+_staging/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

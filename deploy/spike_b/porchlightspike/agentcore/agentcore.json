@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "porchlightspike",
+  "version": 1,
+  "managedBy": "CDK",
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "porchlightspike",
+    "Project": "PorchLight",
+    "Env": "dev",
+    "Owner": "shara",
+    "Purpose": "hackathon-agents-for-humans"
+  },
+  "runtimes": [
+    {
+      "name": "porchlight_spike",
+      "build": "CodeZip",
+      "entrypoint": "main.py",
+      "codeLocation": "app/porchlight_spike/",
+      "runtimeVersion": "PYTHON_3_14",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP"
+    }
+  ],
+  "memories": [],
+  "knowledgeBases": [],
+  "credentials": [],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [],
+  "policyEngines": [],
+  "configBundles": [],
+  "abTests": [],
+  "harnesses": [],
+  "datasets": [],
+  "payments": []
+}
