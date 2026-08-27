@@ -36,6 +36,10 @@ uv sync
 
 Use `uv add <package>` to add a dependency, never `pip install` — pip installs work but do not update uv.lock, and the deploy build fails on the resulting drift.
 
+## Deployment dependency governance
+
+The deployed agent's dependency set is resolved by AgentCore server-side from `deploy/spike_b/porchlightspike/app/porchlight_spike/pyproject.toml`. That manifest pins exact versions (==). The `tests/test_deploy_pins.py` test asserts those pins match what `uv.lock` resolved, so a version bump in either place fails the default test suite until both agree.
+
 ## Local development
 
 `docker compose up -d` brings up Postgres with pgvector. This is for local development only and is never the deployment path.

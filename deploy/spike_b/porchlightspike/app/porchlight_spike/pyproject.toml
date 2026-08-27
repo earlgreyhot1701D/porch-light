@@ -7,10 +7,13 @@ name = "porchlight_spike"
 version = "0.1.0"
 description = "Porch Light Spike B — AgentCore deployment proof"
 requires-python = ">=3.14"
+# §32b: Pinned to exact versions resolved in uv.lock. The deployment has no
+# downstream consumers to be flexible for, and structlog's redaction behavior
+# is a security control. tests/test_deploy_pins.py asserts these match uv.lock.
 dependencies = [
-    "bedrock-agentcore >= 1.9.1",
-    "strands-agents >= 1.50.0",
-    "structlog >= 24.4.0",
+    "bedrock-agentcore==1.22.0",
+    "strands-agents==1.53.0",
+    "structlog==26.1.0",
 ]
 
 [tool.hatch.build.targets.wheel]
