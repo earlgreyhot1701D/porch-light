@@ -12,10 +12,6 @@ results. Observability is not a user-facing result. A dropped log line is
 acceptable; a fabricated or silently-degraded search result, match, or draft
 is not. The logger never raises, never crashes the caller, and never suppresses
 a user-facing error to protect itself.
-
-NOTE: This is a vendored copy for the AgentCore deploy zip. Source of truth
-is src/porchlight/log.py. Keep in sync manually until the packaging story
-is resolved (see §31 uv.lock drift question).
 """
 
 from __future__ import annotations
