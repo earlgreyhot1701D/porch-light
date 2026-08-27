@@ -123,35 +123,44 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - Structured JSON log with run_id emitted. Exit 0.
     - _Requirements: 2.1, 2.3, 11.1, 11.3_
 
-- [ ] 11. Spike B: AgentCore deployment [THROWAWAY]
-  - [ ] 11.1 Create `deploy/spike_b/agentcore.json` with deployment config
-    - runtime: `python3.12` (confirmed in task 2.1)
-    - All four cost tags included
-    - deploymentType: `codeZip`
-    - framework: `strands`
+- [x] 11. Spike B: AgentCore deployment [THROWAWAY]
+  - [x] 11.1 Create AgentCore project with deployment config
+    - runtimes[] entry: name `porchlight_spike`, build `CodeZip`, entrypoint `main.py`, codeLocation `app/porchlight_spike/`, runtimeVersion `PYTHON_3_14`, networkMode `PUBLIC`, protocol `HTTP`
+    - All four cost tags included in agentcore.json top-level tags
+    - managedBy: `CDK` (the AgentCore CLI synthesizes and deploys a CDK stack)
     - _Requirements: 3.2, 7.1_
 
-  - [ ] 11.2 Create `deploy/spike_b/main.py` entrypoint and copy tools
-    - Handler function per AgentCore entrypoint pattern
-    - Import porchlight logging and config
-    - Same tool logic as Spike A
+  - [x] 11.2 Create `app/porchlight_spike/main.py` entrypoint with async streaming
+    - `@app.entrypoint` async generator driven by `agent.stream_async()`
+    - Imports `porchlight.log` (vendored into the deploy zip via scripts/sync_deploy_log.py)
+    - Calls `bind_context(component="spike", run_id=...)` and emits events through our logger
+    - Same tool logic as Spike A (hello_tool, time_tool)
     - _Requirements: 3.1, 3.4_
 
-  - [ ] 11.3 Implement `scripts/build_deploy_zip.py` build step
-    - Install porchlight package into staging dir via `uv pip install . --target`
-    - Export requirements via `uv export --format requirements-txt`
-    - Verify requirements.txt matches uv.lock (drift guard)
-    - Copy entrypoint, tools, agentcore.json into staging
-    - Zip staging directory
+  - [x] 11.3 ~~Implement `scripts/build_deploy_zip.py` build step~~ OBSOLETE (§32b)
+    - AgentCore resolves dependencies server-side from app pyproject.toml (CodeZip build type).
+    - Drift guarantee re-owned by tests/test_deploy_pins.py (exact pins == uv.lock versions).
+    - scripts/build_deploy_zip.py exists as an obsolescence marker, not runnable code.
     - _Requirements: 1.6, 3.2_
 
-  - [ ] 11.4 Deploy Spike B via `agentcore deploy` and verify pass criteria
+  - [x] 11.4 Deploy Spike B via `agentcore deploy` and verify pass criteria
     - Deploy succeeds
     - Invoke endpoint returns non-error response within 30 seconds
-    - CloudWatch contains structured JSON with valid run_id and component "spike"
+    - CloudWatch contains structured JSON with OUR schema (component, run_id, level, timestamp)
+    - Truncation marker `[truncated:1000]` appears for oversized extra fields
+    - Redaction marker `[redacted:document_content]` appears for document-content keys
+    - Third-party logs (botocore) inherit bound contextvars (component + run_id)
     - All four cost tags visible on created resources
     - IF fails within 4 hours: stop and re-plan (Req 3.3)
-    - Record pass/fail in commit message
+    - RESULT:
+      - Region: us-east-1
+      - Stack: AgentCore-porchlightspike-default
+      - Runtime ID: porchlightspike_porchlight_spike-2Gethk7BJO
+      - Runtime ARN: arn:aws:bedrock-agentcore:us-east-1:<AWS_ACCOUNT_ID>:runtime/porchlightspike_porchlight_spike-2Gethk7BJO
+      - Execution role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/AgentCore-porchlightspike-ApplicationAgentPorchligh-b0FuoL1oJqaN
+      - Log group: /aws/bedrock-agentcore/runtimes/porchlightspike_porchlight_spike-2Gethk7BJO-DEFAULT
+      - Tags: Project=PorchLight, Env=dev, Owner=shara, Purpose=hackathon-agents-for-humans
+      - Teardown: `cd deploy/spike_b/porchlightspike/agentcore && npx cdk destroy --all --force`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 7.1, 7.2, 11.1, 11.3_
 
 - [ ] 12. Checkpoint
@@ -197,27 +206,6 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - Do NOT add `PORCHLIGHT_COMPONENT` (component passed at call site, not from env)
     - _Requirements: 12.1_
 
-- [x] 20. Live smoke test infrastructure [PERMANENT]
-  - [x] 20.1 Register `live` marker in pyproject.toml, add `addopts = "-m 'not live'"`
-    - RESULT: plain `pytest` reports 25 passed, 1 deselected.
-    - _Requirements: 13.1, 13.8_
-
-  - [x] 20.2 Create Makefile with `smoke` target running `pytest -m live -v`
-    - _Requirements: 13.2_
-
-  - [x] 20.3 Write `tests/live/test_smoke_model.py`
-    - Real Converse call, asserts non-empty response text, region and model_id against deliberate literals
-    - Skips ONLY on NoCredentialsError; fails on all other errors
-    - RESULT: PASS in us-east-1.
-    - _Requirements: 13.3, 13.6, 13.7_
-
-  - [ ] 20.4 Write `tests/live/test_smoke_agentcore.py` (deferred to task 11)
-    - _Requirements: 13.4_
-
-  - [x] 20.5 Add "Verifying a clean clone" section to README
-    - Documents make smoke, cost, real AWS calls, skip vs fail semantics
-    - _Requirements: 13.5_
-
 - [ ] 18. Final README updates and compliance check [PERMANENT]
   - [ ] 18.1 Update README with model invocation proof, deferred selection statement, and Strands version
     - State: AWS region used, Spec 0 proved invocation on Nova Lite
@@ -226,7 +214,34 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - Record exact pinned Strands SDK version (must match lockfile)
     - _Requirements: 8.2, 8.5, 12.2, 1.6_
 
-- [ ] 19. Final checkpoint
+- [x] 19. Live smoke test infrastructure [PERMANENT]
+  - [x] 19.1 Register `live` marker in pyproject.toml, add `addopts = "-m 'not live'"`
+    - RESULT: plain `pytest` reports 28 passed, 3 deselected.
+    - _Requirements: 13.1, 13.8_
+
+  - [x] 19.2 Create Makefile with `smoke` target running `pytest -m live -v`
+    - _Requirements: 13.2_
+
+  - [x] 19.3 Write `tests/live/test_smoke_model.py`
+    - Real Converse call, asserts non-empty response text, region and model_id against deliberate literals
+    - Skips ONLY on NoCredentialsError; fails on all other errors
+    - RESULT: PASS in us-east-1.
+    - _Requirements: 13.3, 13.6, 13.7_
+
+  - [x] 19.4 Write `tests/live/test_smoke_agentcore.py`
+    - Invokes deployed AgentCore runtime via bedrock-agentcore SDK
+    - Asserts response contains greeting text and UTC timestamp
+    - Asserts CloudWatch record carries our component and run_id fields
+    - Skips ONLY when AGENTCORE_RUNTIME_ARN env var is unset
+    - Fails on any error from a runtime that exists
+    - RESULT: PASS. 3 live tests pass (model + agentcore invoke + cloudwatch schema).
+    - _Requirements: 13.4, 13.6, 13.7_
+
+  - [x] 19.5 Add "Verifying a clean clone" section to README
+    - Documents make smoke, cost, real AWS calls, skip vs fail semantics
+    - _Requirements: 13.5_
+
+- [ ] 20. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise. Verify: no secrets in git history, LICENSE present, README complete, .gitignore correct, lockfile has exact versions.
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
@@ -257,9 +272,10 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     { "id": 9, "tasks": ["10.3"] },
     { "id": 10, "tasks": ["11.1", "11.2"] },
     { "id": 11, "tasks": ["11.3"] },
-    { "id": 12, "tasks": ["11.4"] },
-    { "id": 13, "tasks": ["13.1", "14.1", "15.1", "15.2", "16.1", "16.2", "17.1"] },
-    { "id": 14, "tasks": ["18.1"] }
+    { "id": 12, "tasks": ["11.4", "12"] },
+    { "id": 13, "tasks": ["13.1", "14.1", "15.1", "15.2", "16.1", "16.2", "17.1", "19.1", "19.2", "19.3"] },
+    { "id": 14, "tasks": ["18.1", "19.4"] },
+    { "id": 15, "tasks": ["20"] }
   ]
 }
 ```
