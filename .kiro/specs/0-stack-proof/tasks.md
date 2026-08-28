@@ -157,7 +157,7 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
       - Stack: AgentCore-porchlightspike-default
       - Runtime ID: porchlightspike_porchlight_spike-2Gethk7BJO
       - Runtime ARN: arn:aws:bedrock-agentcore:us-east-1:<AWS_ACCOUNT_ID>:runtime/porchlightspike_porchlight_spike-2Gethk7BJO
-      - Execution role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/AgentCore-porchlightspike-ApplicationAgentPorchligh-b0FuoL1oJqaN
+      - Execution role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/AgentCore-porchlightspike-<EXECUTION_ROLE_NAME>
       - Log group: /aws/bedrock-agentcore/runtimes/porchlightspike_porchlight_spike-2Gethk7BJO-DEFAULT
       - Tags: Project=PorchLight, Env=dev, Owner=shara, Purpose=hackathon-agents-for-humans
       - Teardown: `cd deploy/spike_b/porchlightspike/agentcore && npx cdk destroy --all --force`

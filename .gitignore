@@ -4,6 +4,13 @@
 *.key
 credentials*
 
+# AWS account ID / resource ARNs — never commit (§31c).
+# Rooted here so the vendor's nested .gitignore cannot re-un-ignore them.
+# deployed-state.json is a regenerable CLI output; aws-targets.json is a
+# required input config committed as aws-targets.json.example instead.
+deploy/spike_b/porchlightspike/agentcore/.cli/deployed-state.json
+deploy/spike_b/porchlightspike/agentcore/aws-targets.json
+
 # Python
 __pycache__/
 *.py[cod]
