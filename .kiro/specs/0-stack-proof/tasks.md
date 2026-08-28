@@ -177,12 +177,13 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - FINDING (§31e): the CloudWatch log group `/aws/bedrock-agentcore/runtimes/...-DEFAULT` carries NO tags (`list-tags-for-resource` returns `{}`). This is not "does not support tagging" (CloudWatch log groups do support tags); it is the vendor creating the log group implicitly at runtime, outside the tagged CloudFormation resource set. Requirement 7.1 says every created resource should carry the four tags. Recorded as a real gap, not waved off. Automated enforcement is deferred to a later spec once IaC owns tagging (per the 7.3 note); for Spec 0 the gap is documented rather than hand-patched, since hand-tagging it would be a state outside the repo that nothing keeps in sync.
     - _Requirements: 7.2, 7.3_
 
-- [ ] 14. Local development environment verification [INFRASTRUCTURE]
-  - [ ] 14.1 Verify `docker compose up -d` reaches healthy with extensions enabled
-    - From clean state (remove `porchlight_pgdata` volume first)
-    - Verify health status `healthy` within 60 seconds
-    - Verify `vector`, `pg_trgm`, `unaccent` extensions enabled
-    - Verify connection on `localhost:5432` with porchlight user/db from `.env.example`
+- [x] 14. Local development environment verification [INFRASTRUCTURE]
+  - [x] 14.1 Verify `docker compose up -d` reaches healthy with extensions enabled
+    - From clean state: `docker compose down -v` removed the `porchlight_pgdata` volume first, so `db/init/001-extensions.sql` re-ran on fresh boot.
+    - RESULT: container `porchlight-dev-db` reached health status `healthy` well within 60s.
+    - RESULT: all three extensions present — `pg_trgm`, `unaccent`, `vector` (verified via `psql -U porchlight -d porchlight`).
+    - RESULT: connection accepted on the `porchlight` user/db per `.env.example` DATABASE_URL, image `pgvector/pgvector:pg16`.
+    - Environment note: Docker Desktop engine was not running at session start; started it, then ran the verification.
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
 - [ ] 15. Cloud projects created [INFRASTRUCTURE]
