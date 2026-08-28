@@ -7,6 +7,19 @@ inclusion: always
   - **Do it, then report:** anything fully specified by approved requirements/design, reversible, local, costs nothing, creates no state outside the repo. Work continuously through it.
   - **Propose and wait:** anything that spends money, creates persistent external state (cloud projects, deployments), or where the design deliberately left a choice open. Present options with trade-offs rather than pre-building your preference.
   - **Stop and report immediately:** a checkpoint, any failure, any moment you want to act outside the current task's scope, and **any surprise where the design says X and reality is Y**. Never quietly work around a contradiction — that is the single most expensive thing you can do here.
+- **Do it and report, do not ask, when:**
+  - the question has a verifiable right answer (docs, a version number, an API signature, a config shape)
+  - it is a file you are already tasked with creating
+  - the fix is smaller than the explanation of the fix
+  - you found a discrepancy and the correction is obvious
+- **Ask only when:**
+  - it spends money or creates a billable resource
+  - it changes scope, schedule, or a decision in the decisions doc
+  - it deletes or rewrites something already approved
+  - two reasonable options exist and the tradeoff is a judgment call, not a fact
+  - you hit a genuine blocker
+- **"I cannot verify this myself" is not a reason to ask.** Do the part you can, note the part you cannot, keep going.
+- **Batch reports: one report per block of work, not per finding.**
 - At the design stage the old rule still holds: never deliver a finished implementation of an approach not yet approved.
 - **DO NOT refactor code outside the current task's scope.** This is the single most important rule in this file.
 - If something contradicts the decisions doc or a steering file, say so instead of going along with it. If a task asks for anything in never.md, refuse and cite it.
