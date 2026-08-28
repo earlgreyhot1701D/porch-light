@@ -1126,3 +1126,38 @@ A deliberate, documented, configuration-level model choice made on measured evid
 - **Noted that the verifier is what makes trying a cheap model safe**, which is the rigor buying optionality.
 - Per-job model splitting recorded as STUB, not plan.
 - Clarified that a documented configuration-level choice does not conflict with the §20f silent-fallback ban; the test is whether a human chose it and wrote down why.
+
+
+---
+
+## 31. Spike B result and repo hygiene for a public repo
+
+Spike B passed (structlog proven in the AgentCore runtime, redaction and truncation firing in CloudWatch, third-party logs inheriting bound context). The details live in the Spec 0 tasks.md RESULT lines. This section records only the decision that came out of hardening the repo for public judging.
+
+### 31c. Account-specific AgentCore files: a three-way split
+
+The repo becomes public for hackathon judging. Three tracked files carried our AWS account ID (`<AWS_ACCOUNT_ID>`), embedded in resource ARNs and an IAM role ARN. An account ID is not a credential, but it is a low-severity disclosure that narrows an attacker's surface (role-assumption guessing, targeted phishing) and is hard to rotate. It does not belong in a public repo.
+
+Three files, three different correct treatments, because they are three different kinds of thing:
+
+1. **`agentcore/.cli/deployed-state.json` — vendor output, regenerable.** The AgentCore CLI writes it as an output of `agentcore deploy`. A fresh clone regenerates it on first deploy. **Decision: gitignore it.** This **overrides the vendor's own `.gitignore`**, which explicitly un-ignores this file (`!.cli/deployed-state.json`) on the assumption of a private repo. That assumption does not hold for us. The override is placed in the ROOT `.gitignore` so the nested vendor file cannot re-un-ignore it.
+
+2. **`agentcore/aws-targets.json` — required input config, not regenerable.** The CLI reads it to know which account and region to deploy into. A fresh deploy needs it before it can run, and the CLI does not reconstruct it from AWS. **Decision: treat it exactly like `.env`** — gitignore the real file (keeps the real account ID on disk so deploys keep working) and commit `aws-targets.json.example` with `"account": "<AWS_ACCOUNT_ID>"` and the real region. A judge copies the example and fills in their own 12-digit account ID. Placeholdering a *tracked* copy was rejected: the real ID would have to go back in to deploy, git would then show it modified, and the only thing keeping it out of the next commit would be a human remembering — the §32c "guarantee that depends on remembering" pattern.
+
+3. **`tasks.md` — our spec document, belongs in the repo.** Cannot be gitignored; it is the record. **Decision: replace the account ID and role ARN in the text with `<AWS_ACCOUNT_ID>` and a placeholder role name, keeping the RESULT lines intact** (they are the record; only the identifiers come out).
+
+### 31d. History rewrite
+
+`git rm --cached` and redaction only stop the leak going forward. The account ID stayed readable in commits via `git log -p`. With no remote configured and only a handful of commits, this was the cheapest it would ever be to fix; after a push it means force-pushing over published history.
+
+`git-filter-repo` (2.47.0, installed via `uv tool install`) was run over the full history: `--replace-text` mapping the literal account ID to `<AWS_ACCOUNT_ID>`, plus `--invert-paths` removing both vendor file paths from every commit. The commit narrative survived (same messages, same order; hashes changed as any rewrite requires). Verified zero results from `git grep -l "<AWS_ACCOUNT_ID>"` and `git log --all --oneline -S "<AWS_ACCOUNT_ID>"`, and re-verified a deploy still works afterward. These two checks are now part of the Spec 0 close checkpoint (task 19), so the absence is verified rather than assumed.
+
+---
+
+## Changelog (continued)
+
+**Aug 26-27, 2026 (Spike B close — repo hygiene).** Added §31.
+
+- **Spike B passed** with the strong version of the proof: our structlog schema in CloudWatch, redaction and truncation markers firing in the deployed runtime, third-party logs inheriting bound context.
+- **§31c: account-specific AgentCore files split three ways** for a public repo. `deployed-state.json` gitignored (regenerable vendor output), overriding the vendor's own un-ignore default on the ROOT gitignore. `aws-targets.json` treated like `.env` with a committed `.example` (required input config, not regenerable). `tasks.md` redacted in place with placeholders, RESULT lines kept.
+- **§31d: full git history rewritten with git-filter-repo** to remove the account ID and the two vendor file paths from all commits. Verified zero via `git grep` and `git log -S`, deploy re-verified, and both checks added to the task 19 close checkpoint.

@@ -243,6 +243,9 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
 
 - [ ] 20. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise. Verify: no secrets in git history, LICENSE present, README complete, .gitignore correct, lockfile has exact versions.
+  - Account-ID scrub verification (§31d): both of these MUST return zero results:
+    - `git grep -l "<AWS_ACCOUNT_ID>"` (no tracked file contains the account ID)
+    - `git log --all --oneline -S "<AWS_ACCOUNT_ID>"` (no commit in history introduced/removed it)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
 ## Notes
