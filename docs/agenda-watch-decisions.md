@@ -1152,6 +1152,14 @@ Three files, three different correct treatments, because they are three differen
 
 `git-filter-repo` (2.47.0, installed via `uv tool install`) was run over the full history: `--replace-text` mapping the literal account ID to `<AWS_ACCOUNT_ID>`, plus `--invert-paths` removing both vendor file paths from every commit. The commit narrative survived (same messages, same order; hashes changed as any rewrite requires). Verified zero results from `git grep -l "<AWS_ACCOUNT_ID>"` and `git log --all --oneline -S "<AWS_ACCOUNT_ID>"`, and re-verified a deploy still works afterward. These two checks are now part of the Spec 0 close checkpoint (task 19), so the absence is verified rather than assumed.
 
+### 31e. FINDING: the CloudWatch log group is untagged
+
+Task 13.1 (cost tag verification) found that all four cost tags are present on the AgentCore runtime, its runtime endpoint, the workload identity, and the IAM execution role. The **CloudWatch log group is the exception: it carries no tags at all.**
+
+This is not the "resource type does not support tagging" case that Requirement 7.3 anticipates. CloudWatch log groups support tags. The cause is that AgentCore creates the log group implicitly at first runtime execution, outside the CloudFormation resource set that the CDK tags. So the tagging path that covers every declared resource never touches it.
+
+Recorded as a genuine gap against Requirement 7.1, not waved off. It is not hand-patched at Spec 0: manually tagging a resource the vendor recreates would be state living outside the repo with nothing keeping it in sync, which is the pattern this project keeps refusing. Per the 7.3 note, automated tag enforcement lands in a later spec once infrastructure-as-code owns the log group. Until then the gap is documented and visible rather than silently assumed closed.
+
 ---
 
 ## Changelog (continued)
@@ -1161,3 +1169,4 @@ Three files, three different correct treatments, because they are three differen
 - **Spike B passed** with the strong version of the proof: our structlog schema in CloudWatch, redaction and truncation markers firing in the deployed runtime, third-party logs inheriting bound context.
 - **§31c: account-specific AgentCore files split three ways** for a public repo. `deployed-state.json` gitignored (regenerable vendor output), overriding the vendor's own un-ignore default on the ROOT gitignore. `aws-targets.json` treated like `.env` with a committed `.example` (required input config, not regenerable). `tasks.md` redacted in place with placeholders, RESULT lines kept.
 - **§31d: full git history rewritten with git-filter-repo** to remove the account ID and the two vendor file paths from all commits. Verified zero via `git grep` and `git log -S`, deploy re-verified, and both checks added to the task 19 close checkpoint.
+- **§31e: CloudWatch log group found untagged** during task 13.1. All four cost tags present on the runtime, endpoint, workload identity, and IAM role; the log group carries none because AgentCore creates it implicitly at runtime, outside the tagged CloudFormation set. Documented as a real Requirement 7.1 gap, deferred to IaC-owned enforcement rather than hand-patched.

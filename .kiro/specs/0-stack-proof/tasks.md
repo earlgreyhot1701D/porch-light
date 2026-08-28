@@ -166,10 +166,15 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
 - [ ] 12. Checkpoint
   - Ensure all tests pass, ask the user if questions arise. Spikes proven. If Spike B failed and triggered re-plan, stop here.
 
-- [ ] 13. Cost tag verification [INFRASTRUCTURE]
-  - [ ] 13.1 Enumerate resources created by Spike B deploy, verify all four tags present
-    - Use `aws resourcegroupstaggingapi get-resources` or describe/list-tags API
-    - Document any resource type that does not support tagging
+- [x] 13. Cost tag verification [INFRASTRUCTURE]
+  - [x] 13.1 Enumerate resources created by Spike B deploy, verify all four tags present
+    - Used `aws resourcegroupstaggingapi get-resources --tag-filters Key=Project,Values=PorchLight` plus per-resource list-tags APIs.
+    - RESULT: all four cost tags (Project, Env, Owner, Purpose) present on:
+      - AgentCore runtime (`.../runtime/porchlightspike_porchlight_spike-2Gethk7BJO`)
+      - AgentCore runtime endpoint (`.../runtime-endpoint/DEFAULT`)
+      - AgentCore workload identity (`.../workload-identity/...`)
+      - IAM execution role (verified via `aws iam list-role-tags`)
+    - FINDING (§31e): the CloudWatch log group `/aws/bedrock-agentcore/runtimes/...-DEFAULT` carries NO tags (`list-tags-for-resource` returns `{}`). This is not "does not support tagging" (CloudWatch log groups do support tags); it is the vendor creating the log group implicitly at runtime, outside the tagged CloudFormation resource set. Requirement 7.1 says every created resource should carry the four tags. Recorded as a real gap, not waved off. Automated enforcement is deferred to a later spec once IaC owns tagging (per the 7.3 note); for Spec 0 the gap is documented rather than hand-patched, since hand-tagging it would be a state outside the repo that nothing keeps in sync.
     - _Requirements: 7.2, 7.3_
 
 - [ ] 14. Local development environment verification [INFRASTRUCTURE]
