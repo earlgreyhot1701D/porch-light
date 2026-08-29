@@ -105,6 +105,45 @@ Runs live smoke tests against AWS. Makes real AWS calls and writes real CloudWat
 
 Tests skip (not fail) if credentials or endpoint are absent. A skip means "not proven on this machine." A failure means "the live system is broken or unreachable."
 
+## Cost
+
+The application spend ledger covers **model and API spend only**, with a ceiling
+of $10/month (about 50x the measured steady-state spend of ~$0.20/month on Nova
+Lite). Aurora Serverless v2 fixed compute — roughly $43/month at its 0.5-ACU floor
+— is **infrastructure, not model spend**: it is tracked in the wind-down section
+below and is **not** bounded by the $10 ledger ceiling. If you read "$10" as the
+monthly bill, this line is why that is wrong.
+
+## Wind-down
+
+Porch Light reads a public body's servers on a schedule. The most important
+wind-down obligation is therefore **stopping the crawler**, not saving money: a
+forgotten pipeline hitting the City of Ventura every hour, indefinitely, is a
+broken promise for a product whose entire claim is being a trustworthy reader of
+public records. These teardown steps are written here before the resources are
+created, in order.
+
+1. **EventBridge schedule (stop this first — it touches someone else's server).**
+   Disable, then delete, the hourly ingestion schedule:
+   ```bash
+   aws scheduler update-schedule --name porchlight-<env>-ingestion --state DISABLED
+   aws scheduler delete-schedule --name porchlight-<env>-ingestion
+   ```
+   The schedule ships **disabled** and is enabled only as the final step of Spec 2,
+   after every pass gate is met.
+
+2. **Aurora Serverless v2 cluster (~$43/month at 0.5 ACU, always warm).** After the
+   schedule is stopped, delete the cluster and its associated resources:
+   ```bash
+   aws rds delete-db-cluster --db-cluster-identifier porchlight-<env> --skip-final-snapshot
+   # then any associated instance, subnet group, and the Data API / Secrets Manager secret
+   ```
+   The city is the source of truth (§13): losing the database costs nothing to
+   correctness, only a re-ingest. There is no backup-restore path to maintain.
+
+Keep / park / take-down decision (per §13) is made deliberately, not in the moment;
+the monthly costs above are the inputs.
+
 ## License
 
 MIT
