@@ -187,12 +187,14 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
 - [ ] 15. Cloud projects created [INFRASTRUCTURE]
-  - [ ] 15.1 Create Neon project with pgvector extension
-    - Verify `SELECT 1 FROM pg_extension WHERE extname = 'vector'` succeeds
-    - Add connection string template to `.env.example` (commented-out, no real credentials)
-    - _Requirements: 5.1, 5.2, 5.4_
+  - [~] 15.1 ~~Create Neon project with pgvector extension~~ CANCELLED (§33)
+    - Database changed from Neon to Amazon Aurora Serverless v2 PostgreSQL. $10k AWS credits removes Neon's free-tier rationale, and an all-AWS diagram avoids a non-AWS dependency in an AWS agent hackathon. DynamoDB rejected: data/queries are relational (joins across meetings/items/documents, lexical + vector + rank fusion), which DynamoDB does not do.
+    - Aurora setup moves to Spec 2 (see backlog note below). No database is touched at Spec 0; local docker-compose Postgres covers Specs 1 and 2.
+    - `.env.example` Neon template replaced with an Aurora RDS Data API placeholder (credential-free).
+    - _Requirements: 5.1, 5.2, 5.4 — superseded by §33_
 
-  - [ ] 15.2 Create Vercel project linked to repository
+  - [ ] 15.2 Create Vercel project linked to repository (PENDING — Shara)
+    - Push scrubbed history to the remote FIRST (https://github.com/earlgreyhot1701D/porch-light), then wire Vercel, so the pre-scrub account ID never reaches the remote.
     - Verify default `.vercel.app` URL returns HTTP 200 or Vercel placeholder within 10 seconds
     - _Requirements: 5.3_
 
@@ -265,6 +267,10 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
 - The redaction processor (task 6) is NOT optional and is NOT deferred to polish. It enforces security.md's "logs never contain packet text" rule.
 - Property tests use Hypothesis. Tag format: `# Feature: 0-stack-proof, Property {N}: {title}`
 - Each task references specific requirements for traceability.
+
+### Spec 2 backlog (carried forward from Spec 0)
+
+- **Aurora Serverless v2 PostgreSQL setup (§33, was Spec 0 task 15.1).** Create the cluster with pgvector. Constraints, both from §33: **minimum capacity 0.5 ACU, not 0** (§26c invokes the watcher live from the web layer; Aurora resume-from-zero is ~15s, a blank screen while a person waits; credits absorb staying warm). **Access via the RDS Data API (HTTPS + IAM), not a VPC connection** (avoids a NAT gateway). Verify pgvector present. No database is touched before Spec 2; local docker-compose Postgres covers Specs 1 and 2.
 
 ## Task Dependency Graph
 

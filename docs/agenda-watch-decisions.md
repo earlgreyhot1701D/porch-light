@@ -1170,3 +1170,35 @@ Recorded as a genuine gap against Requirement 7.1, not waved off. It is not hand
 - **§31c: account-specific AgentCore files split three ways** for a public repo. `deployed-state.json` gitignored (regenerable vendor output), overriding the vendor's own un-ignore default on the ROOT gitignore. `aws-targets.json` treated like `.env` with a committed `.example` (required input config, not regenerable). `tasks.md` redacted in place with placeholders, RESULT lines kept.
 - **§31d: full git history rewritten with git-filter-repo** to remove the account ID and the two vendor file paths from all commits. Verified zero via `git grep` and `git log -S`, deploy re-verified, and both checks added to the task 19 close checkpoint.
 - **§31e: CloudWatch log group found untagged** during task 13.1. All four cost tags present on the runtime, endpoint, workload identity, and IAM role; the log group carries none because AgentCore creates it implicitly at runtime, outside the tagged CloudFormation set. Documented as a real Requirement 7.1 gap, deferred to IaC-owned enforcement rather than hand-patched.
+
+
+---
+
+## 33. Database: Aurora Serverless v2, not Neon
+
+Neon (§tech, §26b) is retired as the production database. **Amazon Aurora Serverless v2 PostgreSQL replaces it.**
+
+### 33a. Why the change
+
+- **The $10k in AWS credits removes Neon's rationale.** Neon was chosen partly for its free tier. With credits, staying inside AWS costs effectively nothing at this scale and removes a non-AWS box from an otherwise all-AWS architecture diagram, in an AWS agent hackathon where that box is an avoidable dent.
+- **DynamoDB was considered and rejected.** The data and queries are relational: joins across meetings, items, and documents, plus lexical search, vector search, and rank fusion. DynamoDB has neither joins nor vector search. Forcing this data into a key-value store would be fighting the tool.
+- **Aurora keeps pgvector.** Same Postgres + pgvector code path already proven locally (§5, §7), so the search design does not change.
+
+### 33b. Two configuration constraints
+
+1. **Minimum capacity 0.5 ACU, not 0.** §26c invokes the watcher live from the web layer when a person opens the page. Aurora resuming from zero capacity takes roughly fifteen seconds, which is a blank screen while someone waits. Credits absorb the cost of staying warm; a cold-start delay in front of a waiting human is not acceptable when the money reason for allowing it has been removed.
+2. **Access via the RDS Data API (HTTPS + IAM), not a VPC connection.** This keeps the web layer out of a VPC and avoids a NAT gateway entirely. The site talks to Aurora over signed HTTPS, consistent with the rest of the deployment posture.
+
+### 33c. When
+
+**Aurora setup is a Spec 2 task, not Spec 0.** No database is touched before Spec 2. Local docker-compose Postgres + pgvector covers Specs 1 and 2 completely. The Spec 0 task that would have created Neon (task 15.1) is cancelled, not deferred. `.env.example` carries a credential-free Aurora RDS Data API placeholder (cluster ARN, secret ARN, database name) in place of the old Neon connection string.
+
+---
+
+## Changelog (continued)
+
+**Aug 27, 2026 (Spec 0 close — database change).** Added §33.
+
+- **Database changed from Neon to Amazon Aurora Serverless v2 PostgreSQL.** $10k credits remove Neon's free-tier rationale and an all-AWS diagram avoids a non-AWS dependency. DynamoDB rejected because the data and queries are relational (joins, lexical + vector + rank fusion), which it does not support. pgvector retained, so the search code path is unchanged.
+- **Two constraints recorded:** minimum 0.5 ACU (not 0, because the live watcher invocation cannot sit behind a ~15s cold resume), and RDS Data API access (HTTPS + IAM, no VPC, no NAT gateway).
+- **Spec 0 task 15.1 (Neon) cancelled**, Aurora setup moved to the Spec 2 backlog. No database touched before Spec 2; local docker-compose Postgres covers Specs 1 and 2. `.env.example` updated with a credential-free Aurora Data API placeholder.
