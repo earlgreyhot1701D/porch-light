@@ -20,6 +20,12 @@ inclusion: always
   - you hit a genuine blocker
 - **"I cannot verify this myself" is not a reason to ask.** Do the part you can, note the part you cannot, keep going.
 - **Batch reports: one report per block of work, not per finding.**
+- **Every assigned block of work ends with a RECAP, no exceptions, short enough to read in under a minute:**
+  - **WHAT CHANGED** — files touched, one line each
+  - **FINDINGS** — anything where design said X and reality was Y
+  - **VERIFIED** — what you actually ran and what it returned
+  - **OPEN** — what is unfinished, and who owns it (you or me)
+  - **NEXT** — the single next action
 - At the design stage the old rule still holds: never deliver a finished implementation of an approach not yet approved.
 - **DO NOT refactor code outside the current task's scope.** This is the single most important rule in this file.
 - If something contradicts the decisions doc or a steering file, say so instead of going along with it. If a task asks for anything in never.md, refuse and cite it.
