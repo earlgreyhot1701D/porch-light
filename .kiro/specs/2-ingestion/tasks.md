@@ -123,16 +123,17 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
     - Posting lead time itself is MEASURED (median 5d, min 0d, §35e) and informs T1/T14 but is not a stored threshold.
     - _Requirements: 10.1, 10.2, 10.3_
 
-- [ ] 12. INFRA-PROPOSE: create Aurora Serverless v2 (billable) [INFRA-PROPOSE]
-  - [ ] 12.1 PROPOSE before acting: cluster creation spends money / creates persistent external state
+- [x] 12. INFRA-PROPOSE: create Aurora Serverless v2 (billable) [INFRA-PROPOSE]
+  - [x] 12.1 PROPOSE before acting: cluster creation spends money / creates persistent external state
     - Preconditions verified present: task 0.1 teardown line recorded; schema (task 1) ready; local path green.
     - Create Aurora Serverless v2 + pgvector, **min capacity 0** (dev; raised to 0.5 at Spec 5), RDS Data API (no VPC), cost tags. Verify pgvector + reachability. Create the Secrets Manager secret for Data API creds.
-    - RESULT recorded here (pass gate 5).
+    - RESULT: cluster `porchlight-dev` (aurora-postgresql 16.9), instance `porchlight-dev-instance` (db.serverless), both available. Data API enabled. RDS-managed secret `rds!cluster-b1413d42-...`. MinCapacity 0.0 / Max 1.0, auto-pause 300s. vector+pg_trgm+unaccent present. Schema (8 tables) applied via the Data API using data_api.py's Aurora path; parameterized round-trip verified. Four cost tags verified on the cluster (not assumed). Pass gate 5 met.
     - _Requirements: 8.1, 8.2, 8.3, 8.6_
-  - [ ] 12.2 Leave a re-runnable Aurora smoke test (§28b) [TEST]
+  - [x] 12.2 Leave a re-runnable Aurora smoke test (§28b) [TEST]
     - `tests/live/test_smoke_aurora.py`, `@pytest.mark.live`, excluded from default, part of `make smoke`.
     - Skips ONLY when the Aurora endpoint env var is unset; FAILS on any error from a cluster that exists (same skip-vs-fail discipline as Spec 0).
-    - Asserts: a real Data API query returns; pgvector present; min capacity 0.5 (not 0); the four cost tags on the cluster.
+    - Asserts: a real Data API query returns; pgvector present; **min capacity 0** (the dev setting — asserts it did NOT silently inherit 0.5); the four cost tags on the cluster.
+    - RESULT: 4 tests pass against the live cluster; skip cleanly when AURORA_CLUSTER_ARN unset.
     - _Requirements: 8.1, 8.2, 8.3, 8.6_
 
 - [ ] 13. Final checkpoint + enable the schedule
