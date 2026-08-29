@@ -58,6 +58,22 @@ whose entire claim is being a trustworthy reader of public records cannot quietl
 override a public body's stated crawl preference: that is a hole in its own story,
 and it is a findable one. Obeying it is the point, not a constraint we tolerate.
 
+**Where the model is, and deliberately is not.** The model has exactly three jobs:
+rewrite staff language into plain English and Spanish, decide whether an item
+matches a person's watchlist, and assemble the structure of a comment draft.
+Everything else is deterministic code. In particular, the **hunter** — the part
+that finds new agendas and classifies each document as an agenda, amendment,
+supplemental, cancellation, or Spanish edition — uses no model at all. That
+classification is a pure function of the document's URL and title, already
+property-tested; a model there would be inventing judgment where there is none to
+exercise, which is the exact failure our model-authority rules exist to prevent.
+So of the system's work, **two of the three reasoning loops are genuine agents
+(the extractor and the watcher); the hunter is deliberately not one.** We say this
+plainly rather than dressing up deterministic code as an agent to look more
+"agentic" — a reviewer reading the code would see through that, and it would
+undercut the whole design principle of deterministic structure with AI only at the
+edges.
+
 ## Setup
 
 ```bash
@@ -144,21 +160,16 @@ created, in order.
    The schedule ships **disabled** and is enabled only as the final step of Spec 2,
    after every pass gate is met.
 
-2. **Scheduler Lambda (the glue that invokes the hunter).** Once the schedule is
-   gone nothing calls it, but delete it and its role to leave nothing behind:
+2. **Hunter Lambda + its role (the deterministic ingestion job that fetches from
+   Ventura).** The hunter is a plain Lambda invoked directly by the schedule (§38);
+   once the schedule is gone nothing calls it, but delete it to leave nothing behind:
    ```bash
-   aws lambda delete-function --function-name porchlight-<env>-scheduler
-   aws iam delete-role --role-name porchlight-<env>-scheduler-role   # detach policies first
+   aws lambda delete-function --function-name porchlight-<env>-hunter
+   aws iam delete-role --role-name porchlight-<env>-hunter-role   # detach policies first
+   aws iam delete-role --role-name porchlight-<env>-scheduler-invoke-role  # EventBridge→Lambda role
    ```
 
-3. **Hunter AgentCore runtime (the agent that fetches from Ventura).** Deploying it
-   does not invoke it, but tear it down with the rest:
-   ```bash
-   # from deploy/<hunter agentcore dir>:
-   npx cdk destroy --all --force
-   ```
-
-4. **Aurora Serverless v2 cluster (~$4–5/month at min capacity 0; ~$44/month if
+3. **Aurora Serverless v2 cluster (~$4–5/month at min capacity 0; ~$44/month if
    raised to 0.5 ACU at Spec 5).** After the schedule, Lambda, and runtime are
    stopped, delete the cluster and its associated resources:
    ```bash

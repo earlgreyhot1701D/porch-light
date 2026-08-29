@@ -97,16 +97,15 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
   - [ ] 9.2 Crash mid-run (kill after some docs done) → restart double-writes nothing (pass gate 2)
     - _Requirements: pass gate 2, 3.3_
 
-- [ ] 10.0 INFRA-PROPOSE: deploy the hunter to AgentCore [INFRA-PROPOSE]
-  - [ ] 10.0.1 Deploy `run.py` + Spec 1 adapter as the `porchlight-<env>-hunter` AgentCore runtime
-    - CodeZip PYTHON_3_14 (Spike B pattern). Execution role scoped: RDS Data API to the cluster, Secrets read, CloudWatch logs, network egress (hunter fetches Ventura). No inbound public endpoint. Four cost tags.
-    - Deploying does NOT invoke it; the runtime is inert until the (disabled) schedule is enabled at task 13.
-    - _Requirements: 26 topology; compute-target decision_
+- [ ] 10.0 INFRA-PROPOSE: deploy the hunter as a Lambda (§38, was AgentCore) [INFRA-PROPOSE]
+  - [ ] 10.0.1 Deploy `run.py` + Spec 1 adapter + `db/` as the `porchlight-<env>-hunter` Lambda
+    - Handler calls `run_ingestion(get_backend())` IN-PROCESS. Timeout 12 min. Env: AURORA_CLUSTER_ARN, AURORA_SECRET_ARN, AURORA_DATABASE. Execution role scoped: `rds-data:ExecuteStatement` + related on the cluster, read the RDS-managed secret, CloudWatch logs. Default networking (egress to Ventura + AWS APIs). Four cost tags.
+    - Deploying does NOT invoke it; inert until the (disabled) schedule is enabled at task 13.
+    - _Requirements: §38 compute-target; 26 topology_
 
-- [ ] 10. Schedule wiring (EventBridge + scheduler Lambda) [INFRA-PROPOSE]
-  - [ ] 10.1 Create the scheduler Lambda + EventBridge hourly schedule **DISABLED**; missed fires do not catch up
-    - Scheduler Lambda `porchlight-<env>-scheduler` (~20 lines): calls `InvokeAgentRuntime` on the hunter runtime; IAM role holds ONLY `bedrock-agentcore:InvokeAgentRuntime` on that ARN. Timeout T16=12 min. On error/timeout: log + exit non-zero, NO retry (the lock + next trigger recover).
-    - EventBridge schedule targets the Lambda, created `--state DISABLED`.
+- [ ] 10. Schedule wiring (EventBridge, direct target) [INFRA-PROPOSE]
+  - [ ] 10.1 Create the EventBridge hourly schedule **DISABLED**, target = the hunter Lambda DIRECTLY (§38, no scheduler-Lambda hop)
+    - Hourly rate; missed fires do not catch up (one run on next trigger). Created `--state DISABLED`. EventBridge Scheduler needs a role to invoke the Lambda; scope it to `lambda:InvokeFunction` on that function only.
     - **Ships disabled and why:** an enabled schedule would fire hourly against the City of Ventura's servers before Aurora (wave 7) and the pass gates (wave 8) exist. It is created disabled and only enabled in task 13 after every gate is met. Record this in tasks.md/README.
     - _Requirements: 1.1, 1.2, 1.4_
 
@@ -162,15 +161,16 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
 - **Spec 3 — measure real infra cost.** Read actual monthly cost from Cost Explorer
   filtered by the four tags after ~a week of real runs; replace the README's
   ~$4–5/mo Aurora ESTIMATE with the measured figure.
-- **Spec 3 — hunter and extractor CANNOT share an AgentCore runtime.** The hunter
-  needs network egress to fetch from Ventura; §30d requires the extractor to have
-  NONE. `networkMode` is per-runtime, so they must be two separate runtimes with
-  different network configuration. This confirms §19's three-role requirement maps
-  to **three runtimes**, not three roles on one runtime. Inherit, do not rediscover.
-- **Scheduler Lambda error behavior (decided now, R-adjacent):** on
-  `InvokeAgentRuntime` error OR timeout, the Lambda logs and exits non-zero — it
-  does NOT retry. The run lock and the next hourly trigger already handle recovery;
-  a retrying Lambda would fight the lock. Timeout T16 = 12 min (T11 < T16 < T12 < T14).
+- **§30d flag RETIRED (§38).** The hunter is a deterministic Lambda, not an
+  AgentCore runtime, so the "hunter and extractor need opposite networkMode on
+  separate runtimes" problem dissolves. Only the extractor and watcher live on
+  AgentCore. Spec 3 note updated: the extractor runtime has no egress (§30d); the
+  hunter's egress lives on Lambda, entirely separate.
+- **Hunter Lambda error behavior (§38):** the hunter runs IN-PROCESS in the Lambda
+  (no InvokeAgentRuntime hop). On any unhandled error it logs and exits non-zero; it
+  does NOT retry — the run lock + next hourly trigger handle recovery. Lambda
+  timeout 12 min (> T11 with margin, < Lambda's 15-min max); this is a deployment
+  setting, not an ordering constraint (T16 retired).
 
 ## Task Dependency Graph
 

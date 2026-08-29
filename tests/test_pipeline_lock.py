@@ -100,13 +100,8 @@ def test_fresh_lock_is_not_reclaimable(backend):
 
 
 def test_ordering_invariant():
-    """T11 < T16 (Lambda) < T12 < T14 — the §20 guard. (Also asserted at import.)"""
-    assert (
-        thresholds.T11_WHOLE_RUN
-        < thresholds.T16_LAMBDA_TIMEOUT
-        < thresholds.T12_LOCK_TTL
-        < thresholds.T14_SCHEDULE_INTERVAL
-    )
+    """T11 < T12 < T14 — the §20 guard (§38 retired T16). Also asserted at import."""
+    assert thresholds.T11_WHOLE_RUN < thresholds.T12_LOCK_TTL < thresholds.T14_SCHEDULE_INTERVAL
 
 
 def test_stuck_but_alive_run_stops_extending_lock(backend):
