@@ -97,8 +97,16 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
   - [ ] 9.2 Crash mid-run (kill after some docs done) → restart double-writes nothing (pass gate 2)
     - _Requirements: pass gate 2, 3.3_
 
-- [ ] 10. Schedule wiring (EventBridge) [PERMANENT]
-  - [ ] 10.1 Create the EventBridge hourly schedule **DISABLED**; missed fires do not catch up (one run on next trigger)
+- [ ] 10.0 INFRA-PROPOSE: deploy the hunter to AgentCore [INFRA-PROPOSE]
+  - [ ] 10.0.1 Deploy `run.py` + Spec 1 adapter as the `porchlight-<env>-hunter` AgentCore runtime
+    - CodeZip PYTHON_3_14 (Spike B pattern). Execution role scoped: RDS Data API to the cluster, Secrets read, CloudWatch logs, network egress (hunter fetches Ventura). No inbound public endpoint. Four cost tags.
+    - Deploying does NOT invoke it; the runtime is inert until the (disabled) schedule is enabled at task 13.
+    - _Requirements: 26 topology; compute-target decision_
+
+- [ ] 10. Schedule wiring (EventBridge + scheduler Lambda) [INFRA-PROPOSE]
+  - [ ] 10.1 Create the scheduler Lambda + EventBridge hourly schedule **DISABLED**; missed fires do not catch up
+    - Scheduler Lambda `porchlight-<env>-scheduler` (~20 lines): calls `InvokeAgentRuntime` on the hunter runtime; IAM role holds ONLY `bedrock-agentcore:InvokeAgentRuntime` on that ARN. Timeout T16=12 min. On error/timeout: log + exit non-zero, NO retry (the lock + next trigger recover).
+    - EventBridge schedule targets the Lambda, created `--state DISABLED`.
     - **Ships disabled and why:** an enabled schedule would fire hourly against the City of Ventura's servers before Aurora (wave 7) and the pass gates (wave 8) exist. It is created disabled and only enabled in task 13 after every gate is met. Record this in tasks.md/README.
     - _Requirements: 1.1, 1.2, 1.4_
 
@@ -118,7 +126,7 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
 - [ ] 12. INFRA-PROPOSE: create Aurora Serverless v2 (billable) [INFRA-PROPOSE]
   - [ ] 12.1 PROPOSE before acting: cluster creation spends money / creates persistent external state
     - Preconditions verified present: task 0.1 teardown line recorded; schema (task 1) ready; local path green.
-    - Create Aurora Serverless v2 + pgvector, min 0.5 ACU, RDS Data API (no VPC), cost tags. Verify pgvector + reachability.
+    - Create Aurora Serverless v2 + pgvector, **min capacity 0** (dev; raised to 0.5 at Spec 5), RDS Data API (no VPC), cost tags. Verify pgvector + reachability. Create the Secrets Manager secret for Data API creds.
     - RESULT recorded here (pass gate 5).
     - _Requirements: 8.1, 8.2, 8.3, 8.6_
   - [ ] 12.2 Leave a re-runnable Aurora smoke test (§28b) [TEST]
@@ -141,6 +149,27 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
 - Property tests: `# Feature: 2-ingestion, Property {N}: {title}`.
 - No model calls in Spec 2; the ledger exists so Spec 3's model spend lands in a
   ready, bounded envelope.
+
+### Forward flags (recorded here, owned by later specs — do not build in Spec 2)
+
+- **Spec 5 — raise Aurora min capacity 0 → 0.5 ACU.** The 0.5 floor is for §26c's
+  live-invoked watcher (a person waiting on a ~15s cold resume). During dev the DB
+  is only hit by the hourly scheduled run, which absorbs a cold resume fine, so it
+  runs at min capacity 0 (~$4–5/mo est.) and is raised to 0.5 (~$44/mo) when the
+  watcher ships or before the demo. One console/IaC setting. Reason recorded so the
+  floor is not silently re-inherited. (§33 amended.)
+- **Spec 3 — measure real infra cost.** Read actual monthly cost from Cost Explorer
+  filtered by the four tags after ~a week of real runs; replace the README's
+  ~$4–5/mo Aurora ESTIMATE with the measured figure.
+- **Spec 3 — hunter and extractor CANNOT share an AgentCore runtime.** The hunter
+  needs network egress to fetch from Ventura; §30d requires the extractor to have
+  NONE. `networkMode` is per-runtime, so they must be two separate runtimes with
+  different network configuration. This confirms §19's three-role requirement maps
+  to **three runtimes**, not three roles on one runtime. Inherit, do not rediscover.
+- **Scheduler Lambda error behavior (decided now, R-adjacent):** on
+  `InvokeAgentRuntime` error OR timeout, the Lambda logs and exits non-zero — it
+  does NOT retry. The run lock and the next hourly trigger already handle recovery;
+  a retrying Lambda would fight the lock. Timeout T16 = 12 min (T11 < T16 < T12 < T14).
 
 ## Task Dependency Graph
 

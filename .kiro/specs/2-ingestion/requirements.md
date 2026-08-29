@@ -230,9 +230,15 @@ reliable and cheap.
 
 1. THE production database SHALL be Amazon Aurora Serverless v2 PostgreSQL with
    pgvector (§33), replacing Neon.
-2. THE cluster minimum capacity SHALL be **0.5 ACU, not 0** (§33): the §26c live
-   watcher invocation cannot sit behind a ~15s cold resume. Credits absorb staying
-   warm; the rationale is recorded.
+2. THE cluster minimum capacity SHALL be **0 ACU during development**, raised to
+   **0.5 ACU when the live-invoked watcher ships (Spec 5)** or before the demo,
+   whichever comes first. Reason: the 0.5 floor exists only for §26c's live watcher,
+   where a person waits on a ~15s cold resume; that path does not exist yet. What
+   needs the DB today is Spec 2's hourly SCHEDULED run, and a scheduled job absorbs
+   a cold resume fine because nobody is watching. This is ~$1/mo instead of ~$44/mo
+   for the build. **A Spec 5 task SHALL raise it to 0.5** (one console/IaC setting),
+   with this reason recorded so the floor is not silently re-inherited. (§33 amended;
+   verified cost: $0.12/ACU-hr in us-east-1 → 0.5 ACU continuous ≈ $43.80/mo.)
 3. THE pipeline and site SHALL reach Aurora via the **RDS Data API (HTTPS + IAM)**,
    not a VPC connection, avoiding a NAT gateway (§33).
 4. THE schema SHALL cover: meetings, documents, items (Spec 3 populates), events/
@@ -292,9 +298,10 @@ placeholder ships past Spec 2.
    an interruption.
 3. Retry classification (transient vs permanent) correct on real failure examples.
 4. Timeout ordering `T11 < T12 < T14` asserted.
-5. Aurora reachable via the RDS Data API with pgvector, 0.5 ACU floor, cost-tagged;
-   local docker-compose path still works; teardown command + §13 Aurora entry
-   recorded in the README BEFORE the cluster is created.
+5. Aurora reachable via the RDS Data API with pgvector, **min capacity 0 during
+   development** (raised to 0.5 at Spec 5), cost-tagged; local docker-compose path
+   still works; teardown command + §13 Aurora entry recorded in the README BEFORE
+   the cluster is created.
 6. Every threshold T1–T15 carries a final value + rationale, tagged measured or
    estimate; none left "proposed" (R10).
 

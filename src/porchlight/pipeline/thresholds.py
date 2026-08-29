@@ -19,6 +19,10 @@ T10_PER_DOCUMENT = 90       # ESTIMATE: fetch+hash+classify one doc; above fetch
 T11_WHOLE_RUN = 600         # 10 min. ESTIMATE: bounds a full pass; must stay under the lock TTL.
 T12_LOCK_TTL = 900          # 15 min. ESTIMATE: above run timeout so a live run never loses its lock;
                             #          below schedule interval so a dead/stuck run cannot deadlock the schedule.
+T16_LAMBDA_TIMEOUT = 720    # 12 min. ESTIMATE: the scheduler Lambda waits synchronously on a
+                            #          run that can take up to T11 (10m). Must exceed T11 so it does
+                            #          not abandon a healthy run (orphaning a lock), and stay under
+                            #          T12 so a hung hunter cannot pin the Lambda past the lock TTL.
 T14_SCHEDULE_INTERVAL = 3600  # 60 min. MEASURED-adjacent: hourly per §7 good-citizen posture; > lock TTL.
 
 # --- Retry / quarantine / dormancy (§16a) ---
@@ -36,9 +40,14 @@ INGESTION_SUBBUDGET_USD = 7.0       # 70% of T15.
 SEARCH_SUBBUDGET_USD = 3.0          # 30% of T15 (enforced at Spec 4/6).
 
 # --- Ordering invariant: the §20 guard. Violating this is a deadlock bug. ---
-assert T11_WHOLE_RUN < T12_LOCK_TTL < T14_SCHEDULE_INTERVAL, (
-    "Timeout ordering violated: require run timeout < lock TTL < schedule interval "
-    f"(got {T11_WHOLE_RUN} < {T12_LOCK_TTL} < {T14_SCHEDULE_INTERVAL}). "
-    "A run must not outlive its own lock, and a stuck run's lock must expire before "
-    "the schedule would fire again (§20)."
+# Full chain: run timeout < Lambda timeout < lock TTL < schedule interval.
+# - run < Lambda: the scheduler Lambda must outlast a healthy run, or it abandons
+#   one and orphans a held lock.
+# - Lambda < lock TTL: a hung hunter must not pin the Lambda past the lock TTL.
+# - lock TTL < schedule: a stuck run's lock must expire before the next trigger.
+assert T11_WHOLE_RUN < T16_LAMBDA_TIMEOUT < T12_LOCK_TTL < T14_SCHEDULE_INTERVAL, (
+    "Timeout ordering violated: require run < Lambda < lock TTL < schedule "
+    f"(got {T11_WHOLE_RUN} < {T16_LAMBDA_TIMEOUT} < {T12_LOCK_TTL} < {T14_SCHEDULE_INTERVAL}). "
+    "A run must not outlive the Lambda waiting on it, the Lambda must not outlive "
+    "the lock TTL, and a stuck run's lock must expire before the schedule fires again (§20)."
 )

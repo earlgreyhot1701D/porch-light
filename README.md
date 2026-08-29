@@ -109,10 +109,22 @@ Tests skip (not fail) if credentials or endpoint are absent. A skip means "not p
 
 The application spend ledger covers **model and API spend only**, with a ceiling
 of $10/month (about 50x the measured steady-state spend of ~$0.20/month on Nova
-Lite). Aurora Serverless v2 fixed compute — roughly $43/month at its 0.5-ACU floor
-— is **infrastructure, not model spend**: it is tracked in the wind-down section
-below and is **not** bounded by the $10 ledger ceiling. If you read "$10" as the
-monthly bill, this line is why that is wrong.
+Lite). Infrastructure is tracked separately (below) and is **not** bounded by that
+$10 ledger ceiling. If you read "$10" as the monthly bill, this line is why that
+is wrong.
+
+Infrastructure cost, **estimated** (not yet measured):
+
+- **Aurora Serverless v2 at min capacity 0 (development setting): ~$4–5/month.**
+  Scale-to-zero needs an idle period before pausing, and the hourly ingestion run
+  wakes the cluster every hour, so the real duty cycle is closer to ~10% than 0% —
+  hence ~$4–5, not the ~$1 a naive "scales to zero" reading suggests. Verified
+  rate: $0.12/ACU-hour in us-east-1. At the 0.5-ACU floor (raised at Spec 5 for the
+  live watcher) it would be ~$44/month always-warm; we defer that.
+- **Scheduler Lambda + EventBridge schedule: ~$0/month** (well within free tier).
+- These are estimates. A Spec 3 task reads the actual number from Cost Explorer,
+  filtered by our four tags, after a week of real runs, and replaces this estimate
+  with the measurement.
 
 ## Wind-down
 
@@ -132,11 +144,27 @@ created, in order.
    The schedule ships **disabled** and is enabled only as the final step of Spec 2,
    after every pass gate is met.
 
-2. **Aurora Serverless v2 cluster (~$43/month at 0.5 ACU, always warm).** After the
-   schedule is stopped, delete the cluster and its associated resources:
+2. **Scheduler Lambda (the glue that invokes the hunter).** Once the schedule is
+   gone nothing calls it, but delete it and its role to leave nothing behind:
+   ```bash
+   aws lambda delete-function --function-name porchlight-<env>-scheduler
+   aws iam delete-role --role-name porchlight-<env>-scheduler-role   # detach policies first
+   ```
+
+3. **Hunter AgentCore runtime (the agent that fetches from Ventura).** Deploying it
+   does not invoke it, but tear it down with the rest:
+   ```bash
+   # from deploy/<hunter agentcore dir>:
+   npx cdk destroy --all --force
+   ```
+
+4. **Aurora Serverless v2 cluster (~$4–5/month at min capacity 0; ~$44/month if
+   raised to 0.5 ACU at Spec 5).** After the schedule, Lambda, and runtime are
+   stopped, delete the cluster and its associated resources:
    ```bash
    aws rds delete-db-cluster --db-cluster-identifier porchlight-<env> --skip-final-snapshot
-   # then any associated instance, subnet group, and the Data API / Secrets Manager secret
+   aws rds delete-db-instance --db-instance-identifier porchlight-<env>-instance --skip-final-snapshot
+   aws secretsmanager delete-secret --secret-id porchlight-<env>-db --force-delete-without-recovery
    ```
    The city is the source of truth (§13): losing the database costs nothing to
    correctness, only a re-ingest. There is no backup-restore path to maintain.
