@@ -102,9 +102,17 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
     - **Ships disabled and why:** an enabled schedule would fire hourly against the City of Ventura's servers before Aurora (wave 7) and the pass gates (wave 8) exist. It is created disabled and only enabled in task 13 after every gate is met. Record this in tasks.md/README.
     - _Requirements: 1.1, 1.2, 1.4_
 
-- [ ] 11. Thresholds finalized (R10) [PERMANENT]
-  - [ ] 11.1 Every T1–T15 has a FINAL value + rationale, tagged measured or estimate; none left "proposed"
-    - T3=36h, T4=50%, T5=3, T15=$10 (computed); T11<T12<T14 asserted. Record the full table.
+- [x] 11. Thresholds finalized (R10) [PERMANENT]
+  - [x] 11.1 Every T1–T15 has a FINAL value + rationale, tagged measured or estimate; none left "proposed"
+    - Done in `src/porchlight/pipeline/thresholds.py` (single inspectable place), T11<T12<T14 asserted at import. Final table:
+      - T1 horizon future 30d (estimate); T2 horizon past 14d (estimate)
+      - T3 dormancy 36h (estimate); T4 circuit breaker 50% (estimate); T5 quarantine 3 runs (estimate)
+      - T6 fetch 30s, T7 tool 45s, T8 model 60s (estimate; finalized Spec 3), T9 agent 120s, T10 per-doc 90s (all estimate)
+      - T11 run 600s, T12 lock TTL 900s, T14 schedule 3600s (estimate; ordering asserted)
+      - T13 max docs/body 50 (estimate)
+      - T15 spend ceiling $10/mo (COMPUTED, ~50x measured $0.20/mo); ingestion $7 / search $3
+      - Attempts/document 2 (set, §16a L1)
+    - Posting lead time itself is MEASURED (median 5d, min 0d, §35e) and informs T1/T14 but is not a stored threshold.
     - _Requirements: 10.1, 10.2, 10.3_
 
 - [ ] 12. INFRA-PROPOSE: create Aurora Serverless v2 (billable) [INFRA-PROPOSE]

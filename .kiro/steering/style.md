@@ -19,7 +19,7 @@ inclusion: always
   - two reasonable options exist and the tradeoff is a judgment call, not a fact
   - you hit a genuine blocker
 - **"I cannot verify this myself" is not a reason to ask.** Do the part you can, note the part you cannot, keep going.
-- **Batch reports: one report per block of work, not per finding.**
+- **A RECAP covers one BLOCK OF PRE-APPROVED WORK, not one wave, not one finding.** When a range of waves is pre-approved, that whole range is one report: run it straight through and recap once at the end. Do not report between waves inside an approved range, and do not ask to continue into already-approved work. Stop mid-range ONLY for: a surprise where design says X and reality is Y; a genuine blocker you cannot resolve; a task marked INFRA-PROPOSE; or anything that spends money, changes scope, or contradicts an approved decision. "I finished a wave" and "the next wave is large" are not stop conditions.
 - **Every assigned block of work ends with a RECAP, no exceptions, short enough to read in under a minute:**
   - **WHAT CHANGED** — files touched, one line each
   - **FINDINGS** — anything where design said X and reality was Y
