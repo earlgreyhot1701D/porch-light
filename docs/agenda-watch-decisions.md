@@ -1136,7 +1136,7 @@ Spike B passed (structlog proven in the AgentCore runtime, redaction and truncat
 
 ### 31c. Account-specific AgentCore files: a three-way split
 
-The repo becomes public for hackathon judging. Three tracked files carried our AWS account ID (`<AWS_ACCOUNT_ID>`), embedded in resource ARNs and an IAM role ARN. An account ID is not a credential, but it is a low-severity disclosure that narrows an attacker's surface (role-assumption guessing, targeted phishing) and is hard to rotate. It does not belong in a public repo.
+The repo becomes public for hackathon judging. Three tracked files carried our 12-digit AWS account ID (elided here as `831…571`, deliberately not written in full anywhere in the repo), embedded in resource ARNs and an IAM role ARN. An account ID is not a credential, but it is a low-severity disclosure that narrows an attacker's surface (role-assumption guessing, targeted phishing) and is hard to rotate. It does not belong in a public repo.
 
 Three files, three different correct treatments, because they are three different kinds of thing:
 
@@ -1150,7 +1150,7 @@ Three files, three different correct treatments, because they are three differen
 
 `git rm --cached` and redaction only stop the leak going forward. The account ID stayed readable in commits via `git log -p`. With no remote configured and only a handful of commits, this was the cheapest it would ever be to fix; after a push it means force-pushing over published history.
 
-`git-filter-repo` (2.47.0, installed via `uv tool install`) was run over the full history: `--replace-text` mapping the literal account ID to `<AWS_ACCOUNT_ID>`, plus `--invert-paths` removing both vendor file paths from every commit. The commit narrative survived (same messages, same order; hashes changed as any rewrite requires). Verified zero results from `git grep -l "<AWS_ACCOUNT_ID>"` and `git log --all --oneline -S "<AWS_ACCOUNT_ID>"`, and re-verified a deploy still works afterward. These two checks are now part of the Spec 0 close checkpoint (task 19), so the absence is verified rather than assumed.
+`git-filter-repo` (2.47.0, installed via `uv tool install`) was run over the full history: `--replace-text` mapping the literal account ID to `<AWS_ACCOUNT_ID>`, plus `--invert-paths` removing both vendor file paths from every commit. The commit narrative survived (same messages, same order; hashes changed as any rewrite requires). Verified zero results from `git grep` and `git log -S` for the literal account ID (the digits are passed on the command line only, never written into a tracked file, or the check would match its own documentation), and re-verified a deploy still works afterward. These two checks are now part of the Spec 0 close checkpoint (task 19), so the absence is verified rather than assumed.
 
 ### 31e. FINDING: the CloudWatch log group is untagged
 

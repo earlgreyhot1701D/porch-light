@@ -216,12 +216,11 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - Do NOT add `PORCHLIGHT_COMPONENT` (component passed at call site, not from env)
     - _Requirements: 12.1_
 
-- [ ] 18. Final README updates and compliance check [PERMANENT]
-  - [ ] 18.1 Update README with model invocation proof, deferred selection statement, and Strands version
-    - State: AWS region used, Spec 0 proved invocation on Nova Lite
-    - State: production model selection deferred to Spec 3, decided by verifier rejection rate and cost per packet
-    - State: later specs must not assume a model provider never proven at invocation time
-    - Record exact pinned Strands SDK version (must match lockfile)
+- [x] 18. Final README updates and compliance check [PERMANENT]
+  - [x] 18.1 Update README with model invocation proof, deferred selection statement, and Strands version
+    - RESULT: README Model section states Nova Lite (`amazon.nova-lite-v1:0`) proven in us-east-1, production selection deferred to Spec 3 on two numbers (verifier rejection rate, cost per packet), and that later specs must not assume an unproven provider. Strands SDK pinned version 1.53.0 recorded in the Stack section (matches uv.lock).
+    - Stack section Database line changed from Neon to Amazon Aurora Serverless v2 PostgreSQL + pgvector (§33), noting Spec 2 provisioning via the RDS Data API.
+    - Disclosure line present verbatim (Req 1.2).
     - _Requirements: 8.2, 8.5, 12.2, 1.6_
 
 - [x] 19. Live smoke test infrastructure [PERMANENT]
@@ -253,9 +252,7 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
 
 - [ ] 20. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise. Verify: no secrets in git history, LICENSE present, README complete, .gitignore correct, lockfile has exact versions.
-  - Account-ID scrub verification (§31d): both of these MUST return zero results:
-    - `git grep -l "<AWS_ACCOUNT_ID>"` (no tracked file contains the account ID)
-    - `git log --all --oneline -S "<AWS_ACCOUNT_ID>"` (no commit in history introduced/removed it)
+  - Account-ID scrub verification (§31d): grepping the tracked tree and full history for the literal 12-digit account ID MUST return zero results. Run `git grep -l <ACCOUNT_ID>` and `git log --all --oneline -S <ACCOUNT_ID>`, substituting the real digits at the command line only. Do NOT write the literal digits into this file or any tracked file, or the check can never pass (the check text would be a match for itself).
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
 ## Notes
