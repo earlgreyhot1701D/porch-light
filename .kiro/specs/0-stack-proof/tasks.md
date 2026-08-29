@@ -250,9 +250,10 @@ Ordering prioritizes riskiest unknowns first: repo hygiene and the logger (cheap
     - Documents make smoke, cost, real AWS calls, skip vs fail semantics
     - _Requirements: 13.5_
 
-- [ ] 20. Final checkpoint
-  - Ensure all tests pass, ask the user if questions arise. Verify: no secrets in git history, LICENSE present, README complete, .gitignore correct, lockfile has exact versions.
+- [x] 20. Final checkpoint
+  - RESULT: `uv run pytest` → 28 passed, 3 deselected (live tests excluded by default). LICENSE present (MIT). README complete (disclosure line verbatim, stack incl. Aurora §33, model proof + deferred selection, clean-clone section). `.gitignore` correct (`.env`, both vendor account-specific files). uv.lock has exact versions (strands-agents 1.53.0, structlog 26.1.0, bedrock-agentcore 1.22.0).
   - Account-ID scrub verification (§31d): grepping the tracked tree and full history for the literal 12-digit account ID MUST return zero results. Run `git grep -l <ACCOUNT_ID>` and `git log --all --oneline -S <ACCOUNT_ID>`, substituting the real digits at the command line only. Do NOT write the literal digits into this file or any tracked file, or the check can never pass (the check text would be a match for itself).
+    - RESULT: both return zero, plus a per-commit tree scan (`git rev-list --all | git grep`) returns zero. A second filter-repo pass was needed because the first documentation of the scrub had written the literal ID into prose; that self-match is now removed from all 13 commits and the placeholder `<AWS_ACCOUNT_ID>` stands in its place.
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
 ## Notes
