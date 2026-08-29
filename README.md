@@ -39,8 +39,9 @@ resident most needs to know. A tool checked on a weekly rhythm cannot surface a
 same-day meeting before it starts. We say this plainly rather than imply a
 guarantee we cannot keep; closing that gap is future work, not a solved problem.
 
-**Spanish.** Roughly one Ventura meeting in six carries a Spanish agenda the city
-itself publishes. For those meetings, we show the city's official Spanish
+**Spanish.** About one Ventura meeting in fifteen carries a Spanish agenda the
+city itself publishes — concentrated in the City Council, where it is roughly one
+meeting in three. For those meetings, we show the city's official Spanish
 document and the receipt points at it — we do not run our own translation over a
 meeting the city already translated, because a receipt promises the linked
 document says what we say it says, and our wording next to a link to a different

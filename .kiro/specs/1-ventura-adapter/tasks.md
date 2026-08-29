@@ -96,8 +96,10 @@ against the live site. [TEST] is a test deliverable that gates the block.
 - [x] 10. VERIFICATION: correct meeting list for a known week [VERIFICATION]
   - [x] 10.1 Hand-check City Council and Planning Commission for a known week against the live site
     - RESULT: parser's recent CC meetings (3685 Aug-25, 3680 Aug-18) and PC meetings (3687 Aug-26, 3682 Aug-20) all resolve to live `application/pdf` agendas (HTTP 200). Included a meeting with a Spanish edition (§36): Apr-28 has English `3621` and Spanish `3622`, both resolve live, both attributed to City Council by date. Pass gate 1 met.
-    - BUG FOUND + FIXED during hand-check: every stub carried duplicate document URLs (rows link the same file twice, icon + text anchor). Fixed `enumerate.py` to de-dupe URLs within a row; CC 3685 now shows the correct Agenda+Minutes, 0 stubs with duplicates. Meeting count is 152 (site grew from the 129 first captured; distinct ids confirmed, not a dup artifact).
-    - §36 note: the Spanish edition has a DIFFERENT meeting id than its English counterpart (3622 vs 3621), matched by date. The same-meeting linking is Spec 3/6 work per §36b, not built here.
+    - BUG FOUND + FIXED during hand-check: every stub carried duplicate document URLs (rows link the same file twice, icon + text anchor). Fixed `enumerate.py` to de-dupe URLs within a row; CC 3685 now shows the correct Agenda+Minutes, 0 stubs with duplicates.
+    - COUNT CORRECTION (was wrong in the first wave-6 report): the 129→152 change is NOT site growth. Re-parsing the UNCHANGED saved fixture with the current parser yields 152, so the parser changed, not the site. The 129 was wave-0's count of `PreviousVersions` links only; the parser correctly emits any row with a meeting link. The extra 23 are 129 PV-linked rows + 23 rows that have a `ViewFile/Agenda` link but no PV link. Verified they are REAL meetings, not header/empty artifacts: all sampled resolve to live HTTP 200 agendas; classified as 9 spanish_edition, agenda, supplemental, cancellation. This is the better of the two explanations — real meetings we would have dropped under the old count, not phantom meetings Spec 2 would ingest.
+    - §36 note: the Spanish edition has a DIFFERENT meeting id than its English counterpart (3622 vs 3621), matched by date. Same-meeting linking is Spec 3/6 work per §36b, not built here.
+    - FLAG for Spec 3 (§36b), recorded not built: EN/ES pairing must match on **body_id + date**, not date alone. Two bodies meeting the same day, both with Spanish editions, would cross-link under date-only matching. (Owner: recorded here for the decisions-doc §36b; do not implement in Spec 1.)
     - _Requirements: pass gate 1_
 
 - [x] 11. VERIFICATION: stale-agenda behavior [TEST]
@@ -119,6 +121,11 @@ against the live site. [TEST] is a test deliverable that gates the block.
 - The "packet" → "agenda" vocabulary correction (§35a) applies to new code and
   spec language here; the mock copy sweep is Spec 6 (§35d), not this spec.
 - Property tests use Hypothesis. Tag format: `# Feature: 1-ventura-adapter, Property {N}: {title}`.
+- **§28 confirmation (dedup bug, task 10.1):** the property tests passed while the
+  real output was wrong. Every stub carried duplicate document URLs and the whole
+  test suite was green; only the hand-check against the live site caught it. This
+  is exactly why the hand-check gate exists — green tests are not proof of correct
+  output on real data.
 
 ## Task Dependency Graph
 
