@@ -69,6 +69,17 @@ meetings before writing this spec:
   only JSON API (`JSON.php`) is on the excluded Granicus host (§34c stands
   unchanged — no documented API available to us). Enumeration is server-rendered
   HTML on the permitted host, which is sufficient.
+- **The "upcoming" window is narrow, permanently (§35e).** Measured 2026-08-27:
+  the index's newest meeting was the prior day, and 0 of the 10 in-horizon
+  meetings were in the future. AgendaCenter lists a meeting only once its agenda
+  posts, and Ventura posts close to the meeting. So Porch Light promises "you will
+  hear about it with about [measured] days to act," not "watch the calendar." The
+  real lead time is a pass-gate measurement (below), not an assumption.
+- **Per-body pages exist but are unreliable; the combined index is the source.**
+  All four probed category slugs return 200, but Planning-Commission-6 renders its
+  meetings server-side while City-Council-2 returns zero rows (JS-loaded). The
+  combined `/AgendaCenter` index reliably renders all 129 for all bodies, so the
+  registry (R1) is a list of body names, not URLs, and enumeration is one fetch.
 
 ## Glossary
 
@@ -102,10 +113,14 @@ pages to check and nothing is discovered by guessing.
 
 1. THE Adapter SHALL provide a static, versioned registry of Ventura public
    bodies, each entry containing: a stable `body_id`, the official body name
-   (English), the AgendaCenter URL path on the permitted host, and the body's
-   category (legislative / advisory).
-2. Every URL in the registry SHALL be on the permitted host (§34). No registry
-   entry SHALL reference the excluded Granicus host.
+   (English), and the body's category (legislative / advisory). The registry is a
+   list of body **names/identifiers**, NOT a list of per-body URLs: enumeration
+   reads the single combined `/AgendaCenter` index and attributes each meeting to
+   a body by that index's grouping (verified — per-body category pages exist but
+   render inconsistently; the combined index reliably renders all bodies).
+2. All fetching SHALL be on the permitted host (§34); no fetch SHALL target the
+   excluded Granicus host. (The registry itself holds no URLs to validate; the
+   host allowlist is enforced in `fetch.py`, R7.1.)
 3. THE registry SHALL be verified by hand against the live AgendaCenter at build
    time, and the verification date recorded, because the roster changes (ad hoc
    committees are created and retired). A stale registry is a maintenance risk,
@@ -125,12 +140,14 @@ and needs no headless browser.
 
 #### Acceptance Criteria
 
-1. THE Adapter SHALL enumerate meetings by parsing the server-rendered
-   AgendaCenter HTML on the permitted host, which contains a `PreviousVersions`
-   link and current `ViewFile/Agenda` / `ViewFile/Minutes` links per meeting
-   (verified). It SHALL NOT require executing page JavaScript or a headless
-   browser. The category-filter controls are JS-rendered and SHALL NOT be relied
-   on; the meeting rows in the served HTML are the source.
+1. THE Adapter SHALL enumerate meetings by parsing the **single combined**
+   server-rendered `/AgendaCenter` index on the permitted host, which reliably
+   contains a `PreviousVersions` link and current `ViewFile/Agenda` /
+   `ViewFile/Minutes` links for every meeting of every body (129 verified). It
+   SHALL NOT require executing page JavaScript or a headless browser, and SHALL
+   NOT depend on per-body category pages (verified inconsistent: some render
+   server-side, some load rows via JS). The category-filter widget on the index
+   is JS-rendered and SHALL NOT be relied on.
 2. FOR each enumerated meeting, THE Adapter SHALL capture: `body_id`, meeting
    date, meeting type (regular / special / adjourned / closed-session, as stated
    in the source), and the set of associated document URLs with their roles (R3).
@@ -203,9 +220,16 @@ chronology.
 2. WHEN a document is posted or amended for a meeting whose date has already
    passed, THE Adapter SHALL record it as new material for a past meeting and
    SHALL NOT surface it as upcoming. (Real case on the Ventura site, §7.)
-3. THE surfacing decision SHALL be a pure function of meeting date versus current
-   city-local date, with the DST case covered (R6, threshold-free logic).
-4. "Upcoming" SHALL be computed against **city local time** (America/Los_Angeles),
+3. THE surfacing decision SHALL be a pure function of the meeting **start
+   datetime** versus the current city-local datetime. It SHALL use the meeting
+   time extracted from the agenda text (e.g. "SPECIAL MEETING - 5:00 P.M."), not
+   date granularity: a 5:00 PM meeting SHALL stop being "upcoming" at 5:00 PM, not
+   at midnight. Because the product's job is to notify *before* a meeting starts,
+   day granularity on the day of the meeting is a bug, not an approximation.
+4. WHEN the meeting time cannot be parsed, THE Adapter SHALL fall back to
+   end-of-day city-local for the upcoming decision AND SHALL log the fallback, so
+   a day-granularity decision is never made silently.
+5. "Upcoming" SHALL be computed against **city local time** (America/Los_Angeles),
    not the server clock or the viewer's zone (§2).
 
 ### Requirement 6: Honest states and time handling
@@ -224,7 +248,9 @@ quiet body and a broken fetch are never confused, and a deadline is never wrong.
 3. Dates, times, meeting-type labels, and body names SHALL be copied from source,
    never generated or paraphrased (never.md #1).
 4. THE Adapter SHALL have an explicit DST-boundary test case for the city-local
-   date/time logic (§2).
+   date/time logic (§2): a meeting at 5:00 PM city-local SHALL be upcoming at
+   4:59 PM and not upcoming at 5:01 PM, on both a spring-forward and a fall-back
+   date, regardless of the runner's zone or UTC.
 5. A degraded dependency SHALL produce an honest empty state, never a fabricated
    or silently-degraded result (never.md #7).
 
@@ -308,6 +334,10 @@ claim and its rot points stated honestly.
    edition, minutes.
 4. Property tests present and passing on the two invisible-failure surfaces: the
    agenda-index parser and the horizon/surfacing rules.
+5. **Posting lead time measured (§35e):** across at least 20 real meetings, agenda
+   `Last-Modified` versus meeting date, reporting the **median and minimum**. This
+   number is the README's honest headline ("about N days to act") and the basis
+   for the Spec 5 watch cadence. Not assumed — measured.
 
 ## Explicitly out of scope for Spec 1
 

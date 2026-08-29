@@ -55,10 +55,10 @@ live (the two invisible-failure surfaces: parser and horizon/surfacing).
 ## Data flow
 
 ```
-registry (bodies)
-   │  for each body, fetch its AgendaCenter HTML (fetch.py)
+registry (body names/identifiers)
+   │  fetch the SINGLE combined /AgendaCenter index once (fetch.py)
    ▼
-enumerate.py ── parses served HTML ──▶ [Meeting stubs: body_id, date, type, current Agenda/Minutes URLs]
+enumerate.py ── parses served HTML, attributes each meeting to a body ──▶ [Meeting stubs: body_id, date, type, current Agenda/Minutes URLs]
    │  for each meeting IN HORIZON only (horizon.py gate), fetch PreviousVersions (fetch.py)
    ▼
 previous_versions.py ── parses PV HTML ──▶ [full document set per meeting: ArchivedAgenda*, ArchivedMinutes*, supplemental/attachment entries]
@@ -80,10 +80,21 @@ index parse and zero additional fetches. Enumeration still walks the full index
 
 ## Enumeration mechanism (resolves R2.1, was deferred from requirements)
 
-The AgendaCenter HTML is server-rendered and contains, per meeting, a
+The **single combined `/AgendaCenter` index** is server-rendered and reliably
+contains all meetings for all bodies (129 verified), each with a
 `/AgendaCenter/PreviousVersions/_<MMDDYYYY>-<id>` link plus current
 `ViewFile/Agenda` and `ViewFile/Minutes` links. The `_<MMDDYYYY>` segment gives
 the meeting date deterministically; the `<id>` is the meeting's stable id.
+
+**Enumeration reads the combined index once, not per-body pages.** Verified
+finding (§35, corrected here): per-body category pages (`/AgendaCenter/City-Council-2`
+etc.) exist and return 200, but they are **inconsistent** — Planning-Commission-6
+server-renders its meetings, City-Council-2 returns zero rows (JS-loaded on that
+page). The combined index always renders all 129. So the dependable source is the
+combined index, and each meeting is **attributed to a body** by the body grouping
+in that index. The registry (R1) is therefore a list of body **names/identifiers**
+used to attribute and validate meetings, not a list of per-body fetch URLs. This
+also drops enumeration from ~25 fetches to **1**.
 
 - **Meeting date** comes from the `_MMDDYYYY` URL segment, cross-checked against
   the date printed in the agenda PDF's text layer (R2.4 — source text is
@@ -127,13 +138,21 @@ the meeting date deterministically; the `<id>` is the meeting's stable id.
 - `in_horizon(meeting_date, today_city_local) -> bool`: True iff
   `today - T2 <= meeting_date <= today + T1` (T2=14d back, T1=30d ahead).
   Enforced **before** any per-meeting fetch (R4.3).
-- `is_upcoming(meeting_date, now_city_local) -> bool`: True iff
-  `meeting_date >= today_city_local`. Independent of posting/ingestion (R5.1–5.2):
+- `is_upcoming(meeting_start, now_city_local) -> bool`: True iff the meeting has
+  not yet started. It compares against the **meeting start datetime** in city
+  local time, using the meeting time extracted from the agenda PDF text (verified
+  present: "SPECIAL MEETING - 5:00 P.M.", "CLOSED SESSION – 4:00 P.M."). **Date
+  granularity is a bug for this product** — a 5:00 PM meeting must stop being
+  "upcoming" at 5:00 PM, not at midnight — because the entire job is telling
+  someone *before* a meeting starts. When the time cannot be parsed, it falls back
+  to end-of-day city-local and **logs the fallback** (so a silent day-granularity
+  decision never happens unnoticed). Independent of posting/ingestion (R5.1–5.2):
   an agenda amended after a past meeting is ingested (if in horizon) but never
   upcoming.
 - Both computed in **America/Los_Angeles**, with an explicit **DST-boundary test**
-  (R5.3, R6.4): a meeting at 5:00 PM city-local on a spring-forward and a
-  fall-back date must classify correctly regardless of the runner's zone or UTC.
+  (R5.3, R6.4): a meeting at 5:00 PM city-local must be upcoming at 4:59 PM and
+  not upcoming at 5:01 PM, on **both** a spring-forward and a fall-back date,
+  regardless of the runner's zone or UTC.
 
 ## Run budget arithmetic (against T11 = 10-minute whole-run timeout)
 
@@ -142,22 +161,24 @@ index page ~0.34s, PreviousVersions ~0.70s, agenda PDF 0.29–0.45s. Round up to
 conservative **1.5s per fetch** to absorb backoff, TLS, and variance.
 
 **Constants:** max 1 concurrent (§7). Full index has **129 meetings** (dated
-2023-03-15 .. 2026-08-26). The current horizon (2026-08-12 .. 2026-09-25) admits
-**10 meetings** (measured against the live index today).
+2023-03-15 .. 2026-08-26). The current horizon (2026-08-13 .. 2026-09-26) admits
+**10 meetings**, and — measured on 2026-08-27 — **0 of them are in the future;
+all 10 are past** (see §35e finding below). Enumeration reads the combined index
+in **1 fetch**, not per-body (correction folded in).
 
 **Fetch count for one run:**
 
 | Phase | Fetches | Note |
 | --- | --- | --- |
-| Enumeration | ~1 per body page | The index/body pages are walked to read the 129-entry list. Ventura's bodies share the AgendaCenter; budget ≤ ~25 body/category page fetches to be safe. |
+| Enumeration | **1** | The single combined `/AgendaCenter` index renders all 129 meetings for all bodies. No per-body fetches. |
 | PreviousVersions | 1 per in-horizon meeting = **10** | Horizon-gated (R4.3). Out-of-window meetings cost 0 fetches. |
 | Agenda/Minutes PDFs | ≤ ~2 per in-horizon meeting = **~20** | Current agenda + current minutes; conditional GET (R7.3) skips unchanged files, so steady-state is far lower. |
 | Supplemental/archived | a few, only if present in PV trail | Bounded by T13 (max 50 docs/body/run). |
 
 **Worst-case first run (no conditional-GET skips):**
-`25 (enumeration) + 10 (PV) + 20 (PDFs) + ~10 (archived/supplemental) ≈ 65 fetches`.
-At 1.5s serial: **~98 seconds ≈ 1.6 minutes**. Against T11 = 10 minutes, that is
-**~6x margin**. Comfortable fit.
+`1 (enumeration) + 10 (PV) + 20 (PDFs) + ~10 (archived/supplemental) ≈ 41 fetches`.
+At 1.5s serial: **~62 seconds ≈ 1 minute**. Against T11 = 10 minutes, that is
+**~10x margin**. Comfortable fit, improved by the single-index enumeration.
 
 **Steady-state run (hourly, conditional GET skips unchanged):** most PDFs return
 304 and are not downloaded; fetch count drops to enumeration + PV for the ~10
@@ -170,6 +191,28 @@ before fetching. The design fits with margin **because** the horizon is enforced
 first, not after. If a future body proves much larger, the fix is a per-run
 meeting cap (extend T13 to a per-run total), not raising T11 above the lock TTL
 (T12=15m) — the ordering constraint `T11 < T12 < T14` must hold.
+
+## What Porch Light actually promises (§35e)
+
+Measured on 2026-08-27: the combined index's newest meeting was dated the day
+before, and **0 of the 10 in-horizon meetings were in the future**. AgendaCenter
+lists a meeting only once its agenda is posted, and Ventura posts close to the
+meeting. So "upcoming" is not a 30-day calendar view — it is a **narrow window
+about as wide as the posting lead time**, permanently. T1's 30-day future horizon
+is almost always mostly empty; it is a safe outer bound, not a description of what
+users will see.
+
+This does not break anything, but it changes the promise, and the product must
+say so honestly (voice.md, limitations-as-a-feature): **not "watch the calendar
+for me" but "you will hear about it with about [measured] days to act."** The real
+number is a Spec 1 deliverable, not an assumption:
+
+- **Pass-gate addition:** before Spec 1 closes, measure real posting lead time
+  across **at least 20 meetings** — agenda `Last-Modified` versus meeting date —
+  and report the **median and the minimum**. Do not assume 72 hours; measure it.
+- That median becomes the README's honest headline, and Spec 5 builds the watch
+  cadence on it (a watch that runs less often than the lead time is a missed
+  deadline).
 
 ## Cost headroom for Spec 3 (§27 model comparison)
 
