@@ -10,6 +10,8 @@ dependencies = [
     "bedrock-agentcore>=1.9.1",
     "strands-agents>=1.50.0",
     "structlog>=26.1.0",
+    "tzdata>=2025.1",
+    "beautifulsoup4>=4.13.0",
 ]
 
 [project.optional-dependencies]
