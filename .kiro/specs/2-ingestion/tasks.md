@@ -23,22 +23,23 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
 
 ## Tasks
 
-- [ ] 0. Wind-down sentences before the resources (R8.7) [PERMANENT]
-  - [ ] 0.1 Record teardown commands + §13 entries in the README BEFORE the resources exist
+- [x] 0. Wind-down sentences before the resources (R8.7) [PERMANENT]
+  - [x] 0.1 Record teardown commands + §13 entries in the README BEFORE the resources exist
+    - Done. README Wind-down section: EventBridge schedule teardown FIRST (disable+delete, reason: stopping the crawler is the real obligation), then Aurora cluster teardown (~$43/mo). README Cost section: ledger-covers-model-only / Aurora-is-infra sentence. All written before any resource exists.
     - **EventBridge schedule, named FIRST in §13 (above Aurora):** the exact command to disable and delete the schedule, with the reason stated plainly — this is the thing that touches someone else's server, so for a trustworthy-reader product the wind-down obligation is STOPPING, not cost. A forgotten crawler hitting a public body hourly is a broken promise in a way a forgotten DB bill is not.
     - Aurora: exact command to delete the cluster and associated resources; §13 entry with ~$43/mo (0.5 ACU continuous).
     - README cost section: the ledger-covers-model-only / Aurora-is-infra sentence (design §ledger).
     - _Requirements: 8.7, 6.2_
 
-- [ ] 1. Database schema (local first, backend-agnostic) [PERMANENT]
-  - [ ] 1.1 Write `db/schema.sql`: meetings, documents (status, document_id hash, body_id, meeting_date), items (Spec 3 fills), readlog, spend_ledger, run_lock, body_status
-    - Indexes on document hash, meeting date, body, vector column (§18b#7).
+- [x] 1. Database schema (local first, backend-agnostic) [PERMANENT]
+  - [x] 1.1 Write `db/schema.sql`: bodies, meetings, documents (status, document_id hash, body_id, meeting_date), items (Spec 3 fills), readlog, spend_ledger, run_lock, body_status
+    - Done. 8 tables. Indexes on document status/meeting/hash-PK, meeting date+body, ledger. Vector column declared; vector INDEX deferred to Spec 4 (dim not yet fixed) with a note. readlog.status includes `timed_out` (design correction). body_status is per-body last-read only (no global).
     - _Requirements: 8.4_
-  - [ ] 1.2 `db/data_api.py`: one interface over RDS Data API (prod) and docker Postgres (local)
-    - Pipeline code stays backend-agnostic; local path works with no cloud.
+  - [x] 1.2 `db/data_api.py`: one interface over RDS Data API (prod) and docker Postgres (local)
+    - Done. `get_backend()` selects by config (Aurora ARNs → Data API; else DATABASE_URL → local psycopg; else raises — never a silent default). Parameterized only. boto3/psycopg lazy-imported.
     - _Requirements: 8.5_
-  - [ ] 1.3 Apply schema to local docker-compose Postgres; verify tables + indexes + pgvector
-    - RESULT recorded here.
+  - [x] 1.3 Apply schema to local docker-compose Postgres; verify tables + indexes + pgvector
+    - RESULT: 8 tables created, 6 idx_ indexes present, pgvector present, parameterized round-trip works through the wrapper. GOTCHA noted: literal `%` in SQL (e.g. `LIKE 'x%'`) must be `%%` or parameterized under psycopg — a wrapper caveat for callers.
     - _Requirements: 8.4, 8.5_
 
 - [ ] 2. Run lock — built and tested EARLY (the highest-risk piece) [PERMANENT]
