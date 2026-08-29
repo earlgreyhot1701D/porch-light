@@ -42,13 +42,12 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
     - RESULT: 8 tables created, 6 idx_ indexes present, pgvector present, parameterized round-trip works through the wrapper. GOTCHA noted: literal `%` in SQL (e.g. `LIKE 'x%'`) must be `%%` or parameterized under psycopg — a wrapper caveat for callers.
     - _Requirements: 8.4, 8.5_
 
-- [ ] 2. Run lock — built and tested EARLY (the highest-risk piece) [PERMANENT]
-  - [ ] 2.1 Implement `pipeline/lock.py`: acquire (insert-or-take-if-expired), heartbeat (capped at acquired_at + T11), release, SIGTERM→interrupted
-    - Heartbeat NEVER refreshes past `acquired_at + T11`, so a stuck-but-alive run's lock still expires at T12 (§20 side-door fix).
+- [x] 2. Run lock — built and tested EARLY (the highest-risk piece) [PERMANENT]
+  - [x] 2.1 Implement `pipeline/lock.py`: acquire (insert-or-take-if-expired), heartbeat (capped at acquired_at + T11), release, timed_out/interrupted statuses
+    - Done. DB-row lock via injected backend. Heartbeat thread refuses to refresh past `acquired_at + T11`; `check_deadline()` raises `RunTimedOut`. `thresholds.py` added with T1–T15 (each rationale + measured/estimate) and the T11<T12<T14 invariant asserted at import.
     - _Requirements: 2.1, 2.2, 2.3, 2.5, 2.6_
-  - [ ] 2.2 Lock tests incl. the stuck-run case [TEST]
-    - Fresh lock not reclaimable; expired-heartbeat lock reclaimable; `T11<T12<T14` asserted.
-    - **Stuck-but-alive:** run exceeds T11 → heartbeat stops though process lives → lock reclaimable at T12 → stale-lock alarm fires → run marked `timed_out` (distinct from failed/interrupted).
+  - [x] 2.2 Lock tests incl. the stuck-run case [TEST]
+    - Done. 6 tests: acquire/release, held-lock rejects second, expired reclaimable, fresh not reclaimable, ordering invariant, and the stuck-but-alive case (run past T11 → RunTimedOut + lock reclaimable at T12 though process lives). All pass against local Postgres; skip cleanly when DATABASE_URL unset (57 passed, 6 skipped).
     - _Requirements: 2.2, 2.3, 2.4, 2.6_
 
 - [ ] 3. Per-document status + in-process work list (queue is STUB) [PERMANENT]
