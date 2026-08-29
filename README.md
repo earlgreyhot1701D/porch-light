@@ -23,6 +23,40 @@ Spec 0 proved invocation on: Amazon Nova Lite (`amazon.nova-lite-v1:0`), us-east
 
 Production model selection is deferred to Spec 3 and will be decided by two numbers: verifier rejection rate on the same real packets, and measured cost per packet. Later specs must not assume a model provider that was never proven at invocation time.
 
+## What it watches, and its honest limits
+
+Porch Light watches the City of Ventura's public meeting agendas. It is built as
+a **CivicEngage AgendaCenter adapter**, so the same code could serve other cities
+on that platform — but the honest claim is CivicEngage AgendaCenter cities, not
+"any CivicPlus site" and not "Ventura only." Reach is not the claim; the claim is
+that the person who needs this most currently has nothing.
+
+**How much warning you get: about five days to act, sometimes the same day.**
+Measured across 135 real Ventura meetings, the median gap between an agenda
+posting and its meeting is five days. But roughly one meeting in ten posts the
+same day it happens — these are special and emergency meetings, exactly when a
+resident most needs to know. A tool checked on a weekly rhythm cannot surface a
+same-day meeting before it starts. We say this plainly rather than imply a
+guarantee we cannot keep; closing that gap is future work, not a solved problem.
+
+**Spanish.** Roughly one Ventura meeting in six carries a Spanish agenda the city
+itself publishes. For those meetings, we show the city's official Spanish
+document and the receipt points at it — we do not run our own translation over a
+meeting the city already translated, because a receipt promises the linked
+document says what we say it says, and our wording next to a link to a different
+official document would break that promise. For the rest, the Spanish text is our
+translation of the English source, verified against that source, and it is
+labeled differently from a city-published edition so a reader always knows which
+they are reading.
+
+**Why we honor a robots.txt block we could ignore.** Ventura's agenda documents
+are reachable on the city's own domain, which permits automated reading. The
+city's separate Granicus video/agenda host tells all automated readers to stay
+out, and we obey that even though robots.txt is a convention, not law. A product
+whose entire claim is being a trustworthy reader of public records cannot quietly
+override a public body's stated crawl preference: that is a hole in its own story,
+and it is a findable one. Obeying it is the point, not a constraint we tolerate.
+
 ## Setup
 
 ```bash
@@ -30,9 +64,15 @@ Production model selection is deferred to Spec 3 and will be decided by two numb
 cp .env.example .env
 docker compose up -d
 
-# Install Python dependencies
-uv sync
+# Install Python dependencies, including the test runner
+uv sync --extra dev
 ```
+
+Use `uv sync --extra dev`, not plain `uv sync`. Plain `uv sync` installs only
+runtime dependencies and leaves the clone with no test runner, so `make test`
+would fail on a fresh checkout. The `--extra dev` group brings in pytest and
+hypothesis. (Verified from a clean clone into a temp directory: plain sync →
+pytest absent; `--extra dev` → 57 tests pass.)
 
 Before deploying to AgentCore, copy the deployment target template and fill in your own 12-digit AWS account ID (same pattern as `.env.example`):
 

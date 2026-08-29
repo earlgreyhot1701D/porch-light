@@ -93,9 +93,11 @@ against the live site. [TEST] is a test deliverable that gates the block.
     - **FINDING — Spanish edition is NOT dead code:** Ventura DOES publish its own Spanish agendas (21 Spanish titles in the real index, e.g. "10 DE FEBRERO DE 2026 AGENDA DEL CONCEJO MUNICIPAL"). So `spanish_edition` (R3.4) is exercised by real data; no synthetic fixture was fabricated. Note for README/§8: Ventura publishes city Spanish editions distinct from our translation surface — both exist; the classifier tags the city's, §8 generates ours.
     - _Requirements: pass gate 3, 3.4_
 
-- [ ] 10. VERIFICATION: correct meeting list for a known week [VERIFICATION]
-  - [ ] 10.1 Hand-check City Council and Planning Commission for a known week against the live site
-    - RESULT recorded here (pass gate 1).
+- [x] 10. VERIFICATION: correct meeting list for a known week [VERIFICATION]
+  - [x] 10.1 Hand-check City Council and Planning Commission for a known week against the live site
+    - RESULT: parser's recent CC meetings (3685 Aug-25, 3680 Aug-18) and PC meetings (3687 Aug-26, 3682 Aug-20) all resolve to live `application/pdf` agendas (HTTP 200). Included a meeting with a Spanish edition (§36): Apr-28 has English `3621` and Spanish `3622`, both resolve live, both attributed to City Council by date. Pass gate 1 met.
+    - BUG FOUND + FIXED during hand-check: every stub carried duplicate document URLs (rows link the same file twice, icon + text anchor). Fixed `enumerate.py` to de-dupe URLs within a row; CC 3685 now shows the correct Agenda+Minutes, 0 stubs with duplicates. Meeting count is 152 (site grew from the 129 first captured; distinct ids confirmed, not a dup artifact).
+    - §36 note: the Spanish edition has a DIFFERENT meeting id than its English counterpart (3622 vs 3621), matched by date. The same-meeting linking is Spec 3/6 work per §36b, not built here.
     - _Requirements: pass gate 1_
 
 - [x] 11. VERIFICATION: stale-agenda behavior [TEST]
@@ -105,8 +107,9 @@ against the live site. [TEST] is a test deliverable that gates the block.
 
 - [ ] 12. (moved to 0.1 — posting lead time runs in wave 0, before code)
 
-- [ ] 13. Final checkpoint
-  - All property tests and working-rigor tests pass. Pass gates 1–5 met. README claim scoped to CivicEngage AgendaCenter (not "CivicPlus", not "Ventura-only"); robots.txt-as-convention rationale stated plainly (§34 note); "about N days to act" headline uses the measured median.
+- [x] 13. Final checkpoint
+  - RESULT: full suite 57 passed, 3 deselected. Clean-clone setup verified from a temp-dir clone: plain `uv sync` leaves pytest absent; `uv sync --extra dev` → 57 pass. README updated: setup uses `--extra dev` with the reason; headline pairs median+floor ("about five days to act, sometimes the same day"); §36 Spanish (~1 in 6 city-published, shown in preference, labeled differently); reusability scoped to CivicEngage AgendaCenter (§34/R9.1); robots.txt-as-convention paragraph stated plainly (§34b); §35g same-day gap left visible, not solved.
+  - Pass gates: (1) meeting list hand-checked ✓; (2) stale-agenda tests ✓; (3) role classification on real roles ✓; (4) property tests on parser + horizon ✓; (5) posting lead time measured, median 5d / min 0d ✓.
   - _Requirements: 9.1, 9.3, pass gate 1–5_
 
 ## Notes

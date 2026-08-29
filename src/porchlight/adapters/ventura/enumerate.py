@@ -75,7 +75,11 @@ def enumerate_meetings(index_html: str) -> list[MeetingStub]:
     for row in soup.select(".catAgendaRow"):
         try:
             # Collect all ViewFile links and the PreviousVersions link in this row.
-            viewfiles = []
+            # A row often links the same file twice (icon anchor + text anchor);
+            # de-duplicate while preserving first-seen order so the document set
+            # is not inflated downstream.
+            viewfiles: list[str] = []
+            seen_urls: set[str] = set()
             meeting_id = None
             meeting_date = None
             prev_url = None
@@ -84,7 +88,9 @@ def enumerate_meetings(index_html: str) -> list[MeetingStub]:
                 href = a["href"]
                 vm = _VIEWFILE.search(href)
                 if vm:
-                    viewfiles.append(href)
+                    if href not in seen_urls:
+                        seen_urls.add(href)
+                        viewfiles.append(href)
                     mid = vm.group(5)
                     mm, dd, yyyy = int(vm.group(2)), int(vm.group(3)), int(vm.group(4))
                     meeting_id = meeting_id or mid
