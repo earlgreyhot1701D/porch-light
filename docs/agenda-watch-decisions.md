@@ -402,6 +402,7 @@ Every failure state ends at the same escape hatch: **a link to the city's own pa
 | Draft could not be generated | The item and its receipt remain. | Yes, bounded. |
 | Partial stream death (tenth state) | Agent response stream died partway through, leaving a partial answer that looks complete. Noted-not-built, Spec 5. §31. | No. (Detection + honest truncation marker needed.) |
 | Extractor egress question | §30d: PUBLIC networkMode allows outbound egress. Extractor must have no network egress (§19). VPC networkMode with no egress route, or the claim must be downgraded. Noted-not-built, Spec 5 decision. | N/A. |
+| Partially-read document (eleventh state) | The extractor cap fired mid-agenda. Items extracted before the cap are shown (real, verifiable); the document is marked "partially read" with the reason and the source link so the reader opens the PDF for the rest. Never partial-shown-as-complete. Spec 3, R1.7. | No. (Open the city PDF.) |
 
 **The only two user-facing retries are re-run a search and re-draft a comment.** Both cheap, both rate limited, both things the user actually controls. Nothing else gets a button.
 
