@@ -21,9 +21,20 @@ cross-check (a gap between declared and observed is itself worth knowing).
 Honest failure is a requirement, not a nicety (§40, never.md #1): when the wording
 varies from the known pattern, the parser returns UNPARSED — it never guesses a
 posting time. A guessed posting time feeding a schedule-narrowing decision is
-exactly the kind of fabricated fact this product refuses. The parse runs over
-STORED text only, never re-fetching the corpus (§40b: a 152-document re-fetch
-would trip Ventura's rate limit and look like an attack).
+exactly the kind of fabricated fact this product refuses.
+
+The same refusal applies to a city TYPO (§40c): when the stated weekday and the
+stated date disagree ("Wednesday, August 13, 2026" — but Aug 13 is a Thursday),
+the record is AMBIGUOUS. We do NOT pick a side to feed the posting-time
+distribution — a distribution built on a guessed resolution of a city typo is a
+fabricated input to a real decision. Ambiguous records are parsed, flagged, and
+EXCLUDED from the distribution (their count reported alongside it). The date is
+still exposed for lead-time / ordering, since the Brown Act requires the date, but
+marked so a reader knows. Trusting a single signal is what this design keeps
+refusing to do.
+
+The parse runs over STORED text only, never re-fetching the corpus (§40b: a
+152-document re-fetch would trip Ventura's rate limit and look like an attack).
 """
 
 from __future__ import annotations
@@ -63,21 +74,40 @@ class PostingStatement:
 
     `posted_at` is the city-local, tz-aware posting instant when parsed, else None.
     `parsed` False means the statement was absent or worded differently — the
-    caller records it as unparsed and moves on, never a guessed time. `stated_weekday`
-    is what the document said; `weekday_matches` is whether it agrees with the
-    computed date (a False here is a data-quality flag worth logging, not a parse
-    failure).
+    caller records it as unparsed and moves on, never a guessed time.
+
+    `ambiguous` True means the statement parsed but its stated weekday and stated
+    date DISAGREE (e.g. "Wednesday, August 13, 2026" — but Aug 13 is a Thursday).
+    We do NOT pick a side: resolving a city typo to feed the posting-time
+    distribution would be a fabricated input to a real decision (the schedule
+    narrowing, §35g), the same class of error as guessing a posting time. So an
+    ambiguous record is EXCLUDED from the distribution (`usable_for_distribution`
+    is False) and its count is reported. The date is still exposed for lead-time /
+    ordering — the Brown Act requires the DATE — but flagged so a reader knows.
+
+    `weekday_matches` is None when there was nothing to compare (unparsed), else
+    whether the stated weekday agrees with the computed date.
     """
 
     parsed: bool
     posted_at: datetime | None = None
     stated_weekday: str = ""
     weekday_matches: bool | None = None
+    ambiguous: bool = False
     raw: str = ""
 
     @classmethod
     def unparsed(cls) -> "PostingStatement":
         return cls(parsed=False)
+
+    @property
+    def usable_for_distribution(self) -> bool:
+        """True only for a clean parse whose weekday and date agree.
+
+        The posting-time distribution (task 11.2) includes ONLY these. Ambiguous
+        and unparsed records are counted and reported, never guessed into the data.
+        """
+        return self.parsed and not self.ambiguous
 
 
 def parse_posting_statement(document_text: str) -> PostingStatement:
@@ -120,11 +150,18 @@ def parse_posting_statement(document_text: str) -> PostingStatement:
         _WD = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
         weekday_matches = _WD[posted_at.weekday()] == stated_weekday.lower()
 
+        # Stated weekday vs stated date disagree -> AMBIGUOUS. We do not resolve the
+        # city's typo (six-days reasoning suggests the DATE is the likelier error,
+        # but "likelier" is still a guess). Parse it, flag it, exclude it from the
+        # distribution. The date remains available for lead-time/ordering, flagged.
+        ambiguous = not weekday_matches
+
         return PostingStatement(
             parsed=True,
             posted_at=posted_at,
             stated_weekday=stated_weekday,
             weekday_matches=weekday_matches,
+            ambiguous=ambiguous,
             raw=m.group(0),
         )
     except Exception:

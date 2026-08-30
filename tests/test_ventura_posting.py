@@ -36,33 +36,48 @@ _AUG25 = (
 )
 
 
-def test_parses_aug18_sample_and_flags_the_citys_weekday_mismatch():
-    # The Aug 18 agenda's posting statement, as verified, says "Wednesday,
-    # August 13, 2026" — but Aug 13, 2026 is a THURSDAY. The parser trusts the
-    # date (month/day/year), never the stated weekday, and flags the mismatch as a
-    # data-quality signal rather than guessing or silently "correcting" it (§40).
-    # This is the honest-failure behavior the finding requires, caught on real data.
+def test_aug18_sample_is_ambiguous_and_excluded_from_distribution():
+    # The Aug 18 agenda's posting statement says "Wednesday, August 13, 2026" — but
+    # Aug 13, 2026 is a THURSDAY. Weekday and date disagree. We do NOT resolve the
+    # typo (six-days reasoning suggests the date is the likelier error, but that is
+    # still a guess). The record is AMBIGUOUS: parsed, flagged, and excluded from
+    # the posting-time distribution (§40c). The date stays available, flagged.
     r = parse_posting_statement(_AUG18)
     assert r.parsed
-    assert r.posted_at == datetime(2026, 8, 13, 17, 0, tzinfo=CITY_TZ)  # computed date, trusted
-    assert r.stated_weekday.lower() == "wednesday"
-    assert r.weekday_matches is False  # city's own statement disagrees with the calendar
+    assert r.ambiguous is True
+    assert r.weekday_matches is False
+    assert r.usable_for_distribution is False
+    # Date still exposed for lead-time/ordering (Brown Act requires the date).
+    assert r.posted_at == datetime(2026, 8, 13, 17, 0, tzinfo=CITY_TZ)
 
 
-def test_parses_aug25_sample():
-    # Aug 19, 2026 genuinely is a Wednesday, so this one's weekday agrees.
+def test_parses_aug25_sample_clean_and_usable():
+    # Aug 19, 2026 genuinely is a Wednesday, so this one's weekday agrees: usable.
     r = parse_posting_statement(_AUG25)
     assert r.parsed
-    assert r.posted_at == datetime(2026, 8, 19, 17, 0, tzinfo=CITY_TZ)
+    assert r.ambiguous is False
     assert r.weekday_matches is True
+    assert r.usable_for_distribution is True
+    assert r.posted_at == datetime(2026, 8, 19, 17, 0, tzinfo=CITY_TZ)
 
 
 def test_both_samples_posted_at_5pm():
     # The §40 observation the schedule narrowing rests on: both posted at 5:00 p.m.
-    # (The stated weekday on the Aug 18 sample is the city's, and is flagged above.)
+    # (The Aug 18 weekday/date conflict is a separate, flagged issue.)
     for text in (_AUG18, _AUG25):
         r = parse_posting_statement(text)
         assert (r.posted_at.hour, r.posted_at.minute) == (17, 0)
+
+
+def test_clean_record_is_usable_ambiguous_is_not():
+    clean = parse_posting_statement("posted on Wednesday, August 19, 2026, at 5:00 p.m. ...")
+    ambiguous = parse_posting_statement("posted on Wednesday, August 13, 2026, at 5:00 p.m. ...")
+    unparsed = parse_posting_statement("no posting statement here")
+    assert clean.usable_for_distribution is True
+    assert ambiguous.usable_for_distribution is False  # parsed but conflicted
+    assert ambiguous.parsed is True
+    assert unparsed.usable_for_distribution is False  # not parsed at all
+    assert unparsed.parsed is False
 
 
 def test_noon_and_midnight_boundaries():
@@ -72,11 +87,14 @@ def test_noon_and_midnight_boundaries():
     assert midnight.posted_at == datetime(2026, 6, 1, 0, 0, tzinfo=CITY_TZ)
 
 
-def test_weekday_mismatch_is_flagged_not_failed():
-    # Aug 13, 2026 is a Thursday; the doc says Tuesday. Parse succeeds, flag is False.
+def test_weekday_mismatch_is_ambiguous_not_failed():
+    # Aug 13, 2026 is a Thursday; the doc says Tuesday. Parse succeeds (date usable
+    # for ordering) but the record is ambiguous and excluded from the distribution.
     r = parse_posting_statement("posted on Tuesday, August 13, 2026, at 5:00 p.m. ...")
     assert r.parsed
     assert r.weekday_matches is False
+    assert r.ambiguous is True
+    assert r.usable_for_distribution is False
 
 
 # --- Honest failure: varied wording never guesses ---
