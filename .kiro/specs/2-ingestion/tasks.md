@@ -138,10 +138,15 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
     - RESULT: 4 tests pass against the live cluster; skip cleanly when AURORA_CLUSTER_ARN unset.
     - _Requirements: 8.1, 8.2, 8.3, 8.6_
 
-- [ ] 13. Final checkpoint + enable the schedule
-  - All property + working-rigor tests pass. Pass gates 1–6 met. Thresholds all final. Aurora teardown line recorded before creation. Ledger docstring + README cost sentence present. Log-group regimes correct. Aurora smoke test (12.2) green.
-  - **ONLY after all of the above: enable the EventBridge schedule** (created disabled in 10.1). This is the single action that starts hourly traffic against the city; it is the last thing done, deliberately.
+- [x] 13. Final checkpoint + enable the schedule
+  - Checkpoint PASS: suite 65 passed/15 skipped/7 deselected; account ID clean in tree + all history; no secret-file patterns in history; teardown lines present for all 5 live resources; live Aurora smoke green (with cold-resume tolerance); thresholds all final; ledger docstring + README cost sentence present; log-group regimes correct.
+  - Schedule ENABLED (verified State=ENABLED, rate(1 hour), correct target + scoped role, Flex=OFF). §39: 24/7 hourly for now, narrowed at Spec 3 from our own run-log posting times.
+  - Pass gates 1 (second run does nothing) and 2 (crash-restart no double-write) PROVEN LIVE via manual invokes (read=15 then read=0/skipped=15). **OPEN: observe the same behavior on a genuinely SCHEDULED fire — needs ~1–2h real clock time; the schedule will invoke the identical Lambda the identical way, so behavior is proven, the trigger firing itself is what remains to watch.**
   - _Requirements: pass gate 1–6, 10.1_
+
+## Post-close watch item
+
+- **Confirm the first SCHEDULED run** (not a manual invoke): readlog gains a row with status=ok, and the following hour's scheduled run does nothing (read=0, skipped=N) because nothing changed. Baseline readlog count at enablement: 7. This needs elapsed time; check `readlog` for count > 7 and inspect the newest rows.
 
 ## Notes
 
