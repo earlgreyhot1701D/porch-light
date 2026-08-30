@@ -104,9 +104,11 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
     - Deploy findings (all fixed, see wip + fix commits): Aurora cold-resume needed a ~90s bounded retry (min-cap 0 fully-paused resume); Data API needs explicit `::timestamptz` casts (psycopg doesn't); the pipeline had to seed bodies+meetings before the FK'd children (the fresh-schema test now guards it, testing.md #4); relative worklist URLs made absolute.
     - _Requirements: §38 compute-target; 26 topology; pass gate 1, 2, 3_
 
-- [ ] 10. Schedule wiring (EventBridge, direct target) [INFRA-PROPOSE]
-  - [ ] 10.1 Create the EventBridge hourly schedule **DISABLED**, target = the hunter Lambda DIRECTLY (§38, no scheduler-Lambda hop)
-    - Hourly rate; missed fires do not catch up (one run on next trigger). Created `--state DISABLED`. EventBridge Scheduler needs a role to invoke the Lambda; scope it to `lambda:InvokeFunction` on that function only.
+- [x] 10. Schedule wiring (EventBridge, direct target) [INFRA-PROPOSE]
+  - [x] 10.1 Create the EventBridge hourly schedule **DISABLED**, target = the hunter Lambda DIRECTLY (§38, no scheduler-Lambda hop)
+    - Done. `porchlight-dev-ingestion`, `rate(1 hour)`, **State=DISABLED** (verified), target = hunter Lambda, `FlexibleTimeWindow=OFF` (no catch-up). Invoke role `porchlight-dev-scheduler-invoke-role` scoped to `lambda:InvokeFunction` on that one function only.
+    - FINDING (tagging, §31e-class): EventBridge **schedules do not carry resource tags individually** — tags attach to the schedule GROUP. The `default` group is tagged with the four cost tags instead. Recorded, not silently skipped. The schedule fires nothing until enabled at task 13.
+    - _Requirements: 1.1, 1.2, 1.4, 7 tagging_
     - **Ships disabled and why:** an enabled schedule would fire hourly against the City of Ventura's servers before Aurora (wave 7) and the pass gates (wave 8) exist. It is created disabled and only enabled in task 13 after every gate is met. Record this in tasks.md/README.
     - _Requirements: 1.1, 1.2, 1.4_
 
