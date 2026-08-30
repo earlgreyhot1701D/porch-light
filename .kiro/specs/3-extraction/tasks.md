@@ -100,7 +100,9 @@ Tags: [HUMAN] Shara owns. [PERMANENT] ships. [TEST]. [INFRA-PROPOSE] billable/ex
 - [ ] 11. Observability / cost / window (§39 carry-forwards) [PERMANENT]
   - [ ] 11.1 Model calls record cost to the ledger by run_id + model id (T15 envelope)
     - _Requirements: 9.1_
-  - [ ] 11.2 After ~a week of real runs: Cost Explorer by four tags → replace README Aurora estimate; posting-time distribution from our run log → propose narrowed schedule window w/ margin (§39, §35g)
+  - [ ] 11.2 After ~a week of real runs: Cost Explorer by four tags → replace README Aurora estimate; posting-time distribution → propose narrowed schedule window w/ margin (§40, supersedes §39 for this signal; §35g)
+    - **AMENDED (§40):** build the posting-time distribution by parsing the Brown Act posting statement (date AND time) from every ingested agenda's STORED text (`adapters/ventura/posting.py`) — the city's own legally-mandated declaration, retroactive across all 152 stored agendas. Keep run-log first-seen timestamps as a CROSS-CHECK: a gap between when the city says it posted and when we first saw it is itself worth knowing (detection latency). If Wednesday-5pm holds across the corpus, §35g same-day risk narrows and a weekday window is defensible on measured data.
+    - **§40b:** the parse runs over STORED text only — never re-fetch the corpus (a 152-document re-fetch would trip Ventura's rate limit and look like an attack). The posting parser + its property tests are already built (Spec 1 adapter surface); this task is the distribution + the window proposal, PROPOSE-and-wait before changing the live schedule.
     - _Requirements: 9.2, 9.3_
 
 - [ ] 12. Demo video script (drafted THIS block) [HUMAN-ish, drafted with Shara]

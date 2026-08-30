@@ -72,6 +72,16 @@ and the design gave the right answer with no user-visible effect. Conditional GE
 is an optimization we use when it helps; content hash is the correctness mechanism
 that holds when it does not.
 
+**The city rate-limits, and closely (§40b).** Three sequential agenda fetches
+returned HTTP 429. So the good-citizen fetch posture (hourly not continuous,
+exponential backoff, one concurrent fetch at a time, conditional GET, a
+descriptive user-agent with a contact URL) is not merely polite here — it is
+required for the reader to function at all. It also sets a hard rule for our own
+analysis: any pass over the corpus, such as building the posting-time distribution
+from every agenda's Brown Act posting statement, reads the STORED document text
+and never re-fetches. A 152-document re-fetch would trip the limit and, from the
+city's side, look like an attack.
+
 **Where the model is, and deliberately is not.** The model has exactly three jobs:
 rewrite staff language into plain English and Spanish, decide whether an item
 matches a person's watchlist, and assemble the structure of a comment draft.
