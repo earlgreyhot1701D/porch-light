@@ -107,30 +107,70 @@ def check_containment(rewrite: Rewrite, source: SourceRecord) -> CheckResult:
     return CheckResult("containment", True)
 
 
-def check_reading_level(rewrite: Rewrite, source: SourceRecord, floor: float) -> CheckResult:
-    """Check 5: the rewrite reads at or above the per-language floor AND simpler than source.
+# Check-5 "already-plain source" tuning. PROVISIONAL, derived from the task-9
+# Nova-Lite ES data. The "strictly simpler" rule is right for DENSE source and
+# wrong for source that is already plain (a faithful rewrite of already-plain text
+# cannot be much simpler, yet it is fine). So the rule is conditional on how plain
+# the source already is.
+#
+# Derivation (observed Nova-Lite ES, post-fix): source Fernandez Huerta scores split
+# cleanly into one dense source (golden-005, 61.7, whose rewrite genuinely simplified
+# to 84.3) and three already-plain sources (golden-001 74.9, 006 76.5, 003 77.7,
+# whose faithful rewrites landed at 73.8 / 75.8 / 70.6). So:
+#   - ALREADY_PLAIN_SOURCE = 70.0: above the dense source (61.7), below the lowest
+#     already-plain source (74.9); separates the two regimes.
+#   - PLAIN_SOURCE_TOLERANCE = 8.0: the worst acceptable good-rewrite gap on plain
+#     source was golden-003 at -7.1 (70.6 vs 77.7); 8.0 = 7.1 + a small margin. On
+#     already-plain source a rewrite passes if it clears the floor and is no more
+#     than 8.0 points HARDER than the source.
+# Both provisional (small n, one meeting, one model); revisit at task 0b.
+ALREADY_PLAIN_SOURCE = 70.0
+PLAIN_SOURCE_TOLERANCE = 8.0
 
-    Two conditions, both from R3b: (a) the rewrite meets the derived per-language
-    floor, and (b) it is simpler than the source (if it did not get simpler, it did
-    not do its job). `floor` is derived from the golden set at calibration, never
-    guessed here.
+
+def check_reading_level(rewrite: Rewrite, source: SourceRecord, floor: float) -> CheckResult:
+    """Check 5: readable per-language, and simplified WHEN the source needed it (R3b).
+
+    Always requires the rewrite to clear the per-language `floor` (derived at
+    calibration). The "did it simplify" condition is CONDITIONAL on source density:
+
+      - DENSE source (source score < ALREADY_PLAIN_SOURCE): the rewrite must be
+        strictly simpler than the source — if dense text did not get simpler, the
+        rewrite did not do its job.
+      - ALREADY-PLAIN source (source score >= ALREADY_PLAIN_SOURCE): a faithful
+        rewrite of already-plain text cannot be much simpler, so it need only clear
+        the floor and be no more than PLAIN_SOURCE_TOLERANCE points HARDER than the
+        source. This is what keeps a good Spanish rewrite of a short consent item
+        from being rejected (Spanish shipping, not "measuring oddly").
     """
     rlang = RLang.ES if rewrite.language is Language.ES else RLang.EN
     out_score = score(rewrite.summary, rlang).score
     src_score = score(source.text, rlang).score
+
     if out_score < floor:
         return CheckResult(
             "reading_level",
             False,
             f"reading score {out_score:.1f} below floor {floor:.1f} ({rlang.value})",
         )
-    if out_score <= src_score:
-        # "If it did not get simpler, it did not do its job." Equal-to-source (a
-        # verbatim copy) is not simpler, so it fails too — must be strictly easier.
+
+    if src_score < ALREADY_PLAIN_SOURCE:
+        # Dense source: must be strictly simpler than the source.
+        if out_score <= src_score:
+            return CheckResult(
+                "reading_level",
+                False,
+                f"dense source ({src_score:.1f}); rewrite ({out_score:.1f}) not simpler",
+            )
+        return CheckResult("reading_level", True)
+
+    # Already-plain source: clear the floor and do not get MORE than tolerance harder.
+    if out_score < src_score - PLAIN_SOURCE_TOLERANCE:
         return CheckResult(
             "reading_level",
             False,
-            f"rewrite ({out_score:.1f}) not simpler than source ({src_score:.1f})",
+            f"already-plain source ({src_score:.1f}); rewrite ({out_score:.1f}) "
+            f"harder than source by more than {PLAIN_SOURCE_TOLERANCE:.1f}",
         )
     return CheckResult("reading_level", True)
 

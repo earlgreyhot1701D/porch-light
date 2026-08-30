@@ -136,6 +136,21 @@ attached (code decides, not a loop); fail twice → mark item unrewritten, show
 original staff text with a note, count the rejection. **The model never grades
 itself.** Rejection counts feed §27 model selection.
 
+**Per-language fallback (pipeline decision, never-fail-open).** The two languages
+fall back independently, because one can verify while the other does not:
+
+- **English fails twice →** show the original English staff text for that item with
+  a plain note that a verified plain-English summary was not produced. Never the
+  unverified rewrite.
+- **Spanish fails twice →** emit the **verified English rewrite** for that item and
+  state plainly that a verified Spanish version was not produced for it. Porch Light
+  **never emits an unverified rewrite** (EN or ES) and **never silently drops the
+  item** — the item is always shown, with an honest statement of what could be
+  verified. This is the never-fail-open rule (never.md #7): a degraded dependency
+  produces an honest, labeled partial result, not a fabricated or silently-dropped
+  one. The model is Nova Lite for both the attempt and the retry (no silent
+  provider fallback, never.md #7).
+
 Adversarial test cases (R3.5): added entity, dropped date, altered dollar amount,
 unsimplified copy, ES rewrite with a changed number, ES rewrite with a translated
 street name. Each must be REJECTED. Plus real golden-set rewrites that must PASS.

@@ -164,18 +164,21 @@ stating these plainly is the product working, not an apology.
 - **v2.** Re-derive from the 20-item 0b corpus and from multiple models' correct
   output; the EN floor (33.8) should get the same treatment.
 
-### Check 5 requires "strictly simpler than source," which mis-fires on already-simple source
+### Check 5's "simpler than source" rule is conditional on source density (FIXED)
 
-- **What it is.** Check 5 passes only if the rewrite is above the floor AND
-  strictly simpler (higher-scoring) than the source. On short consent items whose
-  source text already scores high on Fernández Huerta (74.9-77.7 observed), a
-  faithful rewrite lands at a similar score and fails the "strictly simpler"
-  condition even though it is above the floor and perfectly readable.
-- **What it affects.** Some Spanish rewrites of already-simple items are rejected
-  and shown as original staff text, even though the rewrite was fine.
-- **Why we accepted it.** Fail-closed: the reader sees the real source text, never
-  a fabricated summary. On genuinely dense items (the ones that matter most) check
-  5 works as intended. Observed only on structurally-simple consent items.
-- **v2.** On already-simple source, pass a rewrite that is not MORE complex rather
-  than requiring it to be strictly simpler; separate "did it simplify" from "is it
-  readable" so an already-simple item is judged on readability alone.
+- **What it was.** Check 5 originally required the rewrite to be strictly simpler
+  than the source. On short consent items whose source already scores high on
+  Fernández Huerta (74.9-77.7), a faithful rewrite lands at a similar score and was
+  rejected even though it was readable — rejecting ~75% of Spanish output, i.e.
+  Spanish not shipping.
+- **What changed (Spec 3 task 1).** The rule is now conditional: DENSE source
+  (score < 70.0) still must get strictly simpler; ALREADY-PLAIN source (>= 70.0)
+  need only clear the floor and be no more than 8.0 points harder than the source.
+  Both numbers (`ALREADY_PLAIN_SOURCE=70.0`, `PLAIN_SOURCE_TOLERANCE=8.0`) are
+  PROVISIONAL, derived from the observed task-9 ES data (one dense source at 61.7
+  whose rewrite genuinely simplified; three plain sources 74.9-77.7 with faithful
+  rewrites, worst acceptable gap -7.1). Result: Nova-Lite ES rejection dropped from
+  3/4 to 1/4.
+- **Residual.** The thresholds rest on small n (one meeting, one model). Revisit at
+  task 0b; the EN floor (33.8) should get the same conditional treatment if EN ever
+  shows the same already-plain pattern.

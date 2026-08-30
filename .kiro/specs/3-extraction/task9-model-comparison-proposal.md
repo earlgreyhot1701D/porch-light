@@ -174,3 +174,20 @@ artifact on already-simple source, not a bad rewrite. Model output is
 nondeterministic so these scores wobble run to run. Noted as a v2 item: on
 already-simple source, check 5 should pass a rewrite that is not MORE complex
 rather than requiring strictly simpler. Not changed now (measurement only).
+
+### Post-check-5-fix Nova-Lite measurement (Spec 3 task 1)
+
+After making check 5 conditional on source density (dense < 70.0 must simplify;
+already-plain >= 70.0 needs floor + within 8.0 of source), Nova Lite over the four
+good items, twice, cost $0.00082:
+
+| run | overall | EN | ES | ES rejections by check |
+| --- | --- | --- | --- | --- |
+| 1 | 1/8 = 12% | 0/4 | 1/4 | entity_preservation 1, no_new 1, both_languages 1 |
+| 2 | 1/8 = 12% | 0/4 | 1/4 | entity_preservation 1, no_new 1, both_languages 1 |
+
+ES rejection dropped 3/4 -> 1/4 (overall 38% -> 12%). The remaining single ES
+rejection is an entity/name issue on one item (a name Nova translated that is not
+in the observed role/body list), not reading level — and model output is
+nondeterministic, so it wobbles run to run. Not chased: adding a term not observed
+would be inventing vocabulary. This is the write-up number.
