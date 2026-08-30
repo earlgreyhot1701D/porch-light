@@ -1,0 +1,33 @@
+# Normalize line endings so the repo has one opinion and no tool imposes its own.
+# Text files are stored with LF in the repo; checkout is normalized. This stops
+# the CRLF/LF churn that otherwise rewrites untouched files on Windows.
+* text=auto eol=lf
+
+# Explicit text types (belt and suspenders for the common ones here).
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.toml  text eol=lf
+*.sql   text eol=lf
+*.txt   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.lock  text eol=lf
+*.example text eol=lf
+Makefile text eol=lf
+.gitignore text eol=lf
+.env.example text eol=lf
+
+# Binary — never normalize.
+*.pdf   binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.gz    binary
