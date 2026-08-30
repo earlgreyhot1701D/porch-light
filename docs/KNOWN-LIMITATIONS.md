@@ -86,18 +86,34 @@ stating these plainly is the product working, not an apology.
   and alert when a new unmapped glyph appears above the repair-log baseline rather
   than silently passing it through.
 
-### Verifier check 5 (reading level) is coupled per-item, and one adversarial trips it incidentally
+### golden-002/es is not a clean single-variable adversarial
 
-- **What it is.** The reading-level floors (EN 33.8 Flesch, ES 77.3 Fernández
-  Huerta) are DERIVED from the six-item 0a set. The adversarial golden-002/es
-  scores 68.5 (all six ES: `[94.3, 68.5, 85.9, 86.2, 88.8, 82.3]`), so it is
-  rejected by check 5 as well as by checks 2/6 (the intended street-name catch) —
-  the check-5 rejection is incidental to how that broken rewrite happens to be
-  phrased, not check 5 doing the street name's job.
-- **What it affects.** Nothing functionally today (the adversarial must be rejected
-  regardless). It means the ES floor rests on five correct samples.
-- **Why we accepted it.** The floor is sound at this scale (all ten correct rewrites
-  pass, adversarial clears it by 8.8 points); the incidental multi-check rejection
-  of an adversarial is harmless.
-- **v2.** Re-derive both floors from the larger 0b corpus; the ES rewrite-vs-source
-  gap (~15.6) is much tighter than EN (~33.7) and a 20-sample floor may move.
+- **What it is.** golden-002/es is rejected by checks 2, 5, AND 6. Only checks 2
+  and 6 are the intended catch (the translated street name "Victoria Avenue" ->
+  "Avenida Victoria"); the check-5 hit is incidental to that rewrite's density (it
+  scores 68.5 vs the 77.3 ES floor — all six ES: `[94.3, 68.5, 85.9, 86.2, 88.8,
+  82.3]`). So it does not isolate a single variable.
+- **What it affects.** Only the cleanliness of that one adversarial as a test
+  fixture; functionally nothing (it must be rejected regardless).
+- **Why we accepted it.** The intended checks bite, and the extra check-5 rejection
+  is harmless. The ES floor rests on five correct samples.
+- **v2.** Author the adversarial to differ from a passing rewrite in EXACTLY the
+  street name and nothing else, so it isolates checks 2/6 alone; re-derive both
+  floors from the larger 0b corpus.
+
+### The verifier was calibrated against one author's voice
+
+- **What it is.** The verifier (especially check 5, reading level) was calibrated
+  against AI-drafted, human-approved rewrites in one author's voice. A model whose
+  phrasing differs stylistically from that voice may be rejected for STYLE rather
+  than for accuracy.
+- **What it affects.** Model selection (task 9): a model could score a higher
+  rejection rate because it writes differently, not less accurately.
+- **Why we accepted it.** Residual, accepted for v1. The entity checks (2/3/4/6)
+  are style-independent — they catch accuracy, not voice — so a style-only
+  rejection shows up only in check 5, and the twice-per-model run plus the
+  fall-through decision rule (disagreement at n=10 => pick Nova Lite) keep a style
+  artifact from silently deciding the comparison.
+- **v2.** Calibrate against rewrites from multiple authors and against each
+  candidate model's own correct output, separating a style floor from an accuracy
+  floor.
