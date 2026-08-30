@@ -112,9 +112,12 @@ CREATE TABLE IF NOT EXISTS spend_ledger (
     run_id      TEXT NOT NULL,
     component   TEXT NOT NULL,                -- 'ingestion' | 'search' (sub-budgets of T15)
     cost_usd    NUMERIC(10,4) NOT NULL,
+    model_id    TEXT,                          -- Bedrock model id for model spend; NULL for ingestion/API rows (§27, Spec 3 R9.1)
     ts          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_ledger_component_ts ON spend_ledger (component, ts);
+-- Model spend is attributable per model for the §27 cost-per-agenda comparison.
+CREATE INDEX IF NOT EXISTS idx_ledger_model_ts ON spend_ledger (model_id, ts);
 
 -- ---------------------------------------------------------------------------
 -- run_lock: the run mutex (§20). A DB row, not an in-memory flag, so it survives

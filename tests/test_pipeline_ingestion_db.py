@@ -135,6 +135,28 @@ def test_ledger_subbudgets_are_separate(backend):
     ledger.check_before_run(backend, "ingestion")
 
 
+def test_model_spend_records_run_id_and_model_id(backend):
+    """Spec 3 R9.1/§27: model spend is attributable by run_id AND model id."""
+    ledger.record_model_spend(backend, "run_x", 0.0012, "amazon.nova-lite-v1:0", "ingestion")
+    ledger.record_model_spend(backend, "run_x", 0.0300, "anthropic.claude-x", "ingestion")
+    # Per-model cost is queryable for the cost-per-agenda comparison.
+    r = backend.query(
+        "SELECT model_id, SUM(cost_usd) AS total FROM spend_ledger "
+        "WHERE model_id IS NOT NULL GROUP BY model_id ORDER BY model_id"
+    )
+    totals = {row["model_id"]: float(row["total"]) for row in r.rows}
+    assert totals["amazon.nova-lite-v1:0"] == 0.0012
+    assert totals["anthropic.claude-x"] == 0.0300
+    # Model spend still counts toward the component sub-budget (T15 unchanged).
+    assert ledger.month_spend(backend, "ingestion") == 0.0312
+
+
+def test_model_spend_requires_a_model_id(backend):
+    """An empty model id defeats §27 attribution, so it fails loudly."""
+    with pytest.raises(ValueError):
+        ledger.record_model_spend(backend, "run_x", 0.01, "", "ingestion")
+
+
 # --- Fresh-schema full-pipeline test (testing.md #4: seed inputs, not outputs) ---
 
 @pytest.fixture()

@@ -60,8 +60,43 @@ def check_before_run(backend, component: str = "ingestion") -> None:
 
 
 def record(backend, run_id: str, cost_usd: float, component: str = "ingestion") -> None:
-    """Append a spend row, attributable by run_id (R6.4)."""
+    """Append a spend row, attributable by run_id (R6.4).
+
+    For rows with no model (ingestion/API spend). Model spend uses
+    `record_model_spend` so the model id is attributable for the §27 comparison.
+    """
     backend.execute(
         "INSERT INTO spend_ledger (run_id, component, cost_usd) VALUES (%s, %s, %s)",
         [run_id, component, cost_usd],
+    )
+
+
+def record_model_spend(
+    backend,
+    run_id: str,
+    cost_usd: float,
+    model_id: str,
+    component: str = "ingestion",
+) -> None:
+    """Append a MODEL spend row, attributable by run_id AND model id (Spec 3 R9.1, §27).
+
+    Model spend counts toward the same sub-budget as its component (extraction and
+    rewrite are ingestion-side), so the T15 ceiling and the sub-budget check are
+    unchanged. The model id is recorded on the row and emitted in the log event so
+    a measurement run is attributable per model (the §27 cost-per-agenda number).
+    Requires a model_id — an empty one is a bug (a model call with no attributable
+    model defeats the comparison), so it fails loudly rather than silently.
+    """
+    if not model_id:
+        raise ValueError("record_model_spend requires a model_id (§27 attribution)")
+    backend.execute(
+        "INSERT INTO spend_ledger (run_id, component, cost_usd, model_id) VALUES (%s, %s, %s, %s)",
+        [run_id, component, cost_usd, model_id],
+    )
+    log.info(
+        "model_spend_recorded",
+        run_id=run_id,
+        component=component,
+        cost_usd=cost_usd,
+        model_id=model_id,
     )
