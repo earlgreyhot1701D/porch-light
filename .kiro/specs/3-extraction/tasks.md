@@ -32,10 +32,10 @@ Tags: [HUMAN] Shara owns. [PERMANENT] ships. [TEST]. [INFRA-PROPOSE] billable/ex
     - Gates: task 8 (calibration). Does NOT gate tasks 1–7.
     - _Requirements: §11 golden set; R3.5_
 
-- [ ] 0b. [HUMAN] Golden set — the remaining ~14 (owner: Shara)
-  - [ ] 0b.1 Add ~14 more real items in the same format, before the model comparison
-    - Sample size matters for the rejection-rate number that picks the model. Same §8 fallback applies.
-    - Gates: task 9 (model selection). Does NOT gate calibration (task 8 runs on 0a).
+- [~] 0b. [HUMAN] Golden set — the remaining ~14 (owner: Shara) — **DEFERRED, not an oversight**
+  - [~] 0b.1 Add ~14 more real items in the same format
+    - **DEFERRED (post-calibration decision):** six items (0a) are enough to SELECT a model. The 0b sample was originally to tighten the rejection-rate number; calibration on 0a already drove known-good rejection to 0 and both adversarials bite, so the six exercise every entity class the verifier has (dates, amounts w/ EN/ES separators, street name, identifier, role/body name, multi-option item). 0b is added ONLY IF model selection comes back ambiguous or a model fails on a CLASS of item rather than at random — then items are chosen to cover that class. Not built pre-emptively.
+    - Still gated ahead of any FINAL model lock-in if the class-coverage trigger fires; does not gate the initial task-9 comparison over 0a.
     - _Requirements: §11 golden set; R5.2_
 
 - [ ] 1. Entity normalizer + entities (spine surface #1) [PERMANENT]
@@ -86,7 +86,7 @@ Tags: [HUMAN] Shara owns. [PERMANENT] ships. [TEST]. [INFRA-PROPOSE] billable/ex
     - Any check that REJECTS a known-good rewrite is WRONG → fix/narrow it, record what changed and why. Derive check-5 thresholds (en + es) from the hand-written rewrites' reading scores vs sources; record both numbers. Gate: rejection rate on known-good rewrites = 0 before task 9.
     - _Requirements: 3.5, 3b, R5 (precondition)_
 
-- [ ] 9. The rewrite chain + model selection (GATED on task 8 AND task 0b) [PERMANENT] [INFRA-PROPOSE for live model calls]
+- [ ] 9. The rewrite chain + model selection (GATED on task 8; runs over 0a — 0b deferred) [PERMANENT] [INFRA-PROPOSE for live model calls]
   - [ ] 9.1 `rewrite/chain.py` + `rewrite/model.py`: source→EN→verify→ES→verify-against-source; temp ~0, no tools, no loop; Strands-vs-Converse decided + recorded; city-Spanish-edition skip on body_id+date (§36b)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
   - [ ] 9.2 Model comparison over the golden set: Nova Lite vs one stronger model; record verifier rejection rate + cost/agenda for each; pick + write the reason
@@ -131,7 +131,7 @@ Tags: [HUMAN] Shara owns. [PERMANENT] ships. [TEST]. [INFRA-PROPOSE] billable/ex
     { "id": 3, "tasks": ["3.2", "4.1", "10.1"] },
     { "id": 4, "tasks": ["4.2", "11.1"] },
     { "id": 5, "tasks": ["8.1"], "note": "GATED on task 0a (the six)" },
-    { "id": 6, "tasks": ["9.1", "9.2"], "note": "GATED on task 8 AND task 0b; 9.2 is INFRA-PROPOSE (paid model calls)" },
+    { "id": 6, "tasks": ["9.1", "9.2"], "note": "GATED on task 8 (calibration done); runs over 0a — 0b DEFERRED unless class-coverage trigger fires; 9.2 is INFRA-PROPOSE (paid model calls)" },
     { "id": 7, "tasks": ["11.2", "12.1"] },
     { "id": 8, "tasks": ["13"] }
   ]

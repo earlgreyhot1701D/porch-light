@@ -43,6 +43,16 @@ T15_SPEND_CEILING_USD = 10.0        # COMPUTED: ~50x the ~$0.20/mo measured stea
 INGESTION_SUBBUDGET_USD = 7.0       # 70% of T15.
 SEARCH_SUBBUDGET_USD = 3.0          # 30% of T15 (enforced at Spec 4/6).
 
+# --- Verifier check-5 reading-level floors (Spec 3 R3b, DERIVED at task 8 calibration) ---
+# A rewrite passes check 5 only if it reads at or above the floor for its language
+# (higher = easier). Both DERIVED, not guessed: min score across the ten hand-written
+# correct golden-0a rewrites, minus a flat 5.0 margin. Per-language metrics: English
+# Flesch Reading Ease, Spanish Fernandez Huerta (never the English metric on Spanish).
+READING_FLOOR_EN = 33.8   # DERIVED (task 8): min EN correct-rewrite score 38.8 - 5.0. Flesch Reading Ease.
+READING_FLOOR_ES = 77.3   # DERIVED (task 8): min ES correct-rewrite score 82.3 - 5.0. Fernandez Huerta.
+                          # PROVISIONAL, derived from 5 samples, revisit at task 0b. The ES rewrite-vs-source
+                          # gap (~15.6) is far tighter than EN (~33.7); a 20-sample floor may move.
+
 # --- Ordering invariant: the §20 guard. Violating this is a deadlock bug. ---
 # Chain (post-§38, hunter runs in-process on a directly-invoked Lambda):
 #   run timeout < lock TTL < schedule interval.
