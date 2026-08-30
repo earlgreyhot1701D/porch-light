@@ -100,6 +100,16 @@ _STREET = re.compile(
 )
 _PROPER = re.compile(r"\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)+\b")
 
+# Leading determiners/articles are not part of a proper name. A sentence-initial
+# "The Council" or Spanish "El Concejo" is a common-noun REFERENCE, not the proper
+# name the raw-compare rule targets (which is "Planning Commission", "Main Street").
+# Stripping them keeps a correct EN->ES rewrite ("the Council" -> "el Concejo") from
+# reading as an invented name. Whether two BODY names are equivalent across
+# languages is a calibration decision (task 8), not decided here.
+_LEADING_DET = re.compile(
+    r"^(?:the|a|an|el|la|los|las|un|una|unos|unas)\s+", re.IGNORECASE
+)
+
 
 def _find(pattern: re.Pattern[str], text: str) -> list[tuple[int, int, str]]:
     return [(m.start(), m.end(), m.group(0).strip()) for m in pattern.finditer(text)]
@@ -151,7 +161,13 @@ def extract(text: str) -> list[Entity]:
         for m in _PROPER.finditer(text):
             if any(s <= m.start() < e for s, e in seen_name_spans):
                 continue
-            entities.append(Entity(EntityClass.NAME, m.group(0).strip()))
+            raw = _LEADING_DET.sub("", m.group(0).strip())
+            # After dropping a leading article, a single remaining word is a common
+            # noun ("Council"), not a multi-word proper name — don't treat it as a
+            # raw-compare entity.
+            if len(raw.split()) < 2:
+                continue
+            entities.append(Entity(EntityClass.NAME, raw))
 
         return entities
     except Exception:

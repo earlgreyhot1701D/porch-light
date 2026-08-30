@@ -1,0 +1,122 @@
+{
+  "is_quiet": false,
+  "heartbeat": {
+    "city_read": {
+      "en": "City read 10:42 AM",
+      "es": "Ciudad revisada 10:42 AM"
+    },
+    "read_count": {
+      "en": "20 of 21 bodies read",
+      "es": "20 de 21 organismos leidos"
+    },
+    "next_check": {
+      "en": "Next check: Tuesday, 8:00 AM · Pacific, city local time",
+      "es": "Proxima revision: martes, 8:00 AM · Pacifico, hora local de la ciudad"
+    }
+  },
+  "recent_checks": [
+    {
+      "datetime": "2026-08-16T10:42:00-07:00",
+      "date": {
+        "en": "Fri, Aug 16",
+        "es": "Vie, 16 ago"
+      },
+      "time": "10:42 AM · Pacific, city local time",
+      "body": {
+        "en": "Planning Commission could not be read",
+        "es": "No se pudo leer la Comision de Planificacion"
+      },
+      "evidence": {
+        "en": "not located at cityofventura.ca.gov/planning as of Aug 16, 10:42 AM PT",
+        "es": "no se localizo en cityofventura.ca.gov/planning al 16 de agosto, 10:42 AM PT"
+      }
+    }
+  ],
+  "changed": [
+    {
+      "id": "supplemental-packet",
+      "tone": "hot",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "Official term: Supplemental packet",
+        "es": "Termino oficial: paquete suplementario"
+      },
+      "heading": {
+        "en": "Extra documents were added about the wine bar proposed at 123 Elm Street, including parking and noise conditions.",
+        "es": "Se agregaron documentos adicionales sobre el bar de vinos propuesto en 123 Elm Street, incluidas las condiciones de estacionamiento y ruido."
+      },
+      "match_reason": {
+        "en": "Matched your watch: \"Can they put a bar next to my house?\"",
+        "es": "Coincidio con su alerta: \"Pueden poner un bar junto a mi casa?\""
+      },
+      "scale_note": {
+        "en": "This packet is 312 pages. The item shown here is 13 pages.",
+        "es": "Este paquete tiene 312 paginas. El elemento aqui es de 13 paginas."
+      },
+      "receipt": {
+        "line": {
+          "en": "Planning Commission · Aug 25, 2026 · Item 7 · pp. 118-130",
+          "es": "Comision de Planificacion · 25 ago 2026 · Punto 7 · pp. 118-130"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=118",
+        "source_label": {
+          "en": "Open the source document",
+          "es": "Abrir el documento original"
+        }
+      },
+      "deadline": {
+        "en": "Comment closes tomorrow at 5:00 PM · Pacific, city local time",
+        "es": "El comentario cierra manana a las 5:00 PM · Pacifico, hora local de la ciudad"
+      },
+      "deadline_actionable": true,
+      "action": {
+        "en": "Start a comment",
+        "es": "Comenzar un comentario"
+      }
+    },
+    {
+      "id": "cancelled-meeting",
+      "tone": "calm",
+      "mark": "off",
+      "status": {
+        "en": "Meeting cancelled",
+        "es": "Reunion cancelada"
+      },
+      "official_term": {
+        "en": "Official term: Cancellation",
+        "es": "Termino oficial: cancelacion"
+      },
+      "heading": {
+        "en": "The Historic Preservation Committee meeting you were watching was cancelled.",
+        "es": "La reunion del Comite de Preservacion Historica que seguia fue cancelada."
+      },
+      "match_reason": {
+        "en": "Matched your watch: \"Street trees on Juniper Avenue\"",
+        "es": "Coincidio con su alerta: \"Arboles en Juniper Avenue\""
+      },
+      "scale_note": {
+        "en": "",
+        "es": ""
+      },
+      "receipt": {
+        "line": {
+          "en": "Historic Preservation Committee · Aug 20, 2026 · notice",
+          "es": "Comite de Preservacion Historica · 20 ago 2026 · aviso"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08202026-3670",
+        "source_label": {
+          "en": "Open the source document",
+          "es": "Abrir el documento original"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "action": null
+    }
+  ],
+  "synthetic": true
+}

@@ -1,0 +1,83 @@
+{
+  "is_quiet": false,
+  "heartbeat": {
+    "city_read": {
+      "en": "City read 10:42 AM",
+      "es": "Ciudad revisada 10:42 AM"
+    },
+    "read_count": {
+      "en": "20 of 21 bodies read",
+      "es": "20 de 21 organismos leidos"
+    },
+    "next_check": {
+      "en": "Next check: Tuesday, 8:00 AM · Pacific, city local time",
+      "es": "Proxima revision: martes, 8:00 AM · Pacifico, hora local de la ciudad"
+    }
+  },
+  "recent_checks": [
+    {
+      "datetime": "2026-08-16T10:42:00-07:00",
+      "date": {
+        "en": "Fri, Aug 16",
+        "es": "Vie, 16 ago"
+      },
+      "time": "10:42 AM · Pacific, city local time",
+      "body": {
+        "en": "Planning Commission could not be read",
+        "es": "No se pudo leer la Comision de Planificacion"
+      },
+      "evidence": {
+        "en": "not located at cityofventura.ca.gov/planning as of Aug 16, 10:42 AM PT",
+        "es": "no se localizo en cityofventura.ca.gov/planning al 16 de agosto, 10:42 AM PT"
+      }
+    }
+  ],
+  "changed": [
+    {
+      "id": "long-item",
+      "tone": "hot",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "Official term: Supplemental packet",
+        "es": "Termino oficial: paquete suplementario"
+      },
+      "heading": {
+        "en": "The committee will consider a resolution authorizing the City Manager to execute a professional services agreement, and amendments thereto, for the comprehensive rehabilitation of the Cabrillo Boulevard corridor between Seaward Avenue and Harbor Boulevard, including but not limited to pavement reconstruction, storm drain improvements, undergrounding of utilities, and the installation of protected bicycle facilities, in an amount not to exceed $4,750,000.",
+        "es": "El comite considerara una resolucion que autoriza al Administrador de la Ciudad a ejecutar un acuerdo de servicios profesionales, y sus enmiendas, para la rehabilitacion integral del corredor de Cabrillo Boulevard entre Seaward Avenue y Harbor Boulevard, incluida la reconstruccion del pavimento, mejoras del drenaje pluvial, el soterramiento de servicios publicos y la instalacion de ciclovias protegidas, por un monto que no exceda los $4,750,000."
+      },
+      "match_reason": {
+        "en": "Matched your watch: \"bike lanes and street reconstruction downtown\"",
+        "es": "Coincidio con su alerta: \"ciclovias y reconstruccion de calles en el centro\""
+      },
+      "scale_note": {
+        "en": "This packet is 512 pages. The item shown here is 41 pages.",
+        "es": "Este paquete tiene 512 paginas. El elemento aqui es de 41 paginas."
+      },
+      "receipt": {
+        "line": {
+          "en": "Measure O Citizens Oversight Committee — Infrastructure and Capital Projects Subcommittee · Sep 2, 2026 · Item 12 · pp. 214-255",
+          "es": "Comite de Supervision Ciudadana de la Medida O — Subcomite de Infraestructura y Proyectos de Capital · 2 sep 2026 · Punto 12 · pp. 214-255"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_09022026-3700#page=214",
+        "source_label": {
+          "en": "Open the source document",
+          "es": "Abrir el documento original"
+        }
+      },
+      "deadline": {
+        "en": "Comment closes in 3 days, at 5:00 PM · Pacific, city local time",
+        "es": "El comentario cierra en 3 dias, a las 5:00 PM · Pacifico, hora local de la ciudad"
+      },
+      "deadline_actionable": true,
+      "action": {
+        "en": "Start a comment",
+        "es": "Comenzar un comentario"
+      }
+    }
+  ],
+  "synthetic": true
+}
