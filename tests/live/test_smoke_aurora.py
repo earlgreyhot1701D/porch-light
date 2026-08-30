@@ -48,13 +48,37 @@ def _ensure_credentials() -> None:
         pytest.skip("No AWS credentials configured (NoCredentialsError).")
 
 
+def _execute_resume_tolerant(client, **kwargs):
+    """Run a Data API statement, absorbing the min-cap-0 cold resume (§33/§38).
+
+    A DatabaseResumingException is NOT a broken cluster — it is the documented wake
+    from scale-to-zero. Tolerating it here keeps the skip-vs-fail discipline honest:
+    absent config skips, a genuinely broken cluster fails, a resuming one waits.
+    """
+    import time
+
+    from botocore.exceptions import ClientError
+
+    last = None
+    for _ in range(12):  # ~90s, matching the pipeline's resume budget
+        try:
+            return client.execute_statement(**kwargs)
+        except ClientError as e:
+            if "resuming" in str(e).lower() or e.response.get("Error", {}).get("Code") == "DatabaseResumingException":
+                last = e
+                time.sleep(5)
+                continue
+            raise
+    raise last
+
+
 @pytest.mark.live
 def test_data_api_query_returns():
     cluster, secret, region = _config()
     _ensure_credentials()
     client = boto3.client("rds-data", region_name=region)
-    resp = client.execute_statement(
-        resourceArn=cluster, secretArn=secret, database="porchlight",
+    resp = _execute_resume_tolerant(
+        client, resourceArn=cluster, secretArn=secret, database="porchlight",
         sql="SELECT 1 AS one",
     )
     assert resp["records"][0][0]["longValue"] == 1
@@ -65,8 +89,8 @@ def test_pgvector_present():
     cluster, secret, region = _config()
     _ensure_credentials()
     client = boto3.client("rds-data", region_name=region)
-    resp = client.execute_statement(
-        resourceArn=cluster, secretArn=secret, database="porchlight",
+    resp = _execute_resume_tolerant(
+        client, resourceArn=cluster, secretArn=secret, database="porchlight",
         sql="SELECT extname FROM pg_extension WHERE extname = 'vector'",
     )
     assert len(resp["records"]) == 1, "pgvector extension not present"
