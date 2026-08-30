@@ -1,29 +1,107 @@
 {
   "meta": {
     "owner": "shara",
-    "verified_date": "PENDING",
-    "spanish_reviewer": "UNVERIFIED — §8 fluent reviewer needed",
-    "notes": "~20 items hand-read against the real Ventura PDFs. [HUMAN] ground-truth artifact (Spec 3). Task 0a = first SIX varied items (gates calibration, task 8); task 0b = remaining ~14 (gates model selection, task 9). The PLACEHOLDER entry below shows the shape; replace with real entries. Tests skip calibration/model-comparison while meta.verified_date == PENDING. §8 fallback: if no fluent Spanish reviewer is available when 0a is due, the author writes the Spanish, spanish_reviewer records 'unverified — author Spanish, no native review', and the README states the Spanish surface is unverified per §8. Calibration proceeds with the limitation recorded."
+    "verified_date": "2026-08-30",
+    "spanish_reviewer": "unverified - AI drafted, human approved, no native review",
+    "rewrite_provenance": "AI drafted, human approved",
+    "source_document": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+    "notes": "Golden set 0a: six items from the Aug 25 2026 City Council agenda (doc 3685). source.text is byte-for-byte from the PDF text layer, encoding artifacts intact (not normalized/repaired). Two adversarial rewrites break exactly one language each; the other language passes. Ten correct rewrites, two rejected expected."
   },
   "items": [
     {
-      "id": "golden-000-PLACEHOLDER",
+      "id": "golden-001",
       "source": {
         "body_id": "city_council",
-        "meeting_date": "2026-02-10",
-        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_02102026-3569",
-        "item_number": "REPLACE_ME",
-        "page_range": [0, 0],
-        "text": "REPLACE_ME: verbatim staff text for this item's page range, copied from the PDF by hand."
+        "meeting_date": "2026-08-25",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+        "item_number": "1",
+        "page_range": [3, 3],
+        "text": "1. City Council Minutes û Regular Meetings held on July 7, 2026 and July 14, 2026\n\nStaff: Michael MacDonald, City Clerk\n\nRECOMMENDATION\n\nApprove City Council Minutes for Regular Meetings held on July 7, 2026 and July 14, 2026."
       },
-      "expected_entities": {
-        "dates": [],
-        "numbers": [],
-        "raw_names": []
-      },
-      "rewrite_en": "REPLACE_ME: hand-written correct plain-English rewrite of the item above.",
-      "rewrite_es": "REPLACE_ME: hand-written correct Spanish rewrite (fluent reviewer, §8).",
+      "rewrite_en": "The City Council will vote on whether to approve the written record of its own regular meetings held on July 7, 2026 and July 14, 2026. City Clerk Michael MacDonald is bringing it forward.",
+      "rewrite_es": "El Concejo votará si aprueba el acta escrita de sus reuniones regulares del 7 de julio de 2026 y del 14 de julio de 2026. Lo presenta Michael MacDonald, City Clerk.",
       "is_adversarial": false,
+      "adversarial_language": null,
+      "adversarial_reason": null
+    },
+    {
+      "id": "golden-002",
+      "source": {
+        "body_id": "city_council",
+        "meeting_date": "2026-08-25",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+        "item_number": "2",
+        "page_range": [3, 3],
+        "text": "2. Ordinance for Second Reading û An Ordinance to Amend Municipal Code for Victoria Avenue Corridor Plan and Development Code Amendments - Banking and Financial Services Drive-Through Uses\n\nStaff: Michael MacDonald, City Clerk\n\nRECOMMENDATION\n\nWaive the second reading in full and adopt of an Ordinance amending the Victoria Avenue Corridor Development Code (Chapter 24.600) Ordinance titled:\n\nôAN ORDINANCE OF THE CITY COUNCIL OF THE CITY OF SAN BUENAVENTURA, CALIFORNIA, AMENDING CHAPTER 24.600, ôVICTORIA AVENUE CORRIDOR DEVELOPMENT CODE,ö TO ALLOW BANKING AND FINANCIAL SERVICES USES TO UTILIZE EXISTING LEGALLY ESTABLISHED DRIVE -THROUGH FACILITI ES AS A PERMITTED USEö"
+      },
+      "rewrite_en": "The City Council will take a final vote on a rule change for the Victoria Avenue Corridor. The change would let banking and financial services businesses use drive-through facilities that are already legally established on the corridor. It amends Chapter 24.600, the Victoria Avenue Corridor Development Code. City Clerk Michael MacDonald is bringing it forward.",
+      "rewrite_es": "El Concejo dará el voto final a un cambio de reglamento para el corredor de la Avenida Victoria. El cambio permitiría que los negocios de servicios bancarios y financieros usen instalaciones de drive-through que ya están legalmente establecidas en el corredor. Modifica el Capítulo 24.600, el Código de Desarrollo del Corredor de la Avenida Victoria. Lo presenta Michael MacDonald, City Clerk.",
+      "is_adversarial": true,
+      "adversarial_language": "es",
+      "adversarial_reason": "Every instance of the street name \"Victoria Avenue\" is translated to \"Avenida Victoria,\" including inside the name of the development code. A resident looking for the street, or for the code by name, would not find it. Check 6 must reject this rewrite. The English rewrite is correct and must PASS."
+    },
+    {
+      "id": "golden-003",
+      "source": {
+        "body_id": "city_council",
+        "meeting_date": "2026-08-25",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+        "item_number": "3",
+        "page_range": [4, 4],
+        "text": "3. Ordinance for Second Reading û Ordinance to Amend Municipal Code for Victoria Avenue Corridor Plan and Development Code to allow General Retail Uses up to 140,000 SF as a Permitted use in the T5.3 Zone\n\nStaff: Michael MacDonald, City Clerk\n\nRECOMMENDATION\n\nWaive the second reading in full and adopt an Ordinance amending the Victoria Avenue Corridor Development Code (Chapter 24.600) Ordinance titled:\n\nôAN ORDINANCE OF THE CITY COUNCIL OF THE CITY OF SAN BUENAVENTURA, CALIFORNIA, AMENDING CHAPTER 24.600, ôVICTORIA AVENUE CORRIDOR DEVELOPMENT CODE,ö SECTION 24.600.180, ôLAND USE TABLE,ö TO ALLOW GENERAL RETAIL USES BETWEEN 100,000 AND 140,000 SQUARE FEET WITHIN THE URBAN CENTER ZONE (T5.3)ö"
+      },
+      "rewrite_en": "The City Council will take a final vote on a rule change for the Victoria Avenue Corridor. It would allow general retail uses between 100,000 and 140,000 square feet as a permitted use in the Urban Center Zone (T5.3). The change amends the land use table, Section 24.600.180, of Chapter 24.600, the Victoria Avenue Corridor Development Code. City Clerk Michael MacDonald is bringing it forward.",
+      "rewrite_es": "El Concejo dará el voto final a un cambio de reglamento para el corredor de Victoria Avenue. Permitiría comercios de venta al público de entre 100.000 y 140.000 pies cuadrados como uso permitido en la Urban Center Zone (T5.3). El cambio modifica la tabla de usos de suelo, Sección 24.600.180, del Capítulo 24.600, el Victoria Avenue Corridor Development Code. Lo presenta Michael MacDonald, City Clerk.",
+      "is_adversarial": false,
+      "adversarial_language": null,
+      "adversarial_reason": null
+    },
+    {
+      "id": "golden-004",
+      "source": {
+        "body_id": "city_council",
+        "meeting_date": "2026-08-25",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+        "item_number": "6",
+        "page_range": [5, 5],
+        "text": "6. First Amendment to Master Services Agreement and Statement of Work 2 with Cognizant Worldwide Limited\n\nStaff: Mike Shaffer, Chief Technology Officer\n\nRECOMMENDATION\n\na. Authorize the City Manager, or designee, to execute the First Amendment to the Master Services Agreement with Cognizant Worldwide Limited, dated September 5, 2024, extending the term of the Agreement to September 4, 2027.\n\nb. Authorize the City Manager, or designee, to execute Statement of Work 2 with Cognizant Worldwide Limited in the amount of $145,800 through August 31, 2027, increasing the total not-to-exceed Agreement amount to $590,130."
+      },
+      "rewrite_en": "The City Council will vote on extending the city's contract with Cognizant Worldwide Limited. The original agreement is dated September 5, 2024, and the extension would run the term through September 4, 2027. A second statement of work would add $145,900 through August 31, 2027, raising the total not-to-exceed amount of the agreement to $590,130. Chief Technology Officer Mike Shaffer is bringing it forward.",
+      "rewrite_es": "El Concejo votará si extiende el contrato de la ciudad con Cognizant Worldwide Limited. El acuerdo original tiene fecha del 5 de septiembre de 2024 y la extensión llevaría el plazo hasta el 4 de septiembre de 2027. Un segundo statement of work agregaría $145.800 hasta el 31 de agosto de 2027, elevando el monto máximo total del acuerdo a $590.130. Lo presenta Mike Shaffer, Chief Technology Officer.",
+      "is_adversarial": true,
+      "adversarial_language": "en",
+      "adversarial_reason": "The dollar amount $145,800 is stated as $145,900 in the English rewrite. Every other entity is correct. Check 2 must reject this rewrite on the amount alone. The Spanish rewrite is correct and must PASS."
+    },
+    {
+      "id": "golden-005",
+      "source": {
+        "body_id": "city_council",
+        "meeting_date": "2026-08-25",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+        "item_number": "8",
+        "page_range": [6, 6],
+        "text": "8. Fourth Amendment to Reimbursement Agreement 2022 -053 Between the Ventura Unified School District and the City of Ventura Regarding Crossing Guards for Fiscal Year 2027\n\nStaff: Charles W. Ebeling, Public Works Director\n\nRECOMMENDATION\n\nAuthorize the City Manager, or designee, to execute the Fourth Amendment to Reimbursement Agreement 2022 -053 with the Ventura Unified School District allowing for additional reimbursement for crossing guard services through the end of Fiscal Year 2027 (Jun e 30, 2027) in the amount of $117,619 for a total Agreement amount not to exceed $521,679."
+      },
+      "rewrite_en": "The City Council will vote on paying the Ventura Unified School District $117,619 more for crossing guard services through the end of Fiscal Year 2027, which ends June 30, 2027. This is the fourth amendment to Reimbursement Agreement 2022-053, and it would bring the total agreement amount to no more than $521,679. Public Works Director Charles W. Ebeling is bringing it forward.",
+      "rewrite_es": "El Concejo votará si le paga al Ventura Unified School District $117.619 adicionales por el servicio de guardias de cruce escolar hasta el final del año fiscal 2027, que termina el 30 de junio de 2027. Es la cuarta modificación al Reimbursement Agreement 2022-053 y elevaría el monto total del acuerdo a un máximo de $521.679. Lo presenta Charles W. Ebeling, Public Works Director.",
+      "is_adversarial": false,
+      "adversarial_language": null,
+      "adversarial_reason": null
+    },
+    {
+      "id": "golden-006",
+      "source": {
+        "body_id": "city_council",
+        "meeting_date": "2026-08-25",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+        "item_number": "10",
+        "page_range": [6, 7],
+        "text": "10. City Hall East Boiler Replacement Project (FA19 -1149) Alternatives Analysis\n\nStaff: Charles W. Ebeling, Public Works Director\n\nRECOMMENDATION\n\nSelect one of the following three options pertaining to the City Hall East boiler replacement project:\n\na. Option A û Approve Natural Gas Boilers (estimated $564,074) and advertise bids for construction, or\n\nb. Option B û Approve Natural Gas Boilers (estimated $564,074), where staff would advertise bids for construction (FA19-1149), and evaluate a heat pump system when the City Hall East chiller units are due for replacement with replacement of the natural gas boilers in Option A, or\n\nc. Option C û Delay the replacement of the natural gas boilers (FA19 - 1149) with a heat pump system until funding is available within an indeterminate time."
+      },
+      "rewrite_en": "The City Council has three options in front of it for the boilers at City Hall East (project FA19-1149), and it will choose one. Option A: approve natural gas boilers at an estimated $564,074 and advertise bids for construction. Option B: approve natural gas boilers at an estimated $564,074, advertise bids for construction, and evaluate a heat pump system later, when the City Hall East chiller units are due for replacement. Option C: delay replacing the natural gas boilers with a heat pump system until funding is available, with no set date. Public Works Director Charles W. Ebeling is bringing it forward. No option has been selected yet.",
+      "rewrite_es": "El Concejo tiene tres opciones para las calderas de City Hall East (proyecto FA19-1149) y elegirá una. Opción A: aprobar calderas de gas natural por un estimado de $564.074 y sacar la construcción a licitación. Opción B: aprobar calderas de gas natural por un estimado de $564.074, sacar la construcción a licitación y evaluar un sistema de bomba de calor más adelante, cuando las unidades enfriadoras de City Hall East deban reemplazarse. Opción C: retrasar el reemplazo de las calderas de gas natural por un sistema de bomba de calor hasta que haya fondos disponibles, sin una fecha definida. Lo presenta Charles W. Ebeling, Public Works Director. Todavía no se ha elegido ninguna opción.",
+      "is_adversarial": false,
+      "adversarial_language": null,
       "adversarial_reason": null
     }
   ]
