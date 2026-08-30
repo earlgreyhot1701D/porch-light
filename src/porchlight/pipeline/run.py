@@ -23,7 +23,7 @@ from porchlight.adapters.ventura import fetch as vfetch
 from porchlight.adapters.ventura.enumerate import enumerate_meetings
 from porchlight.adapters.ventura.horizon import in_horizon
 from porchlight.log import bind_context, generate_run_id, get_logger
-from porchlight.pipeline import changedetect, ledger, retry, runlog
+from porchlight.pipeline import changedetect, ledger, persist, retry, runlog
 from porchlight.pipeline.lock import LockNotAcquired, RunLock, RunTimedOut
 from porchlight.pipeline.worklist import build_worklist
 
@@ -61,7 +61,15 @@ def run_ingestion(backend, *, index_url: str = AGENDA_CENTER_URL) -> str:
         index = vfetch.fetch(index_url)
         stubs = enumerate_meetings(index.body.decode("utf-8") if index.body else "")
         in_window = [s for s in stubs if in_horizon(s.meeting_date)]
-        worklist = build_worklist(in_window)
+
+        # Persist parent rows BEFORE the document loop: documents/body_status FK to
+        # meetings/bodies. Idempotent upserts (persist.py). Stubs with an unknown
+        # body are dropped here and not worked (their FK would fail); enumerate
+        # already surfaced the unknown body.
+        persist.seed_bodies(backend)
+        persist.upsert_meetings(backend, in_window)
+        known = [s for s in in_window if s.body_id is not None]
+        worklist = build_worklist(known)
 
         attempted = 0
         touched_bodies: set[str] = set()

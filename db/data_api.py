@@ -110,15 +110,19 @@ class AuroraDataApiBackend(Backend):
 
         from botocore.exceptions import ClientError
 
+        # Resume from FULLY paused (min-cap 0) can take up to ~60s, longer than a
+        # first naive guess. Budget ~90s total: nobody is waiting on the scheduled
+        # hunter (§38), and the whole run has T11=10min. This is a bounded transient
+        # wait, not a silent fallback (§never).
         last = None
-        for attempt in range(6):  # ~ up to ~30s of resume wait
+        for attempt in range(12):  # ~90s total (5s * 12, capped)
             try:
                 return self._client.execute_statement(**kwargs)
             except ClientError as e:
                 code = e.response.get("Error", {}).get("Code", "")
                 if code in ("DatabaseResumingException", "DatabaseNotFoundException") or "resuming" in str(e).lower():
                     last = e
-                    time.sleep(2 + attempt * 2)
+                    time.sleep(5)
                     continue
                 raise
         raise last  # type: ignore[misc]

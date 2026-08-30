@@ -11,5 +11,8 @@ cdk/node_modules/
 # Ephemeral Staging
 .cache/*
 
-# Exception: Commit the State
-!.cli/deployed-state.json
+# NOTE (§31c): the vendor default un-ignored .cli/deployed-state.json here
+# ("!.cli/deployed-state.json"). We REMOVED that negation. The file carries our
+# AWS account ID in resource ARNs and this repo is public; a nested negation was
+# overriding the root .gitignore and re-tracking it. deployed-state.json is a
+# regenerable CLI output and stays ignored. Do not restore the negation.

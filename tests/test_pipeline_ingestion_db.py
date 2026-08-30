@@ -133,3 +133,59 @@ def test_ledger_subbudgets_are_separate(backend):
     ledger.record(backend, "run1", SEARCH_SUBBUDGET_USD, "search")
     # Search is spent, but ingestion is untouched → ingestion still runs.
     ledger.check_before_run(backend, "ingestion")
+
+
+# --- Fresh-schema full-pipeline test (testing.md #4: seed inputs, not outputs) ---
+
+@pytest.fixture()
+def fresh_backend():
+    """A schema with NOTHING the pipeline is responsible for creating pre-seeded.
+
+    Unlike `backend`, this does NOT insert bodies or meetings. The pipeline must
+    create them itself; if it does not, the FK violation that reached the deployed
+    hunter reproduces here instead of in production.
+    """
+    import data_api
+
+    be = data_api.get_backend()
+    be.execute(Path(__file__).parent.parent.joinpath("db", "schema.sql").read_text(encoding="utf-8"))
+    for t in ("spend_ledger", "documents", "meetings", "body_status", "bodies", "readlog", "run_lock"):
+        be.execute(f"DELETE FROM {t}")
+    yield be
+    for t in ("spend_ledger", "documents", "meetings", "body_status", "bodies", "readlog", "run_lock"):
+        be.execute(f"DELETE FROM {t}")
+
+
+def test_full_run_creates_parents_from_empty_schema(fresh_backend, monkeypatch):
+    """The pipeline, against an empty schema, seeds bodies + meetings and records a
+    document — no pre-seeded parent rows. This is the FK gap's regression test."""
+    from porchlight.adapters.ventura import fetch as vfetch
+    from porchlight.adapters.ventura.fetch import FetchResult
+    from porchlight.pipeline import run as run_mod
+
+    # Fake the index fetch to return our captured real fixture, and the per-doc
+    # fetch to return small agenda bytes — inputs seeded, outputs are not.
+    index_html = (Path(__file__).parent / "fixtures" / "ventura" / "agenda_center_index.html").read_text(encoding="utf-8")
+
+    def fake_fetch(url, if_modified_since=None, if_none_match=None):
+        if url.rstrip("/").endswith("/AgendaCenter"):
+            return FetchResult(url=url, status=200, body=index_html.encode("utf-8"),
+                               last_modified=None, etag=None)
+        return FetchResult(url=url, status=200, body=b"agenda bytes for " + url.encode(),
+                           last_modified="Mon, 01 Jan 2026 00:00:00 GMT", etag=None)
+
+    monkeypatch.setattr(vfetch, "fetch", fake_fetch)
+
+    status = run_mod.run_ingestion(fresh_backend)
+
+    # The pipeline created bodies and at least one meeting, and recorded documents,
+    # all from an empty schema. Before the fix this raised an FK violation.
+    assert status in ("ok", "circuit_broken")  # ok expected; circuit_broken would still mean parents existed
+    bodies = int(fresh_backend.query("SELECT count(*) AS c FROM bodies").rows[0]["c"])
+    meetings = int(fresh_backend.query("SELECT count(*) AS c FROM meetings").rows[0]["c"])
+    docs = int(fresh_backend.query("SELECT count(*) AS c FROM documents").rows[0]["c"])
+    assert bodies == 21, f"expected 21 seeded bodies, got {bodies}"
+    assert meetings >= 1, "pipeline should have upserted in-horizon meetings"
+    assert docs >= 1, "pipeline should have recorded at least one document"
+    # And the run finished ok (parents existed when children were written).
+    assert status == "ok"

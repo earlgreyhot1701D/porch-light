@@ -97,11 +97,12 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
   - [ ] 9.2 Crash mid-run (kill after some docs done) → restart double-writes nothing (pass gate 2)
     - _Requirements: pass gate 2, 3.3_
 
-- [ ] 10.0 INFRA-PROPOSE: deploy the hunter as a Lambda (§38, was AgentCore) [INFRA-PROPOSE]
-  - [ ] 10.0.1 Deploy `run.py` + Spec 1 adapter + `db/` as the `porchlight-<env>-hunter` Lambda
-    - Handler calls `run_ingestion(get_backend())` IN-PROCESS. Timeout 12 min. Env: AURORA_CLUSTER_ARN, AURORA_SECRET_ARN, AURORA_DATABASE. Execution role scoped: `rds-data:ExecuteStatement` + related on the cluster, read the RDS-managed secret, CloudWatch logs. Default networking (egress to Ventura + AWS APIs). Four cost tags.
-    - Deploying does NOT invoke it; inert until the (disabled) schedule is enabled at task 13.
-    - _Requirements: §38 compute-target; 26 topology_
+- [x] 10.0 INFRA-PROPOSE: deploy the hunter as a Lambda (§38, was AgentCore) [INFRA-PROPOSE]
+  - [x] 10.0.1 Deploy `run.py` + Spec 1 adapter + `db/` as the `porchlight-dev-hunter` Lambda
+    - Done. Lambda `porchlight-dev-hunter`, **python3.14** (matches §30a — corrected from an initial 3.13), 12-min timeout, scoped role `porchlight-dev-hunter-role` (rds-data on the cluster, read RDS-managed secret, CloudWatch logs), default networking, four cost tags. Handler runs `run_ingestion` in-process.
+    - RESULT (proven by controlled manual invokes; schedule still disabled): clean run `status=ok`, 21 bodies seeded, 11 in-horizon meetings, 15 documents recorded, readlog ok. Second invoke: read=0, skipped=15, documents still 15 — **pass gates 1 (second run does nothing) and idempotency proven LIVE against Aurora.**
+    - Deploy findings (all fixed, see wip + fix commits): Aurora cold-resume needed a ~90s bounded retry (min-cap 0 fully-paused resume); Data API needs explicit `::timestamptz` casts (psycopg doesn't); the pipeline had to seed bodies+meetings before the FK'd children (the fresh-schema test now guards it, testing.md #4); relative worklist URLs made absolute.
+    - _Requirements: §38 compute-target; 26 topology; pass gate 1, 2, 3_
 
 - [ ] 10. Schedule wiring (EventBridge, direct target) [INFRA-PROPOSE]
   - [ ] 10.1 Create the EventBridge hourly schedule **DISABLED**, target = the hunter Lambda DIRECTLY (§38, no scheduler-Lambda hop)

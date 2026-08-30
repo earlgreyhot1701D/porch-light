@@ -5,7 +5,7 @@ fileMatchPattern: "tests/**|**/test_*.py|Makefile"
 
 # Testing contract
 
-Source: decisions doc §28. The lesson behind this file: a suite can be green while the live workflow is broken, because every test was watching for the failure we imagined.
+Source: decisions doc §28. The lesson behind this file: a suite can be green while the live workflow is broken, because every test was watching for the failure we imagined. Three instances so far: redaction never ran in the deployed runtime; the dedup bug passed every property test; and DB fixtures pre-seeded parent rows so the pipeline never had to write them and an FK-violating gap shipped green.
 
 ## The rule
 
@@ -27,6 +27,9 @@ Where a failure cannot be provoked cheaply against the real service, copy the sh
 
 **3. Hostile fixtures are generated, not typed.**
 `fixtures/ugly.json` comes out of a script run against real ingested data. The 95th-percentile summary length is computed and recorded in the fixture header. Any category with no real instance yet is marked `synthetic: true` in the file so the gap is visible.
+
+**4. Fixtures may seed inputs. They may not seed outputs.**
+Any test touching the database runs against a schema with **nothing pre-seeded that the pipeline is responsible for creating.** A fixture may seed inputs the pipeline reads (e.g. a captured index HTML). It may NOT seed the rows the pipeline is supposed to write (bodies, meetings, documents) — doing so lets a missing write step ship green, which is exactly how the FK gap reached the deployed hunter. If the pipeline must create a parent row before a child, the test starts with that parent absent and asserts the pipeline created it.
 
 ## Forbidden
 
