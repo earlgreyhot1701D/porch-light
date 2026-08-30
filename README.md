@@ -58,6 +58,20 @@ whose entire claim is being a trustworthy reader of public records cannot quietl
 override a public body's stated crawl preference: that is a hole in its own story,
 and it is a findable one. Obeying it is the point, not a constraint we tolerate.
 
+**A real civic-site behavior, and why our design absorbed it (§39).** When we
+measured the city's agenda files, all 152 shared a single `Last-Modified`
+timestamp — a server-side batch re-index had touched every file at once. Under
+HTTP conditional GET, that makes **every document look changed**, so a
+header-based system would re-download all 152 and, worse, could show 152 false
+"new material" cards to someone who was watching. Porch Light does not do that: it
+decides what changed by **content hash**, not by the header. On the run right
+after a batch touch, all 152 files re-downloaded but every one hashed to its
+existing id, so **no rows were written, no downstream work ran, and nobody's
+briefing showed a false change.** We hit this by accident against the live site,
+and the design gave the right answer with no user-visible effect. Conditional GET
+is an optimization we use when it helps; content hash is the correctness mechanism
+that holds when it does not.
+
 **Where the model is, and deliberately is not.** The model has exactly three jobs:
 rewrite staff language into plain English and Spanish, decide whether an item
 matches a person's watchlist, and assemble the structure of a comment draft.
@@ -152,13 +166,18 @@ public records. These teardown steps are written here before the resources are
 created, in order.
 
 1. **EventBridge schedule (stop this first — it touches someone else's server).**
-   Disable, then delete, the hourly ingestion schedule:
+   **This schedule is LIVE:** it invokes the hunter hourly, 24/7, and reads the
+   City of Ventura's AgendaCenter each run (§39 — we run all hours for now; a
+   narrower weekday window is set at Spec 3 once we have real posting-time data).
+   **The command you want at 2am when something is wrong is DISABLE, not delete —**
+   it stops the traffic instantly and is reversible:
    ```bash
-   aws scheduler update-schedule --name porchlight-<env>-ingestion --state DISABLED
+   aws scheduler update-schedule --name porchlight-<env>-ingestion --state DISABLED \
+     --schedule-expression "rate(1 hour)" --flexible-time-window "Mode=OFF" \
+     --target "Arn=<hunter-lambda-arn>,RoleArn=<scheduler-invoke-role-arn>"
+   # then, only when tearing down for good:
    aws scheduler delete-schedule --name porchlight-<env>-ingestion
    ```
-   The schedule ships **disabled** and is enabled only as the final step of Spec 2,
-   after every pass gate is met.
 
 2. **Hunter Lambda + its role (the deterministic ingestion job that fetches from
    Ventura).** The hunter is a plain Lambda invoked directly by the schedule (§38);

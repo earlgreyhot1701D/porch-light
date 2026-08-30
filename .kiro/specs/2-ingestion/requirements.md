@@ -86,9 +86,15 @@ nothing new, so that re-runs and restarts are safe and cheap.
 
 #### Acceptance Criteria
 
-1. THE Pipeline SHALL detect a new or changed document by content hash
-   (`document_id`, Spec 1 R3.7), using conditional GET (`Last-Modified`/`ETag`) to
-   avoid re-downloading unchanged documents (§7, Spec 1 R7.3).
+1. THE Pipeline SHALL detect a new or changed document by **content hash**
+   (`document_id`, Spec 1 R3.7) — this is the CORRECTNESS mechanism. Conditional
+   GET (`Last-Modified`/`ETag`) is an OPTIMIZATION to skip re-downloading unchanged
+   documents when the server's headers are trustworthy; **its savings are not
+   guaranteed** (§39: the city batch-touched all 152 files to one `Last-Modified`,
+   making every document look changed). When conditional GET does not help, the
+   content hash still yields the right answer: re-downloaded-but-identical bytes
+   hash to the existing id and write nothing. Correctness never depends on the
+   header (§7, amends Spec 1 R7.3).
 2. WHEN a run processes a document whose content hash already exists in storage,
    THE Pipeline SHALL NOT create a duplicate record and SHALL NOT re-do downstream
    work for it (idempotency, §7).

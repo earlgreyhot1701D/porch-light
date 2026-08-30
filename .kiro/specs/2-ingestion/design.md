@@ -102,7 +102,11 @@ deadlock requirement.
 ## Change detection and idempotency (R3) — the pass gate
 
 - Conditional GET first (Spec 1 fetch): a `304` means unchanged → mark the
-  document `done`, write nothing new. This is most documents on most runs.
+  document `done`, write nothing new. This is most documents on most runs — but
+  NOT guaranteed (§39): the city batch-touched all 152 files to one `Last-Modified`,
+  so on a re-index run every document returns 200 and re-downloads. Conditional GET
+  is an optimization whose savings can vanish; the content hash below is what keeps
+  the result correct regardless. A re-index run costs bandwidth, not correctness.
 - On `200`: compute `document_id = sha256(bytes)` (Spec 1 hash). Upsert keyed on
   `document_id`. If the id already exists, it is the same bytes → no new row, no
   downstream work (R3.2).

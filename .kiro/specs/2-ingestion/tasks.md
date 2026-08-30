@@ -164,6 +164,15 @@ gate 1–6). Tags: [PERMANENT] ships in `pipeline/` or `db/`. [TEST]. [VERIFICAT
 - **Spec 3 — measure real infra cost.** Read actual monthly cost from Cost Explorer
   filtered by the four tags after ~a week of real runs; replace the README's
   ~$4–5/mo Aurora ESTIMATE with the measured figure.
+- **Spec 3 — build the posting-time distribution from OUR run log, then narrow the
+  schedule window (§39, option 3).** The city's `Last-Modified` is unreliable (one
+  batch value across all 152 files) and the index "Posted" text is date-only (no
+  hour). So after ~a week of real hourly runs, use the run log's first-seen
+  timestamps (when WE first recorded each document — a signal we control) to build
+  the true posting-hour + day-of-week distribution, then propose a narrowed
+  weekday/hours window with a stated margin. Ship 24/7 hourly until then (§39
+  option 2). Same-day special meetings (§35g) are the case a narrow window must not
+  miss; the margin protects them.
 - **§30d flag RETIRED (§38).** The hunter is a deterministic Lambda, not an
   AgentCore runtime, so the "hunter and extractor need opposite networkMode on
   separate runtimes" problem dissolves. Only the extractor and watcher live on
