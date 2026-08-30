@@ -119,7 +119,10 @@ def _rewrite_one(source: SourceRecord, model_id: str, client, skip_es: bool) -> 
             es_text=None, es_verified=False,
             en_attempts=result.en_attempts, es_attempts=0,
             note_en=result.note_en,
-            es_absent_note="Spanish is available in the city's own published Spanish edition (§36b).",
+            es_absent_note=(
+                "Spanish is available in the city's own published Spanish edition. "
+                "El espa\u00f1ol est\u00e1 disponible en la edici\u00f3n en espa\u00f1ol publicada por la ciudad."
+            ),
         )
     return result
 

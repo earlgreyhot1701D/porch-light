@@ -236,3 +236,57 @@ stating these plainly is the product working, not an apology.
   and extraction was never wired in), addressed as its own task, not a patch.
 - **v2 / next task.** Persist role (and document text) during ingestion; re-ingest
   so live data carries what the classifier already computes.
+
+### The verifier checks entities and reading level, not MEANING
+
+- **What it is.** The six checks confirm every entity in a rewrite is in the source,
+  no entity is invented, the receipt is attached from the record, and the reading
+  level is plain. They do NOT check that the RELATIONSHIPS the rewrite asserts
+  between those entities are true. A rewrite can take two true, independent facts
+  and invent a connection between them, and pass every check.
+- **Worked example (W6, item 4 ES).** The source states two independent facts: a
+  CEQA exemption ("15301 (Existing Facilities, Class 1)") and a recommendation to
+  continue the item to October 28, 2026. The model's Spanish fused them into one
+  invented claim — that the city is considering continuing the review *under CEQA
+  Class 1* until that date. Every entity (CEQA, Class 1, the date) is real and
+  present; the CAUSAL relationship between them is fabricated. (That rewrite was
+  rejected here, but for a translated role name, not for the fusion — the fusion
+  itself would have passed.)
+- **Why it is a real boundary, not a bug.** Meaning/relationship verification is a
+  fundamentally harder problem than entity presence; a deterministic checker cannot
+  confirm that a claimed relationship holds without understanding the text, which
+  is the very thing we do not trust the model to assert. The honest position: the
+  verifier guarantees entity fidelity and readability, NOT semantic faithfulness of
+  relationships.
+- **v2.** Explore a claim-level check (does each asserted relationship trace to a
+  single source sentence?), or constrain the rewrite prompt to one-fact-per-sentence
+  so fused claims are structurally harder to produce. Neither is trivial.
+
+### Receipts point at a PAGE, not at an item within a page
+
+- **What it is.** `items.page_start` / `page_end` are whole page numbers. Two items
+  on the same page get identical page ranges (W6: items 2 and 3 both pp. 2-3). The
+  receipt's "jump to page" lands the reader on the page, not on the specific item.
+- **What it affects.** On a dense agenda page, the reader must scan the page to find
+  the item the receipt refers to. The body/date/item-number in the receipt still
+  identify it; only the page anchor is coarse.
+- **Why we accepted it.** Page-level anchoring is honest (it never points at the
+  wrong page) and matches what a PDF page link can do; sub-page anchoring needs
+  character offsets or per-item bookmarks the source PDF does not provide.
+- **v2.** Capture a per-item text offset or a search anchor so the link can
+  highlight the item on the page.
+
+### Our own hardcoded Spanish was missing diacritics (FIXED); model/pipeline/DB path is clean
+
+- **What it was.** The hardcoded ES fallback string was written without accents
+  ("version verificada en espanol"). Investigation (not a guess) found the loss was
+  ONLY in the source-code string literals I authored. The model output, the
+  pipeline, and the database round-trip all PRESERVE accents correctly (verified: a
+  stored "reunión/están" keeps `ord > 127`); the mojibake seen in console/file
+  captures is the PowerShell OEM code page rendering correct UTF-8, not data loss.
+- **Fix.** Corrected the hardcoded strings to carry proper diacritics (using
+  explicit escapes so they cannot be re-stripped by an editor). Model-produced
+  Spanish needed no change.
+- **Residual.** Console/file dumps on Windows still render accents as mojibake for
+  display; the DATA is correct. Any future hardcoded Spanish must be written with
+  accents and spot-checked with `ord()`, not by eye in a console.

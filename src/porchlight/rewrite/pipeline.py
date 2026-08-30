@@ -98,7 +98,7 @@ _EN_FALLBACK_NOTE = (
 )
 _ES_ABSENT_NOTE = (
     "A verified Spanish version was not produced for this item. "
-    "No se pudo producir una version verificada en espanol para este punto."
+    "No se pudo producir una versi\u00f3n verificada en espa\u00f1ol para este punto."
 )
 
 
