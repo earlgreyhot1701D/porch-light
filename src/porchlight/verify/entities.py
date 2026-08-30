@@ -25,6 +25,82 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
+from porchlight.log import get_logger
+
+log = get_logger("porchlight.verify.entities")
+
+
+# ---------------------------------------------------------------------------
+# Artifact-tolerant extraction (VIEW ONLY) — the extractor reads THROUGH a repair
+# pass; it NEVER writes back. source.text stays byte-for-byte with its mojibake,
+# forever (calibration decision 3). The repair maps the known PDF-text-layer
+# artifacts to their intended characters, and collapses a spurious intra-word
+# space only where the result matches a month name (so "Jun e 30" -> "June 30")
+# or a known identifier pattern. Every repair is logged: a repair pass we cannot
+# inspect is the same hazard as an untested control.
+# ---------------------------------------------------------------------------
+
+# Known mojibake -> intended character. Verified against doc 3685's text layer.
+_ARTIFACT_MAP = {
+    "\u00fb": "-",   # û  en/em dash
+    "\u00e6": "'",   # æ  apostrophe (CityÆs -> City's)
+    "\u00c6": "'",   # Æ  apostrophe (CityÆs uses Æ before s)
+    "\u00ba": "\u00a7",  # º  section sign §
+    "\u00f4": '"',   # ô  opening curly double-quote
+    "\u00f6": '"',   # ö  closing curly double-quote
+    "\u2534": "A",   # ┴  stands in for an accented capital (SÁNCHEZ); best-effort
+    "\u00b1": "n",   # ±  stands in for ñ (El Niño); best-effort
+    "\u00f2": "\u2022",  # ò  bullet •
+}
+
+_MONTHS_ALL = (
+    "january", "february", "march", "april", "may", "june", "july",
+    "august", "september", "october", "november", "december",
+    "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+    "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)
+# A spurious intra-word space inside a month name: "Jun e", "Sep tember", etc.
+# We only repair when joining across the space yields a real month word, so this
+# never merges unrelated tokens.
+_MONTH_SPACE_FIX = re.compile(
+    r"\b([A-Za-z]{2,})\s+([a-z]{1,3})\b"
+)
+
+
+def _repair_for_extraction(text: str) -> str:
+    """Return a repaired VIEW of text for entity extraction. Never mutates source.
+
+    Two passes: (1) map known mojibake glyphs; (2) collapse a spurious intra-word
+    space when the join forms a month name. Both are logged with before/after so
+    what the pass silently fixes is inspectable.
+    """
+    if not text:
+        return text
+    repaired = text
+
+    # Pass 1: known artifact glyphs.
+    for bad, good in _ARTIFACT_MAP.items():
+        if bad in repaired:
+            count = repaired.count(bad)
+            repaired = repaired.replace(bad, good)
+            log.info(
+                "entity_repair_artifact",
+                artifact=repr(bad),
+                intended=repr(good),
+                occurrences=count,
+            )
+
+    # Pass 2: month-name intra-word space ("Jun e 30" -> "June 30").
+    def _join_month(m: re.Match[str]) -> str:
+        joined = (m.group(1) + m.group(2))
+        if joined.lower() in _MONTHS_ALL and m.group(1).lower() not in _MONTHS_ALL:
+            log.info("entity_repair_month_space", before=m.group(0), after=joined)
+            return joined
+        return m.group(0)
+
+    repaired = _MONTH_SPACE_FIX.sub(_join_month, repaired)
+    return repaired
+
 
 class EntityClass(str, Enum):
     """What kind of entity a span is, which decides how it is compared."""
@@ -104,11 +180,63 @@ _PROPER = re.compile(r"\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)+\b")
 # "The Council" or Spanish "El Concejo" is a common-noun REFERENCE, not the proper
 # name the raw-compare rule targets (which is "Planning Commission", "Main Street").
 # Stripping them keeps a correct EN->ES rewrite ("the Council" -> "el Concejo") from
-# reading as an invented name. Whether two BODY names are equivalent across
-# languages is a calibration decision (task 8), not decided here.
+# reading as an invented name.
 _LEADING_DET = re.compile(
     r"^(?:the|a|an|el|la|los|las|un|una|unos|unas)\s+", re.IGNORECASE
 )
+
+# ROLE NAMES ARE NOT RAW-COMPARE NAMES (calibration decision 1). Job titles and
+# role names are common nouns that translate freely — they must NOT be raw-compared
+# (that was the dominant known-good rejection). Raw-compare is for person, company,
+# org, street, place, and identifier names. This is a spec correction, not a bug.
+#
+# Two mechanisms:
+#   1. Body-name-in-prose that is a pure common-noun reference ("City Council",
+#      "el Concejo") is dropped entirely.
+#   2. A role TITLE prefixing a person ("City Clerk Michael MacDonald") has the
+#      title stripped, leaving the person name — attaching a role to a person is
+#      not a new entity as long as the person matches (decision 1).
+# "Urban Center Zone" is a zone DESCRIPTION, not an identifier, so it is a common
+# noun too; "T5.3" is the identifier and compares raw (handled as it is not a
+# multi-word proper-noun span, so it is not captured as a NAME here).
+
+# Common-noun role/body phrases that are never raw-compare entities on their own.
+_ROLE_OR_BODY = frozenset(
+    {
+        "city council", "city clerk", "public works director",
+        "chief technology officer", "city manager", "human resources director",
+        "chief of police", "mayor", "deputy mayor", "council", "concejo",
+        "urban center zone", "land use table",
+    }
+)
+
+# Role titles that may prefix a person name; stripped so the person name remains.
+_ROLE_TITLE_PREFIX = re.compile(
+    r"^(?:city\s+clerk|public\s+works\s+director|chief\s+technology\s+officer|"
+    r"city\s+manager|human\s+resources\s+director|chief\s+of\s+police|"
+    r"deputy\s+mayor|mayor)\s+",
+    re.IGNORECASE,
+)
+
+
+def _clean_name(raw: str) -> str | None:
+    """Reduce a candidate NAME span to a raw-compare entity, or None to drop it.
+
+    Applies decision 1: drop pure role/body common-noun phrases; strip a leading
+    role title off a person name. Returns None when nothing raw-comparable remains.
+    """
+    name = _LEADING_DET.sub("", raw.strip())
+    # Strip a leading role title so "City Clerk Michael MacDonald" -> "Michael MacDonald".
+    name = _ROLE_TITLE_PREFIX.sub("", name).strip()
+    if not name:
+        return None
+    if name.casefold() in _ROLE_OR_BODY:
+        return None
+    # A single remaining word after stripping is a common noun ("Council"),
+    # not a multi-word proper name.
+    if len(name.split()) < 2:
+        return None
+    return name
 
 
 def _find(pattern: re.Pattern[str], text: str) -> list[tuple[int, int, str]]:
@@ -129,7 +257,8 @@ def extract(text: str) -> list[Entity]:
     Never raises: unexpected input yields an empty list.
     """
     try:
-        text = text or ""
+        # Read THROUGH the artifact-repair view; source.text is never mutated.
+        text = _repair_for_extraction(text or "")
         entities: list[Entity] = []
 
         # 1. Dates first, and record their spans to mask from the number pass.
@@ -161,13 +290,10 @@ def extract(text: str) -> list[Entity]:
         for m in _PROPER.finditer(text):
             if any(s <= m.start() < e for s, e in seen_name_spans):
                 continue
-            raw = _LEADING_DET.sub("", m.group(0).strip())
-            # After dropping a leading article, a single remaining word is a common
-            # noun ("Council"), not a multi-word proper name — don't treat it as a
-            # raw-compare entity.
-            if len(raw.split()) < 2:
+            cleaned = _clean_name(m.group(0))
+            if cleaned is None:
                 continue
-            entities.append(Entity(EntityClass.NAME, raw))
+            entities.append(Entity(EntityClass.NAME, cleaned))
 
         return entities
     except Exception:

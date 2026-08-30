@@ -73,8 +73,11 @@ _MULT = {
     "thousand": 1_000, "mil": 1_000,
 }
 _MULT_ALT = "|".join(sorted(_MULT.keys(), key=len, reverse=True))
+# `val` captures digits plus BOTH separators (',' and '.') so a locale-aware
+# resolver (_parse_localized_number) can decide thousands-vs-decimal afterward.
+# Capturing only one separator here would split "1.200.000" (ES) or "145.800".
 _NUM_CORE = re.compile(
-    rf"(?P<cur>\$)?\s*(?P<val>\d[\d,]*(?:\.\d+)?)\s*(?:(?P<mult>{_MULT_ALT})\b)?"
+    rf"(?P<cur>\$)?\s*(?P<val>\d[\d.,]*)\s*(?:(?P<mult>{_MULT_ALT})\b)?"
     rf"\s*(?P<pct>%|percent|por\s+ciento)?",
     re.IGNORECASE,
 )
@@ -116,18 +119,58 @@ def _norm_date(raw: str) -> str | None:
     return None
 
 
+def _parse_localized_number(digits: str) -> float | None:
+    """Parse a number string that may use EN or ES separator conventions.
+
+    Locale-aware rule (calibration decision, task 8): a '.' or ',' followed by
+    EXACTLY three digits and NOT followed by more digits is a THOUSANDS separator;
+    a '.' or ',' followed by one or two digits (and no further group) is a DECIMAL.
+    So '145.800' (ES) and '145,800' (EN) both yield 145800.0, while '1.5' stays 1.5
+    and '1.500' becomes 1500.0. Mixed grouping like '1,200,000' / '1.200.000' folds
+    all separators. A genuine decimal like '564.074' with three trailing digits is
+    ambiguous with a thousands group; per the rule (exactly-three-digits ⇒
+    thousands) it resolves to 564074, which matches the English '$564,074' source —
+    the calibration case this rule exists to fix.
+
+    Returns the numeric value, or None if it does not parse.
+    """
+    s = digits.strip().rstrip(".,")  # drop trailing sentence punctuation
+    if not s:
+        return None
+    # A single separator followed by exactly 1 or 2 digits (end of string) = decimal.
+    m_dec = re.fullmatch(r"(\d+)([.,])(\d{1,2})", s)
+    if m_dec:
+        try:
+            return float(f"{m_dec.group(1)}.{m_dec.group(3)}")
+        except ValueError:
+            return None
+    # Otherwise every '.' and ',' is a thousands separator (each group is 3 digits,
+    # or it is a bare integer). Strip them and parse as an integer-valued float.
+    if re.fullmatch(r"\d{1,3}([.,]\d{3})*", s):
+        try:
+            return float(re.sub(r"[.,]", "", s))
+        except ValueError:
+            return None
+    # Fallback: strip commas (EN grouping) and try; leaves a lone trailing decimal.
+    try:
+        return float(s.replace(",", ""))
+    except ValueError:
+        return None
+
+
 def _norm_number(raw: str) -> str | None:
     """Canonicalize a number to 'value|unit', or None if not confident.
 
     unit is one of: 'usd' (currency), 'pct' (percent), 'n' (plain). Magnitude
     words are folded into the value so 1.2 million and 1,200,000 collapse.
+    Separators are resolved locale-aware (see `_parse_localized_number`), so the
+    Spanish thousands-period ('$145.800') matches the English comma ('$145,800').
     """
     m = _NUM_CORE.search(raw.lower())
     if not m or not m["val"]:
         return None
-    try:
-        value = float(m["val"].replace(",", ""))
-    except ValueError:
+    value = _parse_localized_number(m["val"])
+    if value is None:
         return None
     if m["mult"]:
         value *= _MULT[m["mult"].lower()]
