@@ -11,7 +11,7 @@ You are building **Porch Light** with me. Before doing anything, read your steer
 
 A Strands Agents SDK build for the AWS "Agents for Humans" hackathon (Good Neighbor track, submitting Sep 13). An agent that watches City of Ventura's public meeting agendas for one person, summarizes matches in English and Spanish with a receipt on every claim, and drafts the structure of a public comment that only the human can finish and send.
 
-Python. Three agents (hunter, extractor, watcher) with three least-privilege IAM roles. Deterministic verifiers on every model output. Deployment topology per §26: agents to **Bedrock AgentCore via direct code deployment** (a .zip — **no Docker in the deploy path**), frontend and read-only API to **Vercel**, schedule on **EventBridge**, database on **Neon** Postgres with pgvector. `docker-compose.yml` exists for local development only.
+Python. Three reasoning loops with three least-privilege identities; **two are genuine agents** (extractor, watcher) and the **hunter is deterministic** (a scheduled Lambda, no model — §38). Deterministic verifiers on every model output. Deployment topology per §26: agents to **Bedrock AgentCore via direct code deployment** (a .zip — **no Docker in the deploy path**), frontend and read-only API to **Vercel**, schedule on **EventBridge**, database on **Neon** Postgres with pgvector. `docker-compose.yml` exists for local development only.
 
 ## How we work — this is a contract
 

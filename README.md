@@ -12,7 +12,7 @@ A prior weekend prototype of this idea exists at github.com/earlgreyhot1701D/civ
 
 - **Language:** Python
 - **Agent framework:** Strands Agents SDK — version: 1.53.0
-- **Deployment:** Bedrock AgentCore (direct code deploy, .zip, no container)
+- **Deployment:** the two agents (extractor, watcher) run on Bedrock AgentCore (direct code deploy, .zip, no container); the deterministic hunter runs as an EventBridge-scheduled Lambda (§38); frontend + read-only API on Vercel
 - **Database:** Amazon Aurora Serverless v2 PostgreSQL + pgvector (production, provisioned at Spec 2 via the RDS Data API), local pgvector via docker-compose (dev)
 - **Frontend:** Vercel (plain HTML/CSS/JS, no framework)
 - **Schedule:** EventBridge
