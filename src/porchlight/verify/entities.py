@@ -170,11 +170,17 @@ _INTERESTING_NUMBER = re.compile(
 # Recall-oriented; false positives are harmless because names compare raw and a
 # name present in both source and output simply matches. ---
 _STREET = re.compile(
-    r"\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+"
+    r"\b[A-Z][a-zA-Z]+(?:[^\S\n]+[A-Z][a-zA-Z]+)*[^\S\n]+"
     r"(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Drive|Dr\.?|"
     r"Lane|Ln\.?|Way|Court|Ct\.?|Place|Pl\.?)\b"
 )
-_PROPER = re.compile(r"\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)+\b")
+# Proper-noun capture NEVER crosses a newline: a name is within-line. Using
+# [^\S\n] (whitespace except newline) as the inter-word gap stops a match from
+# spanning "RECOMMENDATION\n\nThe City Council" into one bogus name — the
+# over-capture class fixed on real generated rewrites (task 9). An all-caps token
+# that ends a line is a header (RECOMMENDATION, staff labels), not part of a name;
+# _clean_name drops those too.
+_PROPER = re.compile(r"\b[A-Z][a-zA-Z]+(?:[^\S\n]+[A-Z][a-zA-Z]+)+\b")
 
 # Leading determiners/articles are not part of a proper name. A sentence-initial
 # "The Council" or Spanish "El Concejo" is a common-noun REFERENCE, not the proper
@@ -226,6 +232,9 @@ def _clean_name(raw: str) -> str | None:
     role title off a person name. Returns None when nothing raw-comparable remains.
     """
     name = _LEADING_DET.sub("", raw.strip())
+    # An all-caps leading token is a source header/label (RECOMMENDATION, STAFF),
+    # not part of a proper name — drop it so it cannot fuse onto a following name.
+    name = re.sub(r"^[A-Z]{4,}\s+", "", name).strip()
     # Strip a leading role title so "City Clerk Michael MacDonald" -> "Michael MacDonald".
     name = _ROLE_TITLE_PREFIX.sub("", name).strip()
     if not name:

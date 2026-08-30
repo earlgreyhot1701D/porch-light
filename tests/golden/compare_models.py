@@ -36,7 +36,7 @@ GOLDEN = Path(__file__).parent / "golden_set.json"
 
 MODELS = {
     "nova_lite": "amazon.nova-lite-v1:0",
-    "haiku": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+    "nova_pro": "amazon.nova-pro-v1:0",  # comparator (Haiku was EOL/legacy; see proposal doc)
 }
 RUNS = (1, 2)
 

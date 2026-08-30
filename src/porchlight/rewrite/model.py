@@ -28,7 +28,9 @@ import boto3
 # when a Converse response omits usage; the ledger prefers real token counts when
 # present. Values are per the task-9 proposal's sourced rates.
 _PRICE_PER_TOKEN = {
-    # model_id substring -> (input_price, output_price) per 1 token
+    # model_id substring -> (input_price, output_price) per 1 token.
+    # Order matters: "nova-pro" before "nova" so the longer key wins.
+    "nova-pro": (0.80 / 1_000_000, 3.20 / 1_000_000),
     "nova-lite": (0.06 / 1_000_000, 0.24 / 1_000_000),
     "haiku": (0.25 / 1_000_000, 1.25 / 1_000_000),
 }

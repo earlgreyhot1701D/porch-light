@@ -30,6 +30,10 @@ REWRITE_PROMPT_EN = (
     "Do NOT imply or predict an outcome. Do not say the body 'will' do a thing it is "
     "only being asked to consider.\n"
     "- Do not add any opinion, recommendation, or position.\n"
+    "- Do not repeat or echo the source text.\n"
+    "- Do not include headers, labels, or section markers from the source such as "
+    "RECOMMENDATION, Staff, or the item number line.\n"
+    "- Write it as prose a person reads, not as a restructured agenda entry.\n"
     "Return only the rewritten text, nothing else."
 )
 
@@ -46,6 +50,10 @@ REWRITE_PROMPT_ES = (
     "person names, and company names stay exactly as written in the English "
     "(e.g. 'Victoria Avenue' stays 'Victoria Avenue', never 'Avenida Victoria').\n"
     "- Add nothing not in the English. Do not imply an outcome where there are options.\n"
+    "- Do not repeat or echo the source text.\n"
+    "- Do not include headers, labels, or section markers from the source such as "
+    "RECOMMENDATION, Staff, or the item number line.\n"
+    "- Write it as prose a person reads, not as a restructured agenda entry.\n"
     "Return only the Spanish text, nothing else."
 )
 

@@ -12,8 +12,22 @@ Exactly two, per the "cheapest viable vs one larger, not a field of four" rule:
 
 | Role | Model | On-demand price (per 1M tok, in/out) | Why |
 | --- | --- | --- | --- |
-| Cheapest viable | **Amazon Nova Lite** (`amazon.nova-lite-v1:0`) | ~$0.06 / $0.24 | Already proven invocable at Spec 0; no Marketplace subscription gate (§27); the incumbent to beat. |
-| One larger | **Claude Haiku** (current 3.x, `anthropic.claude-3-5-haiku-*`) | ~$0.25 / $1.25 | Cheapest Claude tier — one clear step up in capability, still cheap. NOT a Sonnet: the question is "is the cheap model good enough," and Haiku is the honest one-step comparator. |
+| Cheapest viable | **Amazon Nova Lite** (`amazon.nova-lite-v1:0`) | ~$0.06 / $0.24 | Already proven invocable at Spec 0; no Marketplace subscription gate (§27); the incumbent to beat. ACTIVE. |
+| One larger | **Amazon Nova Pro** (`amazon.nova-pro-v1:0`) | ~$0.80 / $3.20 | The comparator, chosen from the live `list-foundation-models` (us-east-1). See the model-longevity finding below. |
+
+**Comparator changed from Claude Haiku to Nova Pro — model-longevity finding (recorded).**
+The originally-proposed `anthropic.claude-3-5-haiku-20241022-v1:0` is **end-of-life**
+(Converse returned `ResourceNotFoundException: This model version has reached the
+end of its life`, hit 2026-08-30). The still-callable `anthropic.claude-3-haiku-20240307-v1:0`
+is **LEGACY** (endOfLife 2026-09-10, in public-extended-access) — days from EOL, a
+bad pick for anything meant to outlive the hackathon. From the live list, the
+cheapest **ACTIVE** model that is a genuine step up from Nova Lite and shares the
+identical Converse API shape (so the prompt stays a clean controlled variable, no
+cross-provider format drift) is **Nova Pro** (`amazon.nova-pro-v1:0`, ACTIVE since
+2024-12-03, ~$0.80/$3.20 per 1M). Same provider is a feature here, not a
+limitation: it isolates the model-size variable from provider prompt-format
+differences. Prices per public sources (openrouter / metatext / cloudprice),
+rephrased for compliance; the ledger records ACTUAL cost per call by model id.
 
 Prices are approximate current on-demand Bedrock rates (sources below); the ledger
 records ACTUAL cost per call by model id (already built, R9.1), so the decision
@@ -32,11 +46,15 @@ rests on measured cost, not this estimate.
   doubles to **48 calls**. Plan for 48, expect ~24-30.
 - Token estimate per call: source page-range ~300-500 input tokens, rewrite output
   ~150-250 tokens. Generously 600 in / 300 out per call.
-- 48 calls x (600 in + 300 out):
-  - Nova Lite: 28.8k in x $0.06/1M + 14.4k out x $0.24/1M = **~$0.005**
-  - Claude Haiku: 28.8k in x $0.25/1M + 14.4k out x $1.25/1M = **~$0.025**
-  - **Total estimated cost of the whole comparison: under $0.05.** Well inside the
+- Twice per model = 4 items x 2 langs x 2 runs = 16 good-item calls per model (the
+  harness runs the 4 non-adversarial items; adversarials are not billed into the
+  rate). Budget the full 48 for safety incl. retries.
+- Per call ~600 in / 300 out:
+  - Nova Lite: negligible — measured ~$0.0005/run, ~$0.001 for both runs.
+  - Nova Pro: ~13x Nova Lite's rate ($0.80/$3.20 vs $0.06/$0.24) => ~$0.007 for both runs.
+  - **Total estimated cost of the whole comparison: well under $0.02.** Inside the
     ingestion sub-budget (T15 = $10, ingestion = $7). One-time, not recurring.
+    (Nova Lite's 2 runs already cost ~$0.001, spent during the blocked first attempt.)
 
 ## 3. What is measured
 

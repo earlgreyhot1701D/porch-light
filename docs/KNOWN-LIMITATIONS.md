@@ -101,6 +101,27 @@ stating these plainly is the product working, not an apology.
   street name and nothing else, so it isolates checks 2/6 alone; re-derive both
   floors from the larger 0b corpus.
 
+### The model comparison uses two Amazon models, not two providers
+
+- **What it is.** Task 9 compares Nova Lite against **Nova Pro**, not against a
+  Claude/other-provider model. The originally-planned Claude Haiku
+  (`anthropic.claude-3-5-haiku-20241022-v1:0`) was end-of-life at run time
+  (Converse `ResourceNotFoundException`, 2026-08-30); the callable Claude 3 Haiku
+  is LEGACY (EOL 2026-09-10). The cheapest ACTIVE genuine step-up from the live
+  model list was Nova Pro.
+- **What it affects.** The comparison answers "is the cheap Amazon model good
+  enough vs the larger Amazon model," not "Amazon vs Anthropic." Same provider
+  means the Converse prompt is a clean controlled variable (no cross-provider
+  format drift), which is a benefit for THIS question but does not survey the
+  field.
+- **Why we accepted it.** Same-provider isolates the model-size variable, which is
+  what the decision rule needs; a PoC picks one comparator, not a field of four.
+  Bedrock model lifecycles move fast (a model id proposed one week was EOL the
+  next), so pinning to an ACTIVE model matters more than provider diversity.
+- **v2.** Re-run against a current cross-provider model once one is chosen for
+  longevity, and read the model id + lifecycle from config so an EOL id fails loud
+  at startup rather than mid-run.
+
 ### The verifier was calibrated against one author's voice
 
 - **What it is.** The verifier (especially check 5, reading level) was calibrated
