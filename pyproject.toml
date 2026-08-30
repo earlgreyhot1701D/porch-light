@@ -36,3 +36,8 @@ addopts = "-m 'not live'"
 markers = [
     "live: marks tests that hit real AWS services (deselected by default, run with make smoke)",
 ]
+
+[dependency-groups]
+dev = [
+    "pypdf>=6.16.2",
+]

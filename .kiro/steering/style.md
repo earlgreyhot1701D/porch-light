@@ -21,12 +21,13 @@ inclusion: always
 - **"I cannot verify this myself" is not a reason to ask.** Do the part you can, note the part you cannot, keep going.
 - **A RECAP covers one BLOCK OF PRE-APPROVED WORK, not one wave, not one finding.** When a range of waves is pre-approved, that whole range is one report: run it straight through and recap once at the end. Do not report between waves inside an approved range, and do not ask to continue into already-approved work. Stop mid-range ONLY for: a surprise where design says X and reality is Y; a genuine blocker you cannot resolve; a task marked INFRA-PROPOSE; or anything that spends money, changes scope, or contradicts an approved decision. "I finished a wave" and "the next wave is large" are not stop conditions.
 - **Nothing is uncommitted when you send a RECAP. Ever.** That includes proposals and in-flight fixes. Commit proposals with the message prefixed `proposal:` and in-flight work with `wip:` so the log is honest; a correction is a normal commit on top. **Every RECAP's WHAT CHANGED ends with the output of `git status --short`.** "Working tree clean" is the expected line. Gitignored paths do not count; everything else does.
-- **Every assigned block of work ends with a RECAP, no exceptions, short enough to read in under a minute:**
+- **The RECAP FORMAT IS NON-NEGOTIABLE. Every block ends with it — including extraction, prep, conversion, and "I was blocked" reports. No exceptions, never narrative prose instead.** Short enough to read in under a minute, exactly these five sections in this order:
   - **WHAT CHANGED** — files touched, one line each
-  - **FINDINGS** — anything where design said X and reality was Y
-  - **VERIFIED** — what you actually ran and what it returned
-  - **OPEN** — what is unfinished, and who owns it (you or me)
-  - **NEXT** — the single next action
+  - **FINDINGS** — only things I did not already know (design said X, reality was Y). If there are none, say "none."
+  - **VERIFIED** — what you actually ran, with the output. Not "I ran the tests" — the result line.
+  - **OPEN** — questions for me / what is unfinished, and who owns it
+  - **NEXT** — the single next task
+  - Then the raw `git status --short` output, PASTED verbatim, not summarized and not reflowed onto one line. I am reading the tool's words, not yours.
 - At the design stage the old rule still holds: never deliver a finished implementation of an approach not yet approved.
 - **DO NOT refactor code outside the current task's scope.** This is the single most important rule in this file.
 - If something contradicts the decisions doc or a steering file, say so instead of going along with it. If a task asks for anything in never.md, refuse and cite it.
