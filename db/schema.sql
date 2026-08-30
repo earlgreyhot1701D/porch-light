@@ -76,6 +76,33 @@ CREATE INDEX IF NOT EXISTS idx_items_document ON items (document_id);
 -- note rather than an index on a possibly-wrong dimension.
 
 -- ---------------------------------------------------------------------------
+-- item_rewrites: verified rewrites + per-language verify outcome (Spec 3 W3).
+-- One row per item per language. Carries the VERIFIED rewrite text, or NULL text
+-- with verified=FALSE and a note when the language fell back (never-fail-open):
+--   EN fallback -> the item's shown English is the original staff text (stored in
+--     `fallback_text`), verified_en FALSE.
+--   ES fallback -> es text NULL, verified FALSE, es_absent_note set; the reader is
+--     shown the verified English (never.md #7). NEVER stores an unverified rewrite.
+-- Receipt fields (item_number/page range/body/deadline) are NOT duplicated here;
+-- they live on items/meetings and are attached from the record (containment).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS item_rewrites (
+    item_id         TEXT PRIMARY KEY REFERENCES items(item_id),
+    run_id          TEXT NOT NULL,
+    model_id        TEXT NOT NULL,             -- model that produced the rewrites (§27)
+    en_text         TEXT NOT NULL,             -- verified EN rewrite, or original staff text on EN fallback
+    en_verified     BOOLEAN NOT NULL,
+    en_attempts     INT NOT NULL,
+    es_text         TEXT,                       -- verified ES rewrite, or NULL on ES fallback (never unverified)
+    es_verified     BOOLEAN NOT NULL,
+    es_attempts     INT NOT NULL DEFAULT 0,
+    note_en         TEXT NOT NULL DEFAULT '',   -- EN fallback note (empty when verified)
+    es_absent_note  TEXT NOT NULL DEFAULT '',   -- ES fallback note (empty when verified)
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_item_rewrites_run ON item_rewrites (run_id);
+
+-- ---------------------------------------------------------------------------
 -- body_status: per-body last-read + quarantine (§16a L4, §16b, §7 R7.4).
 -- Per-body last-read ONLY; a single global last-read is banned (R7.4).
 -- ---------------------------------------------------------------------------

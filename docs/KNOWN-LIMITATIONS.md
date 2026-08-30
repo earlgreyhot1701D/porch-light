@@ -182,3 +182,17 @@ stating these plainly is the product working, not an apology.
 - **Residual.** The thresholds rest on small n (one meeting, one model). Revisit at
   task 0b; the EN floor (33.8) should get the same conditional treatment if EN ever
   shows the same already-plain pattern.
+
+### The spend ledger stores cost at 4-decimal precision; single model calls round toward zero
+
+- **What it is.** `spend_ledger.cost_usd` is `NUMERIC(10,4)`. A single Nova Lite
+  call costs ~$0.00004, below that resolution, so a per-call row can store as
+  0.0000. The MONTHLY aggregate the $10 budget checks is unaffected (many calls sum
+  to cents), but you cannot recover a true per-agenda cost by summing stored rows.
+- **What it affects.** The "cost per agenda" write-up number if taken from stored
+  ledger values; the budget check itself is fine at this scale.
+- **Why we accepted it.** The budget control works (it is about the monthly total,
+  and $10 vs sub-cent calls has enormous headroom). Cost-per-agenda for the write-up
+  is measured from the harness's summed pre-rounding per-call cost instead.
+- **v2.** Widen `cost_usd` to `NUMERIC(12,8)` (or store micro-dollars as an integer)
+  so per-call cost is recoverable from the ledger directly.
