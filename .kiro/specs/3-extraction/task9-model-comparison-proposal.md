@@ -15,12 +15,27 @@ Exactly two, per the "cheapest viable vs one larger, not a field of four" rule:
 | Cheapest viable | **Amazon Nova Lite** (`amazon.nova-lite-v1:0`) | ~$0.06 / $0.24 | Already proven invocable at Spec 0; no Marketplace subscription gate (§27); the incumbent to beat. ACTIVE. |
 | One larger | **Amazon Nova Pro** (`amazon.nova-pro-v1:0`) | ~$0.80 / $3.20 | The comparator, chosen from the live `list-foundation-models` (us-east-1). See the model-longevity finding below. |
 
+**Pricing source (submission-grade).** The authoritative source is the AWS Bedrock
+pricing page, [aws.amazon.com/bedrock/pricing](https://aws.amazon.com/bedrock/pricing/),
+retrieved 2026-08-30. That page renders its per-model token table dynamically, so
+the exact Nova Lite / Nova Pro per-1K figures must be read on the page directly
+rather than quoted from a scrape; the ~$0.06/$0.24 (Lite) and ~$0.80/$3.20 (Pro)
+per-1M figures used for the estimate below are the widely-reported values and are
+used ONLY to size the run. The DECISION rests on the spend ledger's ACTUAL measured
+cost per call by model id, not on this estimate, so a small discrepancy in the
+published rate does not affect the outcome. (Aggregator cross-checks: openrouter,
+metatext, cloudprice — consistent with the above; rephrased for compliance.)
+
 **Comparator changed from Claude Haiku to Nova Pro — model-longevity finding (recorded).**
 The originally-proposed `anthropic.claude-3-5-haiku-20241022-v1:0` is **end-of-life**
 (Converse returned `ResourceNotFoundException: This model version has reached the
 end of its life`, hit 2026-08-30). The still-callable `anthropic.claude-3-haiku-20240307-v1:0`
-is **LEGACY** (endOfLife 2026-09-10, in public-extended-access) — days from EOL, a
-bad pick for anything meant to outlive the hackathon. From the live list, the
+is **LEGACY** (endOfLife **2026-09-10**, in public-extended-access) — days from EOL, a
+bad pick for anything meant to outlive the hackathon. **Near miss, written down
+while fresh:** the hackathon is judged **2026-09-14**; that Claude 3 Haiku hits EOL
+**2026-09-10**, so pinning it would have broken the demo **four days before
+judging**. The tool-longevity check (querying `list-foundation-models` for
+lifecycle status instead of trusting a remembered id) paid for itself here. From the live list, the
 cheapest **ACTIVE** model that is a genuine step up from Nova Lite and shares the
 identical Converse API shape (so the prompt stays a clean controlled variable, no
 cross-provider format drift) is **Nova Pro** (`amazon.nova-pro-v1:0`, ACTIVE since

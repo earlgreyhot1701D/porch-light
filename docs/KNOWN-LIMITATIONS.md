@@ -118,6 +118,11 @@ stating these plainly is the product working, not an apology.
   what the decision rule needs; a PoC picks one comparator, not a field of four.
   Bedrock model lifecycles move fast (a model id proposed one week was EOL the
   next), so pinning to an ACTIVE model matters more than provider diversity.
+- **Near miss (the longevity check paying for itself).** The callable Claude 3
+  Haiku (`anthropic.claude-3-haiku-20240307-v1:0`) hits EOL **2026-09-10**; the
+  hackathon is judged **2026-09-14**. Pinning that model would have broken the demo
+  **four days before judging**. Checking `list-foundation-models` for lifecycle
+  status, rather than trusting a remembered model id, caught it in advance.
 - **v2.** Re-run against a current cross-provider model once one is chosen for
   longevity, and read the model id + lifecycle from config so an EOL id fails loud
   at startup rather than mid-run.
