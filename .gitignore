@@ -11,6 +11,15 @@ credentials*
 deploy/spike_b/porchlightspike/agentcore/.cli/deployed-state.json
 deploy/spike_b/porchlightspike/agentcore/aws-targets.json
 
+# Hunter Lambda working artifacts: the IAM policy/trust JSON carry the account ID
+# in resource ARNs, and the build outputs are regenerable. Templates committed as
+# *.example instead (§31c pattern). handler.py + build.py ARE committed (source).
+deploy/hunter_lambda/_policy.json
+deploy/hunter_lambda/_trust.json
+deploy/hunter_lambda/hunter_lambda.zip
+deploy/hunter_lambda/_invoke_out.json
+deploy/hunter_lambda/_stage/
+
 # Python
 __pycache__/
 *.py[cod]

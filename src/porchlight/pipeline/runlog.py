@@ -27,17 +27,18 @@ RUN_BUDGET_HALTED = "budget_halted"
 
 def start_run(backend, run_id: str, started_at) -> None:
     backend.execute(
-        "INSERT INTO readlog (run_id, started_at, status) VALUES (%s, %s, %s)",
-        [run_id, started_at, RUN_RUNNING],
+        "INSERT INTO readlog (run_id, started_at, status) VALUES (%s, %s::timestamptz, %s)",
+        [run_id, started_at.isoformat() if hasattr(started_at, "isoformat") else started_at, RUN_RUNNING],
     )
 
 
 def finish_run(backend, run_id: str, finished_at, status: str,
                read: int, skipped: int, failed: int, quarantined: int, cost_usd: float) -> None:
     backend.execute(
-        "UPDATE readlog SET finished_at = %s, status = %s, read_count = %s, skipped_count = %s, "
+        "UPDATE readlog SET finished_at = %s::timestamptz, status = %s, read_count = %s, skipped_count = %s, "
         "failed_count = %s, quarantined_count = %s, cost_usd = %s WHERE run_id = %s",
-        [finished_at, status, read, skipped, failed, quarantined, cost_usd, run_id],
+        [finished_at.isoformat() if hasattr(finished_at, "isoformat") else finished_at,
+         status, read, skipped, failed, quarantined, cost_usd, run_id],
     )
     log.info("run_finished", run_id=run_id, status=status, read=read, skipped=skipped,
              failed=failed, quarantined=quarantined, cost_usd=cost_usd)
@@ -47,10 +48,10 @@ def mark_body_read(backend, body_id: str, read_at) -> None:
     """Record a SUCCESSFUL read of a body; reset its consecutive-fail counter."""
     backend.execute(
         "INSERT INTO body_status (body_id, last_read_at, consecutive_fails, quarantined) "
-        "VALUES (%s, %s, 0, FALSE) "
+        "VALUES (%s, %s::timestamptz, 0, FALSE) "
         "ON CONFLICT (body_id) DO UPDATE SET last_read_at = EXCLUDED.last_read_at, "
         "consecutive_fails = 0, quarantined = FALSE",
-        [body_id, read_at],
+        [body_id, read_at.isoformat() if hasattr(read_at, "isoformat") else read_at],
     )
 
 

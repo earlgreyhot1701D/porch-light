@@ -97,9 +97,35 @@ class AuroraDataApiBackend(Backend):
             data_params.append({"name": f"p{i}", "value": _data_api_value(val)})
         return named_sql, data_params
 
+    def _execute_with_resume(self, **kwargs):
+        """Execute a Data API statement, absorbing the auto-pause cold resume.
+
+        With Aurora min-capacity 0 (the dev setting, §33/§38), the first query
+        after idle raises DatabaseResumingException while the cluster wakes (a few
+        seconds). This is EXPECTED for the scheduled hunter (nobody is waiting), so
+        we wait and retry a bounded number of times rather than crash. This is not
+        a silent fallback (§never): it is a transient-wake retry, logged, bounded.
+        """
+        import time
+
+        from botocore.exceptions import ClientError
+
+        last = None
+        for attempt in range(6):  # ~ up to ~30s of resume wait
+            try:
+                return self._client.execute_statement(**kwargs)
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if code in ("DatabaseResumingException", "DatabaseNotFoundException") or "resuming" in str(e).lower():
+                    last = e
+                    time.sleep(2 + attempt * 2)
+                    continue
+                raise
+        raise last  # type: ignore[misc]
+
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> int:
         named_sql, data_params = self._named(sql, params)
-        resp = self._client.execute_statement(
+        resp = self._execute_with_resume(
             resourceArn=self._cluster_arn,
             secretArn=self._secret_arn,
             database=self._database,
@@ -110,7 +136,7 @@ class AuroraDataApiBackend(Backend):
 
     def query(self, sql: str, params: Sequence[Any] | None = None) -> QueryResult:
         named_sql, data_params = self._named(sql, params)
-        resp = self._client.execute_statement(
+        resp = self._execute_with_resume(
             resourceArn=self._cluster_arn,
             secretArn=self._secret_arn,
             database=self._database,

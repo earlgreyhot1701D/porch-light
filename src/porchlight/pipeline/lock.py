@@ -75,18 +75,22 @@ class RunLock:
         makes this safe against a concurrent live holder — a live lock is never
         deleted, so the insert fails and we raise.
         """
-        now = _utcnow()
+        now = _utcnow()  # a real datetime; stringified only at the SQL boundary below.
+        now_s = now.isoformat()
         # Reclaim a stale lock: one whose heartbeat + ttl has passed.
+        # Timestamp params are cast explicitly (%s::timestamptz): the RDS Data API
+        # does not implicitly cast text→timestamptz the way psycopg does, and the
+        # cast is a no-op on the local path. (Backend-difference finding, §38 deploy.)
         backend.execute(
             "DELETE FROM run_lock WHERE lock_name = %s "
-            "AND heartbeat_at + (ttl_seconds * interval '1 second') < %s",
-            [LOCK_NAME, now],
+            "AND heartbeat_at + (ttl_seconds * interval '1 second') < %s::timestamptz",
+            [LOCK_NAME, now_s],
         )
         try:
             backend.execute(
                 "INSERT INTO run_lock (lock_name, run_id, acquired_at, heartbeat_at, ttl_seconds) "
-                "VALUES (%s, %s, %s, %s, %s)",
-                [LOCK_NAME, run_id, now, now, T12_LOCK_TTL],
+                "VALUES (%s, %s, %s::timestamptz, %s::timestamptz, %s)",
+                [LOCK_NAME, run_id, now_s, now_s, T12_LOCK_TTL],
             )
         except Exception as e:  # PK conflict = a live run holds it
             log.info("lock_not_acquired", run_id=run_id, error=type(e).__name__)
@@ -94,6 +98,7 @@ class RunLock:
                 "A live run holds the ingestion lock; not starting."
             ) from e
 
+        # acquired_at stays a real datetime so _deadline()/check_deadline() arithmetic works.
         lock = cls(backend=backend, run_id=run_id, acquired_at=now, _stop=threading.Event())
         lock._start_heartbeat()
         log.info("lock_acquired", run_id=run_id)
@@ -117,8 +122,8 @@ class RunLock:
                     log.warning("lock_heartbeat_capped", run_id=self.run_id)
                     return
                 self.backend.execute(
-                    "UPDATE run_lock SET heartbeat_at = %s WHERE lock_name = %s AND run_id = %s",
-                    [_utcnow(), LOCK_NAME, self.run_id],
+                    "UPDATE run_lock SET heartbeat_at = %s::timestamptz WHERE lock_name = %s AND run_id = %s",
+                    [_utcnow().isoformat(), LOCK_NAME, self.run_id],
                 )
 
         self._thread = threading.Thread(target=beat, name="run-lock-heartbeat", daemon=True)
@@ -150,10 +155,10 @@ class RunLock:
 
 def is_locked(backend) -> bool:
     """True iff a NON-expired lock row exists. For diagnostics/tests."""
-    now = _utcnow()
+    now = _utcnow().isoformat()
     r = backend.query(
         "SELECT run_id FROM run_lock WHERE lock_name = %s "
-        "AND heartbeat_at + (ttl_seconds * interval '1 second') >= %s",
+        "AND heartbeat_at + (ttl_seconds * interval '1 second') >= %s::timestamptz",
         [LOCK_NAME, now],
     )
     return r.row_count > 0

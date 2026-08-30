@@ -110,8 +110,10 @@ def run_ingestion(backend, *, index_url: str = AGENDA_CENTER_URL) -> str:
         status = runlog.RUN_BUDGET_HALTED
         raise
     except Exception as e:  # noqa: BLE001 - fail closed, record honestly
+        import traceback
         status = runlog.RUN_INTERRUPTED
-        log.error("run_error", run_id=run_id, error=type(e).__name__)
+        log.error("run_error", run_id=run_id, error=type(e).__name__, detail=str(e)[:300],
+                  where=traceback.format_exc().splitlines()[-3:])
     finally:
         runlog.finish_run(
             backend, run_id, datetime.now(timezone.utc), status,
