@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "owner": "shara",
+    "verified_date": "PENDING",
+    "spanish_reviewer": "UNVERIFIED — §8 fluent reviewer needed",
+    "notes": "~20 items hand-read against the real Ventura PDFs. [HUMAN] ground-truth artifact (Spec 3). Task 0a = first SIX varied items (gates calibration, task 8); task 0b = remaining ~14 (gates model selection, task 9). The PLACEHOLDER entry below shows the shape; replace with real entries. Tests skip calibration/model-comparison while meta.verified_date == PENDING. §8 fallback: if no fluent Spanish reviewer is available when 0a is due, the author writes the Spanish, spanish_reviewer records 'unverified — author Spanish, no native review', and the README states the Spanish surface is unverified per §8. Calibration proceeds with the limitation recorded."
+  },
+  "items": [
+    {
+      "id": "golden-000-PLACEHOLDER",
+      "source": {
+        "body_id": "city_council",
+        "meeting_date": "2026-02-10",
+        "document_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_02102026-3569",
+        "item_number": "REPLACE_ME",
+        "page_range": [0, 0],
+        "text": "REPLACE_ME: verbatim staff text for this item's page range, copied from the PDF by hand."
+      },
+      "expected_entities": {
+        "dates": [],
+        "numbers": [],
+        "raw_names": []
+      },
+      "rewrite_en": "REPLACE_ME: hand-written correct plain-English rewrite of the item above.",
+      "rewrite_es": "REPLACE_ME: hand-written correct Spanish rewrite (fluent reviewer, §8).",
+      "is_adversarial": false,
+      "adversarial_reason": null
+    }
+  ]
+}
