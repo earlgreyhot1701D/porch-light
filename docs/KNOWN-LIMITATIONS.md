@@ -196,3 +196,43 @@ stating these plainly is the product working, not an apology.
   is measured from the harness's summed pre-rounding per-call cost instead.
 - **v2.** Widen `cost_usd` to `NUMERIC(12,8)` (or store micro-dollars as an integer)
   so per-call cost is recoverable from the ledger directly.
+
+### The stored corpus is 15 documents, not the 152 the site enumeration found
+
+- **What it is.** Aurora `porchlight-dev` holds 15 documents (11 agendas, 4
+  minutes, Aug 17-Sep 2 2026), not the ~152 the live-site enumeration counted.
+- **What it affects.** Any cost-per-agenda or posting-time-distribution claim: it
+  must state which number it rests on. A per-agenda cost measured over these 15 is
+  not a claim about all 152.
+- **Why we accepted it.** The deployed ingestion has run a limited window; the PoC
+  demonstrates the pipeline, not a full-corpus backfill.
+- **v2.** Backfill the full enumerated set once ingestion persists content (see the
+  root-cause task); state corpus size next to every derived number.
+
+### section 36b (city Spanish edition skip) is implemented and unit-tested but never exercised on real data
+
+- **What it is.** The §36b rule (skip our machine Spanish when the city published
+  its own Spanish edition, matched on body_id + meeting date) is built and unit-
+  tested (`test_rewrite_stage_db.py::test_city_spanish_skip_...`), but NO stored
+  meeting has a `spanish_edition` document, so it has never fired against real data.
+- **What it affects.** Confidence that §36b matches correctly on live data — the
+  matching key and the suppression are proven in tests, not against a real city
+  Spanish edition.
+- **Why we accepted it.** No real instance exists in the stored corpus to exercise
+  it; a unit test on the exact rule is honest coverage for a PoC.
+- **v2.** Confirm against a real city-published Spanish edition once one is ingested.
+
+### documents.role is unpopulated in stored data (classifier output never persisted)
+
+- **What it is.** Every stored document has `role = ""` even though the role
+  classifier works and is unit-tested. Spec 2 ingestion did not persist the
+  classifier's output into the `role` column. Found 2026-08-30, before it could
+  affect a user.
+- **What it affects.** Anything keyed on role in live data: §36b (needs
+  `spanish_edition`), minutes-vs-agenda filtering, supplemental detection. The
+  logic is correct; the stored data is blank.
+- **Why we accepted it (for now).** Surfaced during W6 investigation; it is one of
+  three symptoms of a single root cause (ingestion stores metadata, not content,
+  and extraction was never wired in), addressed as its own task, not a patch.
+- **v2 / next task.** Persist role (and document text) during ingestion; re-ingest
+  so live data carries what the classifier already computes.
