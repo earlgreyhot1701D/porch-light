@@ -207,12 +207,27 @@ _LEADING_DET = re.compile(
 # multi-word proper-noun span, so it is not captured as a NAME here).
 
 # Common-noun role/body phrases that are never raw-compare entities on their own.
+# The Spanish equivalents are NOT a general civic vocabulary — they are ONLY the
+# terms actually observed in generated model output during the task-9 comparison
+# run (Nova Lite, golden 0a, 2026-08-30). Built from a captured artifact, never
+# from a description of one (testing.md, one layer up). Each Spanish term is paired
+# with its English counterpart so the list reads as equivalences, not a bag of
+# words to ignore. Add a Spanish term here only when a real generated rewrite uses
+# it for a role/body common noun.
 _ROLE_OR_BODY = frozenset(
     {
+        # --- English role/body common nouns (source + EN rewrites) ---
         "city council", "city clerk", "public works director",
         "chief technology officer", "city manager", "human resources director",
         "chief of police", "mayor", "deputy mayor", "council", "concejo",
         "urban center zone", "land use table",
+        # --- Spanish equivalents observed in generated ES output (task-9 run) ---
+        "concejo municipal",            # = City Council
+        "ayuntamiento",                 # = City Council / City Hall (Nova's rendering)
+        "secretario municipal",         # = City Clerk
+        "centro urbano",                # = Urban Center (Zone)
+        "distrito escolar unificado",   # = Unified School District
+        "cuarta enmienda",              # = Fourth Amendment (ordinal in a contract name)
     }
 )
 

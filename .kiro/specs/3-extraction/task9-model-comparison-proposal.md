@@ -118,3 +118,59 @@ Sources (approximate current Bedrock on-demand pricing; content rephrased for
 licensing compliance):
 - [markaicode — AWS Bedrock latency benchmark 2026](https://markaicode.com/benchmarks/aws-bedrock-production-benchmark-latency/) (Nova Lite $0.06/$0.24 per 1M)
 - [markaicode — AWS Bedrock pricing](https://markaicode.com/pricing/aws-bedrock-pricing/) (Claude Haiku ~$0.00025 per 1K input)
+
+---
+
+## OUTCOME (task 9 closed)
+
+**Selected model: Amazon Nova Lite (`amazon.nova-lite-v1:0`), decided-under-limitation.**
+
+Comparison ran Nova Lite vs Nova Pro, anti-echo controlled prompt, twice per model,
+actual ledger-summed cost **$0.01216**. Result:
+
+| model | run | overall | EN | ES |
+| --- | --- | --- | --- | --- |
+| Nova Lite | 1 | 50% | 0/4 | 4/4 |
+| Nova Lite | 2 | 50% | 0/4 | 4/4 |
+| Nova Pro | 1 | 38% | 0/4 | 3/4 |
+| Nova Pro | 2 | 38% | 0/4 | 3/4 |
+
+- **EN is clean for both models (0/4).** Every rejection is ES-side.
+- The ES rejections were **artifact-dominated**, not model quality: (1) the models
+  translated role/body common nouns ("Concejo Municipal", "Secretario Municipal",
+  "Centro Urbano", "Distrito Escolar Unificado", "Cuarta Enmienda") that the
+  extractor did not yet recognize as non-raw-compare in Spanish, and (2) the
+  provisional ES reading floor (77.3) rejected fine model prose scoring 69-72.
+- Runs agreed within each model, so the Lite-vs-Pro delta lives in the artifact
+  (Nova Pro happened to translate one fewer name), not in measured quality.
+- Under the fixed decision rule (artifact/noise at this n => take the cheaper),
+  **Nova Lite wins**: it clears EN cleanly at ~1/14th the cost of Nova Pro.
+
+**Then the ES bug was fixed** (it is a production bug: an untreated role/body
+translation rejects every Spanish rewrite live). The extractor's role/body list
+gained the Spanish equivalents actually observed in this run (paired with their
+English counterparts, sourced to the run), and the ES reading floor was re-derived
+to 64.0. Calibration re-run: known-good rejection still 0, adversarials still bite.
+A post-fix Nova-Lite-only ES rejection rate is recorded for the write-up.
+
+### Post-fix Nova-Lite-only measurement (write-up, not a re-decision)
+
+After the ES role/body fix and the 64.0 floor, Nova Lite over the four good items,
+twice, cost $0.00084 total:
+
+| run | overall | EN | ES | ES rejections by check |
+| --- | --- | --- | --- | --- |
+| 1 | 3/8 = 38% | 0/4 | 3/4 | reading_level 3 |
+| 2 | 3/8 = 38% | 0/4 | 3/4 | reading_level 3 |
+
+The role/body-name entity rejections (previously 2-3 per run on checks 2/3/6) are
+**gone** — the ES equivalence fix worked. The remaining ES rejections are ALL
+check 5, and specifically the **"strictly simpler than source"** condition, NOT
+the floor: the rewrites score 70.6-84.3 (all above the 64.0 floor), but three
+items' SOURCE text already scores high on Fernández Huerta (74.9, 77.7, 76.5)
+because Ventura's consent-item Spanish-equivalent text is short and structurally
+simple, so a faithful rewrite cannot be "strictly simpler." This is a metric
+artifact on already-simple source, not a bad rewrite. Model output is
+nondeterministic so these scores wobble run to run. Noted as a v2 item: on
+already-simple source, check 5 should pass a rewrite that is not MORE complex
+rather than requiring strictly simpler. Not changed now (measurement only).

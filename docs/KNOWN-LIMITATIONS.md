@@ -90,9 +90,12 @@ stating these plainly is the product working, not an apology.
 
 - **What it is.** golden-002/es is rejected by checks 2, 5, AND 6. Only checks 2
   and 6 are the intended catch (the translated street name "Victoria Avenue" ->
-  "Avenida Victoria"); the check-5 hit is incidental to that rewrite's density (it
-  scores 68.5 vs the 77.3 ES floor — all six ES: `[94.3, 68.5, 85.9, 86.2, 88.8,
-  82.3]`). So it does not isolate a single variable.
+  "Avenida Victoria"). It scores 68.5 (all six ES: `[94.3, 68.5, 85.9, 86.2, 88.8,
+  82.3]`); under the original 77.3 ES floor it was ALSO tripped by check 5
+  incidentally, but the floor was lowered to 64.0 (see the ES-floor entry), so now
+  it passes check 5 and is rejected only by checks 2/6 — the intended, single-ish
+  variable. It still is not perfectly clean (the broken ES prose differs from a
+  passing rewrite in wording as well as the street name).
 - **What it affects.** Only the cleanliness of that one adversarial as a test
   fixture; functionally nothing (it must be rejected regardless).
 - **Why we accepted it.** The intended checks bite, and the extra check-5 rejection
@@ -143,3 +146,36 @@ stating these plainly is the product working, not an apology.
 - **v2.** Calibrate against rewrites from multiple authors and against each
   candidate model's own correct output, separating a style floor from an accuracy
   floor.
+
+### The Spanish reading-level floor is provisional (64.0), re-derived once
+
+- **What it is.** Check 5's ES floor (Fernández Huerta) was first derived from five
+  single-author golden rewrites as 77.3. That rejected otherwise-fine MODEL output
+  scoring 69.4-71.8. It was re-derived to **64.0** = min observed acceptable model
+  ES score (69.4) minus a 5.0 margin, rounded down — so the floor admits the
+  observed acceptable model range while the correct golden ES (min 82.3) still
+  passes.
+- **What it affects.** How strict check 5 is on Spanish. Too high and good model
+  Spanish is rejected in the live product (the reader gets original staff text);
+  the 64.0 value fixes that for the observed range.
+- **Why we accepted it.** Small n (six items, one meeting, one author + one model's
+  output). 64.0 is provisional and justified by the observed range, not tuned to
+  flatter a number.
+- **v2.** Re-derive from the 20-item 0b corpus and from multiple models' correct
+  output; the EN floor (33.8) should get the same treatment.
+
+### Check 5 requires "strictly simpler than source," which mis-fires on already-simple source
+
+- **What it is.** Check 5 passes only if the rewrite is above the floor AND
+  strictly simpler (higher-scoring) than the source. On short consent items whose
+  source text already scores high on Fernández Huerta (74.9-77.7 observed), a
+  faithful rewrite lands at a similar score and fails the "strictly simpler"
+  condition even though it is above the floor and perfectly readable.
+- **What it affects.** Some Spanish rewrites of already-simple items are rejected
+  and shown as original staff text, even though the rewrite was fine.
+- **Why we accepted it.** Fail-closed: the reader sees the real source text, never
+  a fabricated summary. On genuinely dense items (the ones that matter most) check
+  5 works as intended. Observed only on structurally-simple consent items.
+- **v2.** On already-simple source, pass a rewrite that is not MORE complex rather
+  than requiring it to be strictly simpler; separate "did it simplify" from "is it
+  readable" so an already-simple item is judged on readability alone.

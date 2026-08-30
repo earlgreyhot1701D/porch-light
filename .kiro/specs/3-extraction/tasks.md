@@ -86,11 +86,11 @@ Tags: [HUMAN] Shara owns. [PERMANENT] ships. [TEST]. [INFRA-PROPOSE] billable/ex
     - Any check that REJECTS a known-good rewrite is WRONG → fix/narrow it, record what changed and why. Derive check-5 thresholds (en + es) from the hand-written rewrites' reading scores vs sources; record both numbers. Gate: rejection rate on known-good rewrites = 0 before task 9.
     - _Requirements: 3.5, 3b, R5 (precondition)_
 
-- [ ] 9. The rewrite chain + model selection (GATED on task 8; runs over 0a — 0b deferred) [PERMANENT] [INFRA-PROPOSE for live model calls]
-  - [ ] 9.1 `rewrite/chain.py` + `rewrite/model.py`: source→EN→verify→ES→verify-against-source; temp ~0, no tools, no loop; Strands-vs-Converse decided + recorded; city-Spanish-edition skip on body_id+date (§36b)
+- [x] 9. The rewrite chain + model selection — **MODEL SELECTED: Amazon Nova Lite** (GATED on task 8; ran over 0a; 0b deferred)
+  - [x] 9.1 `rewrite/chain.py` + `rewrite/model.py`: controlled anti-echo prompt (EN+ES, identical), direct **Converse** (decided + recorded: no tools/loop => Converse over Strands), temp ~0. Full chain wiring into the production pipeline (retry/fallback composition, §36b city-Spanish skip) remains for later Spec-3 integration; the comparison composed prompt+model+verifier via the existing `verify.verifier`.
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
-  - [ ] 9.2 Model comparison over the golden set: Nova Lite vs one stronger model; record verifier rejection rate + cost/agenda for each; pick + write the reason
-    - Model id from config, in every log event; no silent fallback. Live model calls — PROPOSE before running the paid comparison.
+  - [x] 9.2 Comparison ran (Nova Lite vs Nova Pro, anti-echo prompt, twice per model, actual cost $0.01216). **Decision: Nova Lite (decided-under-limitation).** EN clean for BOTH models (0/4); every rejection was ES-side and artifact-dominated (ES role/body-name translation + tight provisional ES floor); runs agreed within each model (Lite 50/50, Pro 38/38) so the delta lives in the artifact, not model quality. Under the fixed rule (noise/artifact at this n => cheaper model), Nova Lite wins — the incumbent that clears EN at ~1/14th the cost. Comparison NOT re-opened. Model id read from config, in every log event; no silent fallback. Post-fix Nova-Lite-only ES rate recorded for the write-up (see below).
+    - Comparator was Nova Pro (not Claude Haiku): the proposed Haiku id was EOL and Claude 3 Haiku is LEGACY (EOL 2026-09-10, four days before judging) — recorded as the tool-longevity near miss.
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ] 10. Prompt-injection containment [TEST]
