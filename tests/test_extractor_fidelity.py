@@ -207,16 +207,42 @@ def test_backstop_records_omission_for_a_silently_dropped_numbered_item() -> Non
 
     session = ExtractParseSession(pages=[
         "1. CONFERENCE WITH LEGAL COUNSEL\n2. CONFERENCE WITH LABOR NEGOTIATORS\n",
-        "3. Ordinance for Second Reading\n",
+        "3. Ordinance for Second Reading\n4. Another item\n",
     ])
-    # Model recorded only item 3; items 1 and 2 were silently dropped.
+    # Model recorded items 3 and 4; closed-session items 1 and 2 silently dropped.
     session.recorded.append(ExtractedItem(item_number="3", page_range=(2, 2), text="Ordinance..."))
+    session.recorded.append(ExtractedItem(item_number="4", page_range=(2, 2), text="Another..."))
 
     _backfill_unaccounted_omissions(session, _L())
 
-    # Items 1 and 2 are now explicit omissions — never silently gone.
+    # Items 1 and 2 (below the recorded max of 4) are now explicit omissions.
     assert {om.item_number for om in session.omissions} == {"1", "2"}
     assert all(om.reason for om in session.omissions)
+
+
+def test_backstop_rejects_a_far_outlier_boilerplate_number() -> None:
+    """The backstop must not invent a phantom item from boilerplate that starts a
+    line with digits and a period. Real false positive from meeting 3687:
+    "711. Notification 72 hours prior..." (an ADA relay-service notice) is far above
+    any real item number and must NOT become an omission (decisions §46)."""
+    from porchlight.agents.extractor.agent import _backfill_unaccounted_omissions
+    from porchlight.agents.extractor.session import ExtractParseSession
+
+    class _L:
+        def warning(self, *a, **k) -> None: ...
+        def info(self, *a, **k) -> None: ...
+
+    session = ExtractParseSession(pages=[
+        "1. Approval of the Minutes\n2. A real item\n3. Another\n4. Last\n",
+        "711. Notification 72 hours prior will enable the City to make reasonable\n",
+    ])
+    for n in ("1", "2", "3", "4"):
+        session.recorded.append(ExtractedItem(item_number=n, page_range=(1, 1), text="..."))
+
+    _backfill_unaccounted_omissions(session, _L())
+
+    # Everything real was recorded; 711 is boilerplate, not a missed item.
+    assert session.omissions == []
 
 
 def test_backstop_does_not_duplicate_an_already_recorded_or_omitted_item() -> None:

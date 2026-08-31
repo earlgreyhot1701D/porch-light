@@ -206,13 +206,37 @@ def _backfill_unaccounted_omissions(session, log) -> None:
     """Record an automatic omission for any line-start numbered item the model
     neither recorded nor omitted (§46 deterministic backstop).
 
-    Normalizes item numbers by stripping a trailing '.' so "1" and "1." match.
+    Bounded to the plausible item SEQUENCE: a candidate number is only treated as a
+    missed item if it is <= the highest number the model recorded. This keeps genuine
+    misses (closed-session items 1-2 below a max of 10; a gap in 3..11) while
+    rejecting boilerplate that happens to start a line with digits and a period — the
+    real false positive this guard exists for was "711. Notification 72 hours prior..."
+    (an ADA relay-service notice on a Ventura agenda), which is far above any real
+    item number and must NOT become a phantom omission. If the model recorded nothing
+    (max is 0), the backstop stays silent rather than guess a range. Trailing '.' is
+    normalized so "1" and "1." match.
     """
     def _norm(n: str) -> str:
         return n.strip().rstrip(".")
 
-    accounted = {_norm(it.item_number) for it in session.recorded}
-    accounted |= {_norm(om.item_number) for om in session.omissions}
+    recorded_nums = [_norm(it.item_number) for it in session.recorded]
+    accounted = set(recorded_nums) | {_norm(om.item_number) for om in session.omissions}
+
+    max_recorded = max((int(n) for n in recorded_nums if n.isdigit()), default=0)
+    if max_recorded == 0:
+        # Nothing recorded: we have no sequence to bound against, so we do not invent
+        # omissions from raw line numbers. (A document with zero items is handled by
+        # the document status/partial marker, not here.)
+        return
+
+    # A candidate is a plausible missed item only if it is within the recorded
+    # sequence or CONTIGUOUS just above it. CONTIGUITY_MARGIN=3 catches a trailing
+    # item the model dropped (recorded 3..10, missed 11/12) while rejecting a far
+    # outlier that is really boilerplate ("711." ADA relay notice, >> max). Guessed-
+    # but-labeled (§style): 3 covers a couple of trailing consent items without
+    # admitting page-number or phone-extension noise.
+    CONTIGUITY_MARGIN = 3
+    upper = max_recorded + CONTIGUITY_MARGIN
 
     seen: set[str] = set()
     for page_text in session.pages:
@@ -221,17 +245,22 @@ def _backfill_unaccounted_omissions(session, log) -> None:
             if num in seen:
                 continue
             seen.add(num)
-            if num not in accounted:
-                session.omissions.append(
-                    RecordedOmission(
-                        item_number=num,
-                        reason=(
-                            "not surfaced by the extractor; recorded automatically so "
-                            "the item is not silently dropped (deterministic backstop)"
-                        ),
-                    )
+            if num in accounted:
+                continue
+            # Within the sequence or contiguous just above it is a plausible missed
+            # item; a far outlier is boilerplate, not an item.
+            if not num.isdigit() or int(num) > upper:
+                continue
+            session.omissions.append(
+                RecordedOmission(
+                    item_number=num,
+                    reason=(
+                        "not surfaced by the extractor; recorded automatically so "
+                        "the item is not silently dropped (deterministic backstop)"
+                    ),
                 )
-                log.warning("extractor_omission_backfilled", item_number=num)
+            )
+            log.warning("extractor_omission_backfilled", item_number=num)
 
 
 def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> ExtractionResult:
