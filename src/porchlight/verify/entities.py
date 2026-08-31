@@ -214,19 +214,25 @@ _LEADING_DET = re.compile(
 # with its English counterpart so the list reads as equivalences, not a bag of
 # words to ignore. Add a Spanish term here only when a real generated rewrite uses
 # it for a role/body common noun.
+# NOTE (decisions §45): BODY names are NOT in this list. Body names are governed by
+# the body registry — dropped from the entity checks via `checks._drop_body_names`
+# (registry lookup) and governed by contradiction in check 4 (§41). One source of
+# truth for bodies (the registry), never a word list. This list is now only ROLE
+# titles, ZONE/use descriptions, and other descriptive common nouns that are not
+# bodies and are not registered anywhere — the class that translates freely and must
+# not be raw-compared. Add a Spanish term here only when a real generated rewrite
+# uses it for such a common noun (built from captured artifacts, not a description).
 _ROLE_OR_BODY = frozenset(
     {
-        # --- English role/body common nouns (source + EN rewrites) ---
-        "city council", "city clerk", "public works director",
+        # --- English role common nouns (source + EN rewrites) ---
+        "city clerk", "public works director",
         "chief technology officer", "city manager", "human resources director",
-        "chief of police", "mayor", "deputy mayor", "council", "concejo",
+        "chief of police", "mayor", "deputy mayor",
         "urban center zone", "land use table",
         # --- Spanish equivalents observed in generated ES output (task-9 run) ---
-        "concejo municipal",            # = City Council
-        "ayuntamiento",                 # = City Council / City Hall (Nova's rendering)
         "secretario municipal",         # = City Clerk
         "centro urbano",                # = Urban Center (Zone)
-        "distrito escolar unificado",   # = Unified School District
+        "distrito escolar unificado",   # = Unified School District (not a Ventura body)
         "cuarta enmienda",              # = Fourth Amendment (ordinal in a contract name)
     }
 )

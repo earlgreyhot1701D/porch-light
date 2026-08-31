@@ -22,11 +22,29 @@ replaces.
 from __future__ import annotations
 
 from porchlight.verify.body_registry import find_named_bodies
-from porchlight.verify.entities import extract
+from porchlight.verify.entities import Entity, extract
 from porchlight.verify.models import CheckResult, Language, Rewrite, SourceRecord
 from porchlight.verify.normalize import normalize_all
 from porchlight.verify.reading import Language as RLang
 from porchlight.verify.reading import score
+
+
+def _drop_body_names(entities: list[Entity]) -> list[Entity]:
+    """Remove entities that are a KNOWN body name (registry lookup, not a word list).
+
+    A body name is never an entity for checks 2/3/6, in either language: the body is
+    a deterministic field on the record, and check 4 governs it by CONTRADICTION
+    (§41). We instructed the model to name the body as the record gives it, so the
+    body name is EXPECTED to appear in the rewrite and is legitimately absent from a
+    single item's source slice — reading it as an invented/new entity punishes the
+    model for following our instruction (a bug we created, decisions §45).
+
+    Registry-driven: an entity whose raw span matches a registered body name (EN or
+    accepted ES rendering) is dropped from the set the entity checks compare. A
+    generic phrase that is not a registered body returns nothing from
+    `find_named_bodies` and is kept — a genuinely invented name still fails.
+    """
+    return [e for e in entities if not find_named_bodies(e.raw)]
 
 
 def check_schema(rewrite: Rewrite) -> CheckResult:
@@ -45,8 +63,8 @@ def check_entity_preservation(rewrite: Rewrite, source: SourceRecord) -> CheckRe
     fails. Comparison is on normalized entities so an EN->ES translated date still
     counts as present.
     """
-    src = normalize_all(extract(source.text))
-    out = normalize_all(extract(rewrite.summary))
+    src = normalize_all(_drop_body_names(extract(source.text)))
+    out = normalize_all(_drop_body_names(extract(rewrite.summary)))
     invented = out - src
     if invented:
         return CheckResult(
@@ -67,8 +85,8 @@ def check_no_new_entities(rewrite: Rewrite, source: SourceRecord) -> CheckResult
     normalized output entity absent from source fails) and calibration records any
     narrowing.
     """
-    src = normalize_all(extract(source.text))
-    out = normalize_all(extract(rewrite.summary))
+    src = normalize_all(_drop_body_names(extract(source.text)))
+    out = normalize_all(_drop_body_names(extract(rewrite.summary)))
     added = out - src
     if added:
         return CheckResult(
