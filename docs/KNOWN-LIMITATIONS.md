@@ -312,3 +312,25 @@ stating these plainly is the product working, not an apology.
   both "City Council Minutes" and "City Council"), or move name matching to
   containment/registry checks wherever the field is deterministic, per the
   decisions principle.
+
+### Extractor network containment: one layer deployed, two designed
+
+The extractor reads untrusted PDF text, so its design calls for two independent
+containment layers: the Strands hook tool-allowlist (which blocks any tool call
+outside its four permitted tools) AND network-level egress control (the runtime
+cannot open an outbound connection at all). For v1, only the first layer is
+deployed. The AgentCore runtime runs in PUBLIC network mode, which permits outbound
+egress; network-level no-egress requires VPC network mode with a restricted security
+group and PrivateLink endpoints, which was designed and specified but not deployed
+within the hackathon window. The consequence, stated plainly: if a prompt injection
+defeated the hook allowlist, nothing at the network layer would stop an outbound
+call. The hook allowlist is real and tested; the second layer is designed and
+documented, not shipped. We chose to ship this honestly rather than claim a
+containment posture we had not deployed.
+
+Status note (2026-08-31): the no-egress security group and the design are built and
+recorded (`.kiro/specs/3-extraction/r5-deploy-proposal.md`); the VPC-mode runtime
+deploy hit a firm two-hour timebox and was stopped rather than run into an
+"almost-there" infrastructure spiral. The billable PrivateLink endpoints were torn
+down; nothing bills while the second layer is undeployed. A resume checklist exists
+to complete it in a later session.

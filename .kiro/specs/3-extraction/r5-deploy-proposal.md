@@ -161,3 +161,70 @@ R5's extractor runtime and any VPC endpoints are the new things to remove, above
 - Did NOT fake condition 2. Containment is proven by a blocked attempt against a
   real deployed runtime, or it is not proven. There is no simulated stand-in in
   this doc, deliberately.
+
+## Deploy attempt — timebox outcome (2026-08-31)
+
+**Outcome: timebox reached at the runtime deploy; the no-egress NETWORK layer was
+built, the runtime was NOT deployed. Stopped deliberately rather than run into the
+"almost there" trap. The Option-3 fallback (above) is the honest v1 posture unless
+the deploy is completed in a later session.**
+
+What got built (real, correct, the hard security-design part):
+- **Security group `sg-08e491a424c16581f`** ("porchlight-dev-extractor-noegress") in
+  the default VPC `vpc-0a2bd09f7d76886e1`. Default allow-all egress REVOKED; egress
+  restricted to self-referencing tcp/443 only (reaches the endpoint ENIs sharing the
+  SG, nothing else — no internet path). Tagged. **Free to keep.**
+- **Two interface PrivateLink endpoints** created in that SG (bedrock-runtime,
+  rds-data), PrivateDNS on — then **DELETED at the timebox** because the runtime that
+  would use them was not deployed; leaving them bills ~$0.48/day for nothing.
+
+What was NOT done: the extractor AgentCore runtime was not deployed (needs its own
+deploy project — app dir + vendored porchlight package + deps + a VPC-mode
+`agentcore.json` — then a remote CodeBuild + CloudFormation deploy, which did not
+fit the remaining timebox with confidence). Therefore conditions 2 (live
+containment proof) and 5 (end-to-end run) are NOT met, and the IAM policy (condition
+3) was NOT attached (no runtime ARN).
+
+### VPC-mode `agentcore.json` runtime block (ready to use on resume)
+
+```jsonc
+{
+  "name": "porchlight_extractor",
+  "build": "CodeZip",
+  "entrypoint": "entrypoint.py",
+  "codeLocation": "app/porchlight_extractor/",
+  "runtimeVersion": "PYTHON_3_14",
+  "networkMode": "VPC",
+  "networkConfig": {
+    "vpcId": "vpc-0a2bd09f7d76886e1",
+    "subnets": ["subnet-0f8c328d8ddb20a2d", "subnet-0d4a23067edea18ac"],
+    "securityGroups": ["sg-08e491a424c16581f"]
+  },
+  "protocol": "HTTP"
+}
+```
+
+### Resume checklist (next session, fresh, ~clean start)
+
+1. Recreate the two PrivateLink endpoints in `sg-08e491a424c16581f`
+   (bedrock-runtime + rds-data, PrivateDNS on) — they were torn down to stop billing.
+2. Scaffold `deploy/.../app/porchlight_extractor/` (entrypoint.py + vendored
+   porchlight + deps incl. pypdf/textstat/strands), add the runtime block above.
+3. `agentcore deploy` (VPC mode); wait for READY.
+4. Attach the condition-3 IAM policy to `porchlight-dev-hunter-role` with the real
+   runtime ARN.
+5. Condition 2: invoke a non-allowlisted tool -> paste the real NEVER-log line; and
+   attempt a connection to an arbitrary host from inside -> paste the failure.
+6. Condition 5: run one stored meeting end-to-end, print full output.
+
+### Teardown (restated, current state)
+
+- **Nothing billable from R5 is currently running.** The two endpoints are
+  `deleting`; the SG is free. Aurora is min-cap 0 (idle ~$0). No extractor runtime
+  exists.
+- If a runtime + endpoints are deployed on resume, teardown is:
+  ```
+  agentcore remove runtime porchlight_extractor && agentcore deploy   # from the project dir
+  aws ec2 delete-vpc-endpoints --vpc-endpoint-ids <bedrock-ep-id> <rds-ep-id> --region us-east-1
+  aws ec2 delete-security-group --group-id sg-08e491a424c16581f --region us-east-1   # after ENIs detach
+  ```
