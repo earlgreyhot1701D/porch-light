@@ -1,6 +1,6 @@
 """The extractor's tool bodies, bound to one invocation's stored page text (R1).
 
-The four allowlisted tools (`tools.ALLOWED_TOOLS`) need two things a pure function
+The allowlisted tools (`tools.ALLOWED_TOOLS`) need two things a pure function
 cannot hold across a model loop: the document's page text (to serve ranges) and a
 place to collect the items the model records. `ExtractParseSession` is that per-
 invocation state, and `build_tools` produces the four Strands `@tool` callables
@@ -24,18 +24,32 @@ from dataclasses import dataclass, field
 from porchlight.agents.extractor.tools import ExtractedItem
 
 
+@dataclass(frozen=True)
+class RecordedOmission:
+    """A numbered item the model deliberately did NOT record as an item, with its
+    reason. The extractor MUST NOT silently drop a numbered item (relevance is the
+    watcher's job, with a receipt — never the extractor's, decisions §46). If the
+    model chooses to omit one, it returns the omission here so the pipeline logs it
+    and nothing disappears without a trace."""
+
+    item_number: str
+    reason: str
+
+
 @dataclass
 class ExtractParseSession:
-    """One document's page text + the items the model records against it.
+    """One document's page text + the items (and omissions) the model records.
 
     `pages` is 1-based conceptually (pages[0] is page 1). `recorded` accumulates the
     model's proposed items in call order; the entrypoint validates them after the
-    run. `listing_pages` is the model's optional note of where the agenda's item
-    list lives (a hint, not a guarantee — validation does not trust it).
+    run. `omissions` accumulates any numbered item the model deliberately did not
+    record, with its reason — a silent drop is a failure, an explicit omission is
+    honest (decisions §46).
     """
 
     pages: list[str]
     recorded: list[ExtractedItem] = field(default_factory=list)
+    omissions: list[RecordedOmission] = field(default_factory=list)
 
     @property
     def page_count(self) -> int:
@@ -47,7 +61,7 @@ class ExtractParseSession:
 
 
 def build_tools(session: ExtractParseSession) -> list:
-    """Produce the four allowlisted tools bound to `session`.
+    """Produce the allowlisted tools bound to `session`.
 
     Returned as Strands `@tool` callables. Imported lazily so this module (and the
     session dataclass) needs no SDK in a unit-test environment; the tools are tested
@@ -105,4 +119,16 @@ def build_tools(session: ExtractParseSession) -> list:
         )
         return f"recorded item {item_number!r}; {len(session.recorded)} item(s) so far"
 
-    return [find_listing_pages, get_document_pages, extract_items, record_items]
+    @tool
+    def record_omission(item_number: str, reason: str) -> str:
+        """Record a numbered agenda item you are deliberately NOT recording as an item,
+        and WHY (for example a ceremonial 'Call to Order' or 'Roll Call'). You are NOT
+        allowed to silently skip a numbered item — if you do not record it as an item,
+        you MUST record it here with its number and reason. Deciding what matters is
+        not your job; recording everything you found, is."""
+        session.omissions.append(
+            RecordedOmission(item_number=str(item_number).strip(), reason=reason or "")
+        )
+        return f"recorded omission of item {item_number!r}; {len(session.omissions)} omission(s) so far"
+
+    return [find_listing_pages, get_document_pages, extract_items, record_items, record_omission]

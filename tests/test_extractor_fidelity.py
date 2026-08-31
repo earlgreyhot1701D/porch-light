@@ -9,7 +9,7 @@ must hold no matter what the model proposes:
     in the source is rejected before storage. A hallucinated item number or an
     out-of-range page span never reaches the store. This is an invisible-failure
     surface — a false accept ships a fabricated receipt.
-  - **Tool allowlist (R1.4):** only the four permitted tools run; anything else is
+  - **Tool allowlist (R1.4):** only the permitted tools run; anything else is
     a blocked NEVER-trip. An injected "fetch this URL" is denied.
 """
 
@@ -113,12 +113,16 @@ def test_property_out_of_bounds_page_range_never_accepted(first, last):
 
 # --- Tool allowlist ---
 
-def test_allowlist_permits_only_the_four_tools():
+def test_allowlist_permits_only_the_five_tools():
+    # Five, not four: record_omission was added (decisions §46) so the extractor can
+    # surface a deliberately-skipped numbered item instead of dropping it silently.
+    # Still a closed allowlist; none reaches the network.
     assert ALLOWED_TOOLS == {
         "find_listing_pages",
         "get_document_pages",
         "extract_items",
         "record_items",
+        "record_omission",
     }
     for name in ALLOWED_TOOLS:
         assert is_tool_allowed(name)
@@ -136,3 +140,50 @@ def test_property_any_non_allowlisted_tool_is_blocked(tool_name):
     """Any tool name not on the allowlist is denied (fail closed)."""
     log = _Log()
     assert enforce_tool_allowlist(tool_name, log) is False
+
+
+# --- Fix #2: the extractor must not decide relevance silently (decisions §46) ---
+
+
+def test_record_omission_is_allowlisted() -> None:
+    """The fifth tool is on the allowlist; a numbered item can be recorded as an
+    omission without tripping the containment hook."""
+    assert "record_omission" in ALLOWED_TOOLS
+    assert is_tool_allowed("record_omission")
+
+
+def test_session_records_items_and_omissions_no_silent_drop() -> None:
+    """Every numbered item the model touches ends up either an item or an omission —
+    never neither. This tests the session mechanics (deterministic, no model): the
+    tools populate `recorded` and `omissions`, and the two together account for all
+    numbered items the model acted on.
+
+    An agenda with a ceremonial item (1. Call to Order) plus a real item (2. ...):
+    the model records item 2 and omits item 1 WITH a reason. The invariant is that
+    item 1 is not simply gone — it is in `omissions`.
+    """
+    from porchlight.agents.extractor.session import ExtractParseSession, build_tools
+
+    session = ExtractParseSession(pages=[
+        "1. Call to Order\n2. Approval of a $50,000 contract with Acme Corp."
+    ])
+    # Strands wraps each function in a DecoratedFunctionTool; `_tool_func` is the
+    # underlying callable. We assert the SESSION side effect, independent of the SDK
+    # call surface — the mechanism that guarantees no numbered item is silently lost.
+    tools = {t.tool_name: t._tool_func for t in build_tools(session)}
+
+    tools["record_items"](
+        item_number="2", first_page=1, last_page=1,
+        text="Approval of a $50,000 contract with Acme Corp.",
+    )
+    tools["record_omission"](item_number="1", reason="ceremonial Call to Order")
+
+    recorded_nums = {it.item_number for it in session.recorded}
+    omitted_nums = {om.item_number for om in session.omissions}
+
+    # Item 2 recorded, item 1 omitted-with-reason: neither numbered item is lost.
+    assert recorded_nums == {"2"}
+    assert omitted_nums == {"1"}
+    assert session.omissions[0].reason  # a reason is present, never blank-by-default
+    # The union accounts for every numbered item the model acted on (no silent drop).
+    assert recorded_nums | omitted_nums == {"1", "2"}

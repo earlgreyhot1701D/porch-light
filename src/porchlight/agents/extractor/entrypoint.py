@@ -129,7 +129,7 @@ try:
         if probe:
             from strands import tool as _strands_tool
 
-            # A BENIGN, plainly-safe tool that simply is NOT on the four-name
+            # A BENIGN, plainly-safe tool that simply is NOT on the
             # allowlist. The point is the allowlist blocks by NAME regardless of the
             # tool's intent — so a benign tool the model will actually call proves the
             # hook fires (an obviously-malicious tool just gets refused by the model's
@@ -170,6 +170,7 @@ try:
             document_id=payload.get("document_id", ""),
             accepted=len(extraction.items),
             rejected=len(extraction.rejected),
+            omissions=len(extraction.omissions),
             partially_read=extraction.status["partially_read"],
         )
         # Structured return: one final event carrying the items, so a JSON-invoke
@@ -180,6 +181,7 @@ try:
                 "document_id": payload.get("document_id", ""),
                 "items": extraction.items,
                 "rejected": extraction.rejected,
+                "omissions": extraction.omissions,
                 "status": extraction.status,
                 "turns_used": extraction.turns_used,
                 "tokens_used": extraction.tokens_used,

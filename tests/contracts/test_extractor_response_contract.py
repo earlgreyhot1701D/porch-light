@@ -31,9 +31,10 @@ def envelope() -> dict:
 def test_top_level_shape(envelope: dict) -> None:
     assert "porchlight_result" in envelope, "join parses response for the porchlight_result key"
     r = envelope["porchlight_result"]
-    for key in ("document_id", "items", "rejected", "status", "turns_used", "tokens_used", "model_id"):
+    for key in ("document_id", "items", "rejected", "omissions", "status", "turns_used", "tokens_used", "model_id"):
         assert key in r, f"envelope missing '{key}' — the join reads this field"
     assert isinstance(r["items"], list) and isinstance(r["rejected"], list)
+    assert isinstance(r["omissions"], list), "omissions surfaces silently-dropped items (§46)"
     assert isinstance(r["turns_used"], int) and isinstance(r["tokens_used"], int)
 
 

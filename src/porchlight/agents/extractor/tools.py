@@ -5,8 +5,8 @@ the model cannot influence, isolated here so they are unit-testable without the
 runtime:
 
   1. **The tool allowlist** (`is_tool_allowed`) — the Strands-hook boundary. Only
-     four tools are permitted; anything else (a fetch, a shell, a write to another
-     table) is a NEVER-trip, logged and blocked (never.md #9, R1.4). This is the
+     the five permitted tools run; anything else (a fetch, a shell, a write to
+     another table) is a NEVER-trip, logged and blocked (never.md #9, R1.4). This is the
      first of two independent containment layers; the second is the runtime's
      no-egress networkMode (R1.2, enforced in the AgentCore config, not here).
 
@@ -29,7 +29,17 @@ from dataclasses import dataclass
 
 # --- The allowlist: the ONLY tools the extractor may call (R1.4, §security). ---
 ALLOWED_TOOLS: frozenset[str] = frozenset(
-    {"find_listing_pages", "get_document_pages", "extract_items", "record_items"}
+    {
+        "find_listing_pages",
+        "get_document_pages",
+        "extract_items",
+        "record_items",
+        # record_omission: the model records a numbered item it deliberately did NOT
+        # record as an item, WITH a reason, so nothing is silently dropped (the
+        # extractor must not decide relevance — decisions §46). No network, like the
+        # rest; it only appends to the in-memory session.
+        "record_omission",
+    }
 )
 
 

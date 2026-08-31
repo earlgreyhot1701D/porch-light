@@ -171,9 +171,16 @@ def main() -> None:
         )
         with open(cap, "w", encoding="utf-8") as f:
             json.dump({"porchlight_result": envelope}, f, indent=2, ensure_ascii=False)
+        omissions = envelope.get("omissions", [])
         print(f"extractor: accepted={len(envelope['items'])} rejected={len(envelope['rejected'])} "
-              f"turns={envelope['turns_used']} tokens={envelope['tokens_used']} "
+              f"omissions={len(omissions)} turns={envelope['turns_used']} tokens={envelope['tokens_used']} "
               f"partial={envelope['status']['partially_read']}  (captured -> {cap})")
+        for om in omissions:
+            # The extractor recorded a deliberate omission; the pipeline logs it so a
+            # skipped numbered item is never silent (§46).
+            log.warning("pipeline_extractor_omission", meeting_id=m["meeting_id"],
+                        item_number=om.get("item_number"), reason=om.get("reason"))
+            print(f"  OMISSION: item {om.get('item_number')} — {om.get('reason')}")
 
         records = persist_items(be, m, envelope["items"], run_id)
         summary = run_rewrite_stage(

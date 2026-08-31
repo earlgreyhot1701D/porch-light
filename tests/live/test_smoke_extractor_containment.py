@@ -9,7 +9,7 @@ register, etc.), this test fails loudly.
 
 Testing principle (recorded in the decisions doc): TEST THE CONTROL, NOT THE THING
 THE CONTROL SITS BEHIND. The probe uses a BENIGN, plainly-safe tool that simply is
-not on the four-name allowlist. A malicious-intent tool would be refused by the
+not on the allowlist. A malicious-intent tool would be refused by the
 model's own safety before the hook ran — a pass there would measure the model's
 alignment, not our allowlist. The allowlist blocks by NAME, so a benign
 non-allowlisted tool is the valid test.
