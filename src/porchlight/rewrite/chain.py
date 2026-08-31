@@ -34,6 +34,8 @@ REWRITE_PROMPT_EN = (
     "- Do not include headers, labels, or section markers from the source such as "
     "RECOMMENDATION, Staff, or the item number line.\n"
     "- Write it as prose a person reads, not as a restructured agenda entry.\n"
+    "- Name the public body that is acting on the item, using the name the record "
+    "gives it; do not substitute a different body.\n"
     "Return only the rewritten text, nothing else."
 )
 
@@ -54,6 +56,8 @@ REWRITE_PROMPT_ES = (
     "- Do not include headers, labels, or section markers from the source such as "
     "RECOMMENDATION, Staff, or the item number line.\n"
     "- Write it as prose a person reads, not as a restructured agenda entry.\n"
+    "- Name the public body that is acting on the item, using the name the record "
+    "gives it; do not substitute a different body.\n"
     "Return only the Spanish text, nothing else."
 )
 

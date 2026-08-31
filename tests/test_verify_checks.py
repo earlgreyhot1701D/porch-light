@@ -106,6 +106,52 @@ def test_containment_rejects_wrong_page_range():
     assert not checks.check_containment(r, _SOURCE).passed
 
 
+# --- W6 finding 1: body-consistency in check 4 (body comes off the record) ---
+
+_PC_SOURCE = SourceRecord(
+    body="planning_commission", meeting_date="2026-08-26", item_number="2",
+    page_range=(2, 3),
+    text="2. Prohousing Designation. Consideration of the draft application and formal resolution.",
+    deadline=None, source_url="https://www.cityofventura.ca.gov/doc",
+)
+
+
+def test_containment_rejects_substituted_body_english():
+    """A Planning Commission record whose rewrite says 'The City Council is
+    considering...' is REJECTED by check 4 (body-consistency), not by reading level."""
+    bad = Rewrite(Language.EN, "The City Council is considering the draft Prohousing Designation application and formal resolution.")
+    r = checks.check_containment(bad, _PC_SOURCE)
+    assert not r.passed
+    assert "different body" in r.reason
+
+
+def test_containment_rejects_substituted_body_spanish():
+    """Spanish mirror: naming 'Concejo Municipal' (City Council) on a Planning
+    Commission record fails check 4 exactly like the English does."""
+    bad = Rewrite(Language.ES, "El Concejo Municipal esta considerando la solicitud preliminar de Designacion Prohousing.")
+    r = checks.check_containment(bad, _PC_SOURCE)
+    assert not r.passed
+    assert "different body" in r.reason
+
+
+def test_containment_passes_correct_body_english():
+    good = Rewrite(Language.EN, "The Planning Commission is considering the draft application and resolution.")
+    assert checks.check_containment(good, _PC_SOURCE).passed
+
+
+def test_containment_passes_correct_body_spanish():
+    # Accepted ES rendering of the record's own body passes.
+    good = Rewrite(Language.ES, "La Comision de Planificacion considerara la solicitud preliminar.")
+    assert checks.check_containment(good, _PC_SOURCE).passed
+
+
+def test_containment_absent_body_does_not_reject_v1():
+    # v1: absence of any body name does not reject (counted as body_unnamed elsewhere).
+    no_body = Rewrite(Language.EN, "The draft application and formal resolution will be considered.")
+    assert checks.check_containment(no_body, _PC_SOURCE).passed
+    assert checks.body_is_named(no_body, _PC_SOURCE) is False
+
+
 # --- Check 5: reading level (below floor / not simpler / simpler) ---
 
 def test_reading_level_rejects_unsimplified_copy():

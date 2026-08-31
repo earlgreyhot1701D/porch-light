@@ -290,3 +290,25 @@ stating these plainly is the product working, not an apology.
 - **Residual.** Console/file dumps on Windows still render accents as mojibake for
   display; the DATA is correct. Any future hardcoded Spanish must be written with
   accents and spot-checked with `ord()`, not by eye in a console.
+
+### The proper-noun extractor captures greedy spans (latent entity-matching brittleness)
+
+- **What it is.** The `_PROPER` regex captures greedy multi-word spans, so a source
+  phrase "City Council Minutes" is one entity and "City Council" cannot match it.
+  This surfaced 2026-08-31 while building the body-consistency check: making the
+  verifier match the body as a free-text entity drove known-good rejection to 60%
+  because the golden source spans ("City Council Minutes", "Approve City Council
+  Minutes") did not equal the rewrite's "City Council". The role/body drop list had
+  been masking this.
+- **What it affects.** Entity matching generally, for any multi-word name that
+  appears in the source inside a longer capitalized phrase. It did NOT affect the
+  body check in the end, because the body check moved OFF entity matching to a
+  registry contradiction check (the right fix — see the decisions principle).
+- **Why we accepted it (for now).** The two spine surfaces (entity preservation,
+  no-new) still work on the golden set and W6 because the failing class is
+  greedy-span vs exact-phrase, which is rare for the dates/amounts/identifiers that
+  matter most; names are where it bites. It is latent, not active breakage.
+- **v2.** Extract the maximal proper-noun span AND its known sub-spans (e.g. emit
+  both "City Council Minutes" and "City Council"), or move name matching to
+  containment/registry checks wherever the field is deterministic, per the
+  decisions principle.

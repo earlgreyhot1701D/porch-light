@@ -112,6 +112,7 @@ def main():
 
     print(f"\n{'#'*78}\n# COUNTS")
     print(f"  items: {summary.items}")
+    print(f"  body_unnamed (EN did not name the record's body): {summary.body_unnamed}")
     print(f"  EN verified: {summary.en_verified}   EN fallback: {summary.en_fallback}")
     print(f"  ES verified: {summary.es_verified}   ES fallback: {summary.es_fallback}")
     print(f"  ES recovered on retry (verified on 2nd attempt): {summary.es_recovered_on_retry}")

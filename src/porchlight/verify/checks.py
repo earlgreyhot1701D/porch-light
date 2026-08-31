@@ -21,6 +21,7 @@ replaces.
 
 from __future__ import annotations
 
+from porchlight.verify.body_registry import find_named_bodies
 from porchlight.verify.entities import extract
 from porchlight.verify.models import CheckResult, Language, Rewrite, SourceRecord
 from porchlight.verify.normalize import normalize_all
@@ -102,9 +103,32 @@ def check_containment(rewrite: Rewrite, source: SourceRecord) -> CheckResult:
         )
     if rewrite.claimed_body and rewrite.claimed_body != source.body:
         mismatches.append(f"body {rewrite.claimed_body!r} != record {source.body!r}")
+
+    # Body-consistency (W6 finding 1): the body comes off the record, so the rewrite
+    # must not NAME a different known body. Language-independent — a Spanish rendering
+    # of the wrong body fails exactly like the English name. Absence of any body name
+    # does NOT reject in v1 (the caller counts body_unnamed); naming the record's own
+    # body (EN or accepted ES) passes. We never re-derive the body as an entity; we
+    # check the rewrite for CONTRADICTION of the record's deterministic field.
+    named = find_named_bodies(rewrite.summary)
+    wrong = named - {source.body}
+    if wrong:
+        mismatches.append(
+            f"rewrite names a different body {sorted(wrong)}; record body is {source.body!r}"
+        )
+
     if mismatches:
         return CheckResult("containment", False, "; ".join(mismatches))
     return CheckResult("containment", True)
+
+
+def body_is_named(rewrite: Rewrite, source: SourceRecord) -> bool:
+    """True if the rewrite names the record's own body (EN or accepted ES rendering).
+
+    Used by the stage to count `body_unnamed` — absence is reported, not rejected
+    (v1). Not a check itself; check 4 rejects only a CONTRADICTING body name.
+    """
+    return source.body in find_named_bodies(rewrite.summary)
 
 
 # Check-5 "already-plain source" tuning. PROVISIONAL, derived from the task-9

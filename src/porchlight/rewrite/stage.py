@@ -25,7 +25,8 @@ from porchlight.pipeline import ledger
 from porchlight.rewrite import model as rewrite_model
 from porchlight.rewrite.persist_rewrites import persist_item_rewrite
 from porchlight.rewrite.pipeline import ItemRewriteResult, rewrite_item
-from porchlight.verify.models import SourceRecord
+from porchlight.verify import checks
+from porchlight.verify.models import Language, Rewrite, SourceRecord
 
 log = get_logger("porchlight.rewrite.stage")
 
@@ -42,6 +43,7 @@ class StageSummary:
     en_fallback: int
     es_fallback: int
     es_recovered_on_retry: int
+    body_unnamed: int
     cost_usd: float
 
 
@@ -68,7 +70,7 @@ def run_rewrite_stage(
     # W4: budget gate before spending. Halt honestly, never skip verification.
     ledger.check_before_run(backend, "ingestion")
 
-    en_verified = es_verified = en_fallback = es_fallback = es_recovered = 0
+    en_verified = es_verified = en_fallback = es_fallback = es_recovered = body_unnamed = 0
     total_cost = 0.0
 
     # Cost is measured by wrapping the client so every Converse call's cost lands
@@ -91,6 +93,14 @@ def run_rewrite_stage(
         elif not skip_es:
             es_fallback += 1
 
+        # body_unnamed (v1: reported, not rejected): does the shown English name the
+        # record's own body? Only meaningful when EN verified (a fallback shows the
+        # original staff text, which does name the body).
+        if result.en_verified and not checks.body_is_named(
+            Rewrite(Language.EN, result.en_text), source
+        ):
+            body_unnamed += 1
+
         persist_item_rewrite(backend, item_id, run_id, model_id, result)
 
     total_cost = counting.total_cost
@@ -100,12 +110,12 @@ def run_rewrite_stage(
     summary = StageSummary(
         items=len(items), en_verified=en_verified, es_verified=es_verified,
         en_fallback=en_fallback, es_fallback=es_fallback,
-        es_recovered_on_retry=es_recovered, cost_usd=total_cost,
+        es_recovered_on_retry=es_recovered, body_unnamed=body_unnamed, cost_usd=total_cost,
     )
     log.info("rewrite_stage_done", run_id=run_id, model_id=model_id,
              items=summary.items, en_verified=en_verified, es_verified=es_verified,
              en_fallback=en_fallback, es_fallback=es_fallback,
-             es_recovered_on_retry=es_recovered, cost_usd=total_cost)
+             es_recovered_on_retry=es_recovered, body_unnamed=body_unnamed, cost_usd=total_cost)
     return summary
 
 

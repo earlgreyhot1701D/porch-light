@@ -1203,3 +1203,44 @@ Neon (§tech, §26b) is retired as the production database. **Amazon Aurora Serv
 - **Database changed from Neon to Amazon Aurora Serverless v2 PostgreSQL.** $10k credits remove Neon's free-tier rationale and an all-AWS diagram avoids a non-AWS dependency. DynamoDB rejected because the data and queries are relational (joins, lexical + vector + rank fusion), which it does not support. pgvector retained, so the search code path is unchanged.
 - **Two constraints recorded:** minimum 0.5 ACU (not 0, because the live watcher invocation cannot sit behind a ~15s cold resume), and RDS Data API access (HTTPS + IAM, no VPC, no NAT gateway).
 - **Spec 0 task 15.1 (Neon) cancelled**, Aurora setup moved to the Spec 2 backlog. No database touched before Spec 2; local docker-compose Postgres covers Specs 1 and 2. `.env.example` updated with a credential-free Aurora Data API placeholder.
+
+
+---
+
+## 41. Never verify by inference what the record already states
+
+A general principle, surfaced Aug 31 while fixing the W6 body-name hole (a rewrite
+naming "City Council" on a Planning Commission agenda passed the entity checks
+because §decision-1 had removed body names from raw-compare, and reading level
+caught it only by luck).
+
+**The principle: a deterministic field on the record is checked for CONTRADICTION,
+not matched as an entity learned from the document.**
+
+Entity matching (verifier checks 2, 3, 6) is for facts we LEARN from the document
+text — numbers, dates, amounts, street names, identifiers. Those must trace back
+to the source page range, so they are extracted and compared. The BODY is not one
+of those. It comes off the extraction record deterministically (never.md #1: body
+is copied, never model-generated). Asking the verifier to re-match the body as a
+free-text entity made it re-derive a fact it already held with certainty, and that
+re-derivation is what was brittle: the proper-noun extractor captures greedy spans
+("City Council Minutes"), so "City Council" could not match, and the drop list that
+hid this then made a substituted body name invisible.
+
+**The fix that generalizes:** for a deterministic record field, add a
+CONTAINMENT-style check (check 4) that rejects a rewrite CONTRADICTING the field,
+using a small closed registry of accepted renderings (EN + accepted ES), not a
+free-text entity match. Language-independent: a Spanish rendering of the wrong body
+fails exactly like the English name. Absence of the field in the rewrite is
+reported (a count), not rejected in v1.
+
+**Where else this applies:** any field the record holds deterministically and the
+rewrite might restate — the body (built, §check-4 body-consistency), and
+potentially the meeting date or item number if a future rewrite surface restates
+them in prose. The item number, page range, and deadline are already
+containment-checked (check 4), consistent with this principle; the body-consistency
+rule extends the same idea to the body, with a bilingual registry because the body
+name legitimately translates while an item number does not.
+
+Corollary recorded for the write-up: entity matching is for what we LEARN; the
+record is for what we KNOW. Do not check the second with the machinery of the first.
