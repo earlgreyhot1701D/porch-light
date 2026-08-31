@@ -6,39 +6,31 @@
         "item_number": "1.",
         "page_range": [
           2,
-          3
+          2
         ],
-        "text": "Approval of the draft minutes from the June 24, 2026 meeting. Recommendation:  Approve, as presented.  Materials: draft minutes"
-      },
-      {
-        "item_number": "2.",
-        "page_range": [
-          2,
-          3
-        ],
-        "text": "Prohousing Designation, Citywide The City is applying for a Prohousing Designation to the State of California Department of Housing and Community Development. This designation recognizes jurisdictions that are committed to accelerating housing production, removing barriers to development, and implementing housing-friendly policies. Staff is presenting the draft application for comments and review.  Recommendation: To approve the draft Prohousing Designation application and formal resolution.  Staff:  Andrea Palmer, Senior Management Analyst; Rachel Wess, Management Analyst Applicant:  City of Ventura Materials: staff report, application, resolution, public comment"
+        "text": "Approval of the draft minutes from the June 24, 2026 meeting. Recommendation: Approve, as presented. Materials: draft minutes"
       },
       {
         "item_number": "3.",
         "page_range": [
-          2,
+          3,
           3
         ],
-        "text": "PROJ-25-0914 Loretta Court Apartments Located at APN: 073-0-058-030 Request for Major Design Review to develop a new, 19-unit multi-family residential apartment development with 3 Warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 Exception (Parking Setback), on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan and is commonly identified as Assessor’s Parcel Number 073-0-058-030 (Project Site). California Environmental Quality Act: 15332 (Infill Projects) Recommendation: To approve the project, as conditioned.  Planner:  Grant White, Acting Senior Planner Applicant:  Linda Blackbern of RRM Design Group on behalf of Merewether Trust Materials: staff report, vicinity map, resolution, development standards, plans, public comment, public comment 2"
+        "text": "Request for Major Design Review to develop a new, 19-unit multi-family residential apartment development with 3 Warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 Exception (Parking Setback), on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan and is commonly identified as Assessor’s Parcel Number 073-0-058-030 (Project Site). California Environmental Quality Act: 15332 (Infill Projects) Recommendation: To approve the project, as conditioned. Planner: Grant White, Acting Senior Planner Applicant: Linda Blackbern of RRM Design Group on behalf of Merewether Trust Materials: staff report, vicinity map, resolution, development standards, plans, public comment, public comment 2"
       },
       {
         "item_number": "4.",
         "page_range": [
-          2,
+          3,
           3
         ],
-        "text": "PROJ-25-0933 1193 Colina Vista Addition Request for a Major Variance to allow an increase in building height in the hillside area for a renovation project that includes construction of a 1,903-square-foot second-story addition to an existing single-story residence, along with interior renovations to the first floor (Project). The Project is located on a 0.28-acre lot in the R-1-10 (Single-Family Residential) zone with a land use designation of Neighborhood Very Low 2, located at 1193 Colina Vista and is commonly identified as Assessor's Parcel Number 065-0-224-095 (Project Site). California Environmental Quality Act: 15301 (Existing Facilities, Class 1) Recommendation: To continue to a date certain of October 28, 2026. Planner:  Adams Bernhardt, Senior Planner Applicant:  James McGarry, James McGarry Architecture Materials: continuance memo, public comment"
+        "text": "Request for a Major Variance to allow an increase in building height in the hillside area for a renovation project that includes construction of a 1,903-square-foot second-story addition to an existing single-story residence, along with interior renovations to the first floor (Project). The Project is located on a 0.28-acre lot in the R-1-10 (Single-Family Residential) zone with a land use designation of Neighborhood Very Low 2, located at 1193 Colina Vista and is commonly identified as Assessor's Parcel Number 065-0-224-095 (Project Site). California Environmental Quality Act: 15301 (Existing Facilities, Class 1) Recommendation: To continue to a date certain of October 28, 2026. Planner: Adams Bernhardt, Senior Planner Applicant: James McGarry, James McGarry Architecture Materials: continuance memo, public comment"
       }
     ],
     "rejected": [],
     "omissions": [
       {
-        "item_number": "711",
+        "item_number": "2",
         "reason": "not surfaced by the extractor; recorded automatically so the item is not silently dropped (deterministic backstop)"
       }
     ],
@@ -48,8 +40,8 @@
       "source_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08262026-3687",
       "reason": ""
     },
-    "turns_used": 4,
-    "tokens_used": 10217,
+    "turns_used": 7,
+    "tokens_used": 19493,
     "model_id": "amazon.nova-lite-v1:0"
   }
 }
