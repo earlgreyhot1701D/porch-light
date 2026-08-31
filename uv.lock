@@ -552,6 +552,7 @@ dependencies = [
     { name = "bedrock-agentcore" },
     { name = "boto3" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pypdf" },
     { name = "strands-agents" },
     { name = "structlog" },
     { name = "textstat" },
@@ -564,11 +565,6 @@ dev = [
     { name = "pytest" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pypdf" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.13.0" },
@@ -576,6 +572,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.35.0" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.0" },
+    { name = "pypdf", specifier = ">=6.16.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "strands-agents", specifier = ">=1.50.0" },
     { name = "structlog", specifier = ">=26.1.0" },
@@ -585,7 +582,7 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pypdf", specifier = ">=6.16.2" }]
+dev = []
 
 [[package]]
 name = "psycopg"

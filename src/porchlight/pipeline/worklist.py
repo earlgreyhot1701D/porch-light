@@ -21,6 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from porchlight.adapters.ventura.classify import classify
+
 
 @dataclass(frozen=True)
 class WorkItem:
@@ -56,13 +58,20 @@ def build_worklist(meeting_stubs) -> list[WorkItem]:
     items: list[WorkItem] = []
     for stub in meeting_stubs:
         for url in stub.document_urls:
+            abs_url = _absolute(url)
+            # R1 fix: classify the document HERE so its role is persisted. The
+            # classifier is deterministic (classify.py) and the ViewFile URL segment
+            # (/Agenda/, /Minutes/, ...) is a reliable signal even without a title
+            # (the index gives URLs, not per-document titles). Previously role was
+            # hardcoded "" and the classifier never ran in the pipeline, so every
+            # stored documents.role was empty (root-cause task R1, found W6).
             items.append(
                 WorkItem(
                     meeting_id=stub.meeting_id,
                     body_id=stub.body_id,
                     meeting_date=stub.meeting_date,
-                    document_url=_absolute(url),
-                    role="",  # role is classified when the document is recorded (previous_versions/classify)
+                    document_url=abs_url,
+                    role=classify(abs_url, "").value,
                 )
             )
     items.sort(key=lambda w: (w.meeting_date, w.meeting_id, w.document_url))

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from porchlight.adapters.ventura import fetch as vfetch
 from porchlight.adapters.ventura.hash import document_id
+from porchlight.adapters.ventura.pdftext import extract_pages
 from porchlight.log import get_logger
 
 log = get_logger("porchlight.pipeline.changedetect")
@@ -79,5 +80,18 @@ def record_document(backend, url: str, meeting_id: str, role: str, run_id: str) 
         "first_seen_run) VALUES (%s, %s, %s, %s, 'done', %s, %s, %s)",
         [doc_id, meeting_id, url, role, result.last_modified, result.etag, run_id],
     )
-    log.info("doc_recorded", url=url, document_id=doc_id, meeting_id=meeting_id)
+
+    # R2: persist per-page text from the SAME fetched bytes (no re-fetch, §40b), so
+    # extraction and the rewrite stage read source text from storage. A page with no
+    # text layer stores "" — the extractor then marks that document unreadable rather
+    # than guessing (R1.6). Idempotent on the content-hash document_id.
+    pages = extract_pages(result.body)
+    for page_number, page_text in enumerate(pages, start=1):
+        backend.execute(
+            "INSERT INTO document_pages (document_id, page_number, text) VALUES (%s, %s, %s) "
+            "ON CONFLICT (document_id, page_number) DO UPDATE SET text = EXCLUDED.text",
+            [doc_id, page_number, page_text],
+        )
+
+    log.info("doc_recorded", url=url, document_id=doc_id, meeting_id=meeting_id, pages=len(pages))
     return RecordOutcome(document_id=doc_id, changed=True, unchanged=False, url=url)

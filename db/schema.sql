@@ -60,6 +60,21 @@ CREATE INDEX IF NOT EXISTS idx_documents_status ON documents (status);
 CREATE INDEX IF NOT EXISTS idx_documents_meeting ON documents (meeting_id);
 
 -- ---------------------------------------------------------------------------
+-- document_pages: per-page extracted text of a document (Spec 3 R2, root-cause task).
+-- Persisted at ingestion from the SAME fetched bytes used for hashing (no re-fetch,
+-- §40b). Per-page so an item's page range is recoverable as text. Keyed by
+-- (document_id, page_number); content-hash document_id means identical bytes never
+-- duplicate. This is what the extractor + rewrite stage read from storage.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS document_pages (
+    document_id   TEXT NOT NULL REFERENCES documents(document_id),
+    page_number   INT NOT NULL,               -- 1-based, matches receipt page ranges
+    text          TEXT NOT NULL,              -- verbatim extracted text-layer content (artifacts intact)
+    PRIMARY KEY (document_id, page_number)
+);
+CREATE INDEX IF NOT EXISTS idx_document_pages_doc ON document_pages (document_id);
+
+-- ---------------------------------------------------------------------------
 -- items: populated by Spec 3 (extraction). Declared here so the schema is whole
 -- and the vector index exists from the start (§18b#7). Embeddings are pgvector.
 -- ---------------------------------------------------------------------------
