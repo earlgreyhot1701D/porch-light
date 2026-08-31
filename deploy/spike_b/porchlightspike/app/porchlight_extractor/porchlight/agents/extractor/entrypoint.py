@@ -154,15 +154,38 @@ try:
             log.info("containment_probe_complete")
             return
 
-        # The document text is supplied in the prompt context; the model reads text
-        # it was handed, it does not fetch. get_document_pages (a tool) serves ranges
-        # from THIS in-memory text, never the network.
-        prompt = payload.get("prompt", "Extract the agenda items from the provided document text.")
-        async for event in agent.stream_async(prompt):
-            if isinstance(event, dict) and "event" in event:
-                yield event
+        # Normal operation (R5 condition 5): run the tool-using extractor over the
+        # STORED page text and RETURN the validated items across the JSON invoke
+        # boundary. The model selects items via the record_items tool; the caps bound
+        # the loop; validate_items (deterministic, R1.5) accepts/rejects before we
+        # return. The agent, its allowlist hook, and its turn-cap hook are all built
+        # inside run_extraction — this path does not use the empty-tools agent above.
+        from porchlight.agents.extractor.agent import run_extraction
 
-        log.info("extractor_complete", document_id=payload.get("document_id", ""))
+        source_url = payload.get("source_url", "") or ""
+        extraction = run_extraction(MODEL_ID, pages, source_url, log)
+
+        log.info(
+            "extractor_complete",
+            document_id=payload.get("document_id", ""),
+            accepted=len(extraction.items),
+            rejected=len(extraction.rejected),
+            partially_read=extraction.status["partially_read"],
+        )
+        # Structured return: one final event carrying the items, so a JSON-invoke
+        # caller gets the result (not just the streamed thinking). AgentCore delivers
+        # yielded dicts to the caller; we yield a single result envelope.
+        yield {
+            "porchlight_result": {
+                "document_id": payload.get("document_id", ""),
+                "items": extraction.items,
+                "rejected": extraction.rejected,
+                "status": extraction.status,
+                "turns_used": extraction.turns_used,
+                "tokens_used": extraction.tokens_used,
+                "model_id": MODEL_ID,
+            }
+        }
 
     if __name__ == "__main__":
         app.run()

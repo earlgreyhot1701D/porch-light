@@ -355,44 +355,33 @@ PrivateLink endpoints were torn down at the earlier timebox and are not currentl
 billing. A resume checklist to add layer 2 is in `r5-deploy-proposal.md`.
 
 
-### Item selection: model-driven if the tool spike passes, deterministic if it does not (Option-C floor, written before the spike)
+### Item selection is model-driven (Option A shipped); the verifier is strict on dense Planning source
 
-This entry is written **before** the extractor tool-use spike, so the honest floor
-is on record no matter how the spike lands — the same way the network-egress layer
-was stated honestly before it was resolved (see the containment entry above). It
-will be trimmed to whichever outcome is true once the spike and build finish.
+The Option-C floor written before the spike is resolved: the spike passed 3/3 and we
+shipped **Option A**. The extractor is a genuine tool-using agent (decisions §44).
+Two residual limitations this surfaced on real data:
 
-- **What it is.** The extractor's four tools were named in an allowlist but had no
-  implementations, and the deployed agent ran with an empty tool list (decisions
-  §43). We are making the extractor a genuine tool-using agent (Option A), gated by
-  a 15-minute Nova-Lite tool-use spike (3/3 pass/fail, no prompt iteration). There
-  are three possible landing states, in descending order of what we would prefer:
-  - **A (model-driven, tool loop):** the model calls `get_document_pages` /
-    `record_items` etc. under the caps, and `validate_items` guards every proposed
-    item. Item selection is the model's, bounded and validated by code.
-  - **B (model-driven, structured output):** if the tool loop is unreliable, the
-    model returns items as one structured-output response over the page text, still
-    validated by `validate_items`. Item selection is still the model's judgment;
-    the mechanism is a single call, not a loop. Recorded plainly as B, never dressed
-    as A.
-  - **C (the floor):** if both A and B fail within the timebox, extraction is
-    **deterministic** for v1 — the model-driven extractor is deployed and its
-    containment proven (the hook allowlist NEVER-trip, live), **but item selection
-    is not model-driven.** Deterministic code splits the stored page text into
-    items; the model's role in the pipeline is then only the rewrite/verify chain.
-- **What it affects.** Whether "the extractor is an agent that decides what the
-  items are" is true of the running product, or true only of its deployment and
-  containment while selection is deterministic. It affects the strength of the
-  "agent on AgentCore" claim for the Good Neighbor track, not the correctness of any
-  shown item — every path runs `validate_items` and the verifier, so no fabricated
-  item or page range ships regardless of which path selected it.
-- **Why we would accept C.** A deterministic split of these two known, hand-checkable
-  meetings still proves the demo's spine end to end (real items → verified bilingual
-  rewrites → Aurora, through the deployed runtime's return seam) without betting the
-  timebox on tool-call reliability. Block Zero cost days to almost-there; the floor
-  exists so this block cannot. Deterministic-but-honest beats model-driven-but-
-  unfinished.
-- **v2.** If we ship B or C, v2 revisits A: the tool bodies exist, and the remaining
-  work is reliability (prompt shape, a stronger model, or a retry-on-no-tool-call
-  guard) — measured, not assumed. The named-but-absent tools are already the lesson
-  (testing.md: a test must exercise a capability, not just its name).
+- **What it is.** The extractor's four tools now have bodies; it runs a Strands tool
+  loop (`find_listing_pages`, `get_document_pages`, `extract_items`, `record_items`)
+  under the caps, validates with `validate_items`, and returns structured items
+  across the invoke boundary. On the two condition-5 meetings it extracted clean
+  per-item text with correct page ranges. **But** on meeting 3687 (Planning
+  Commission), EN verification came back 0/4: dense planning staff reports either
+  could not be simplified below the reading floor, or named the body ("Planning
+  Commission") in a way the entity check — which compares against the item's own
+  page-range text — flagged as unsourced, or (item 1) had the model name the wrong
+  body entirely (caught by the §41 containment check).
+- **What it affects.** How many dense Planning items get a plain-language rewrite vs
+  fall back to original staff text. Council consent items rewrite reliably (3685:
+  5/8); dense Planning items often fall back (3687: 0/4). No fabricated item ever
+  ships — every fallback shows the verbatim city text with an honest note (never.md
+  #7). The receipt, page range, and item number are always correct regardless.
+- **Why we accepted it.** The 0/4 is an honest measurement of Nova Lite on dense
+  source, not a defect. We deliberately did NOT tune the verifier or lower a floor to
+  raise the number (§28: green tests must not paper over real behavior). A fallback
+  to accurate original text is the product working, not failing.
+- **v2.** (a) Move the body-name check off the item-slice entity comparison and onto
+  the record/registry containment check (the §41 principle, extended) so a correctly-
+  named body is not flagged as unsourced. (b) Isolate per-item text better than a
+  page range (the "receipts point at a page" limitation). (c) Consider a stronger
+  model for the rewrite of dense items specifically, measured against the same floor.

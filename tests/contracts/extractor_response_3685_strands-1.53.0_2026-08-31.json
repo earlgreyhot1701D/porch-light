@@ -1,0 +1,81 @@
+{
+  "porchlight_result": {
+    "document_id": "doc_sha256_5cde9f5a484b22df96d45cceb25dc22bdb92ec6fee623e20662ce8b81b79f909",
+    "items": [
+      {
+        "item_number": "3",
+        "page_range": [
+          4,
+          4
+        ],
+        "text": "Ordinance for Second Reading – Ordinance to Amend Municipal Code for Victoria Avenue Corridor Plan and Development Code to allow General Retail Uses up to 140,000 SF as a Permitted use in the T5.3 Zone"
+      },
+      {
+        "item_number": "5",
+        "page_range": [
+          5,
+          5
+        ],
+        "text": "Revised Salary Resolution for Unrepresented Employees"
+      },
+      {
+        "item_number": "4",
+        "page_range": [
+          4,
+          4
+        ],
+        "text": "Ordinance for Second Reading - Ordinance Amending Section 16.210.070 of the Municipal Code to Support Changing of Time Limits in City -Owned Parking Lots, and Allowing for Paid Parking in City -Owned Parking Lots"
+      },
+      {
+        "item_number": "6",
+        "page_range": [
+          5,
+          5
+        ],
+        "text": "First Amendment to Master Services Agreement and Statement of Work 2 with Cognizant Worldwide Limited"
+      },
+      {
+        "item_number": "7",
+        "page_range": [
+          5,
+          5
+        ],
+        "text": "Grand Jury Response - Countywide Response to Public Complaints About Fireworks"
+      },
+      {
+        "item_number": "9",
+        "page_range": [
+          6,
+          6
+        ],
+        "text": "First Amendment to Professional Services Agreement 2026 -24 with Kennedy/Jenks Consultants, Inc. for the Water Treatment Evaluation and Corrective Action Plan Support to Address Selenium at the Saticoy Country Club Water System"
+      },
+      {
+        "item_number": "10",
+        "page_range": [
+          6,
+          6
+        ],
+        "text": "City Hall East Boiler Replacement Project (FA19 -1149) Alternatives Analysis"
+      },
+      {
+        "item_number": "8",
+        "page_range": [
+          6,
+          6
+        ],
+        "text": "Fourth Amendment to Reimbursement Agreement 2022 -053 Between the Ventura Unified School District and the City of Ventura Regarding Crossing Guards for Fiscal Year 2027"
+      }
+    ],
+    "rejected": [],
+    "status": {
+      "partially_read": false,
+      "stop_reason": "completed",
+      "source_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
+      "reason": ""
+    },
+    "turns_used": 4,
+    "tokens_used": 11202,
+    "model_id": "amazon.nova-lite-v1:0"
+  }
+}

@@ -120,3 +120,127 @@ def build_agent(model_id: str, tools: list):
     from strands import Agent
 
     return Agent(model=model_id, tools=tools, system_prompt=_SYSTEM_PROMPT)
+
+
+# --- The extraction run: agent loop under caps -> validate -> structured result. ---
+
+_EXTRACT_PROMPT = (
+    "Extract every agenda item from this document.\n"
+    "1. Call find_listing_pages to see the pages.\n"
+    "2. Call get_document_pages to read the pages that contain agenda items.\n"
+    "3. For EACH agenda item, call record_items with its item_number (copied "
+    "exactly from the document), first_page and last_page (the pages the item "
+    "spans), and the item's verbatim text.\n"
+    "Copy item numbers and page ranges from the document; never invent them. "
+    "When you have recorded every item, say DONE."
+)
+
+
+@dataclass(frozen=True)
+class ExtractionResult:
+    """The extractor's structured return — what crosses the JSON invoke boundary.
+
+    `items` is the ACCEPTED items only (each passed source-fidelity validation).
+    `rejected` carries (item-as-dict, reason) for surfacing. `status` is the honest
+    completeness marker (partial vs complete). `turns_used`/`tokens_used` are the
+    real metrics the cap decision was made on. Everything here is JSON-serializable.
+    """
+
+    items: list[dict]
+    rejected: list[dict]
+    status: dict
+    turns_used: int
+    tokens_used: int
+
+
+def _turn_cap_hook(get_count, log):
+    """A BeforeToolCallEvent hook that stops the loop at the turn cap.
+
+    A tool call past TURN_CAP is cancelled (deterministic cap, §3/R1.3): the items
+    recorded so far STAND, and the run ends. This is code deciding, not the model
+    self-limiting. Returns a HookProvider or raises if the SDK surface is missing
+    (fail closed, never.md #7)."""
+    from strands.hooks import BeforeToolCallEvent, HookProvider, HookRegistry
+
+    class _TurnCapHook(HookProvider):
+        def register_hooks(self, registry: HookRegistry) -> None:
+            registry.add_callback(BeforeToolCallEvent, self._before)
+
+        def _before(self, event: BeforeToolCallEvent) -> None:
+            if get_count() >= TURN_CAP:
+                reason = f"extractor turn cap ({TURN_CAP}) reached; stopping"
+                log.warning("cap_fired", cap="turn", turn_cap=TURN_CAP)
+                try:
+                    event.cancel_tool = reason
+                except Exception:
+                    pass
+
+    return _TurnCapHook()
+
+
+def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> ExtractionResult:
+    """Run the tool-using extractor over stored page text; return validated items.
+
+    The seam that crosses the JSON invoke boundary (R5 condition 5). Builds a
+    per-invocation session bound to `pages`, runs the Strands agent under the caps,
+    then validates the recorded items against the source with `validate_items`
+    (R1.5) before returning. The model selects items; deterministic code validates
+    and the caps bound the loop — the model never self-certifies fidelity.
+    """
+    from porchlight.agents.extractor.session import ExtractParseSession, build_tools
+    from porchlight.agents.extractor.tools import validate_items
+
+    session = ExtractParseSession(pages=list(pages))
+    tools = build_tools(session)
+    agent = build_agent(model_id, tools)
+
+    # Register the allowlist hook (import here to avoid a cycle at module load).
+    from porchlight.agents.extractor.entrypoint import _register_allowlist_hook
+
+    _register_allowlist_hook(agent, log)
+    agent.hooks.add_hook(_turn_cap_hook(lambda: len(session.recorded), log))
+
+    result = agent(_EXTRACT_PROMPT)
+
+    # Real metrics from the run — the cap decision is made on these, not guessed.
+    metrics = getattr(result, "metrics", None)
+    turns_used = int(getattr(metrics, "cycle_count", 0) or 0)
+    acc = getattr(metrics, "accumulated_usage", {}) or {}
+    tokens_used = int(acc.get("totalTokens", 0) or 0)
+    model_done = str(getattr(result, "stop_reason", "")) == "end_turn"
+
+    status = classify_completion(turns_used, tokens_used, model_done, source_url)
+
+    validation = validate_items(session.recorded, session.full_text(), session.page_count)
+    log.info(
+        "extraction_validated",
+        recorded=len(session.recorded),
+        accepted=len(validation.accepted),
+        rejected=len(validation.rejected),
+        turns_used=turns_used,
+        tokens_used=tokens_used,
+        partially_read=status.partially_read,
+    )
+
+    return ExtractionResult(
+        items=[
+            {
+                "item_number": it.item_number,
+                "page_range": [it.page_range[0], it.page_range[1]],
+                "text": it.text,
+            }
+            for it in validation.accepted
+        ],
+        rejected=[
+            {"item_number": it.item_number, "page_range": list(it.page_range), "reason": reason}
+            for it, reason in validation.rejected
+        ],
+        status={
+            "partially_read": status.partially_read,
+            "stop_reason": status.stop_reason.value,
+            "source_url": status.source_url,
+            "reason": status.reason,
+        },
+        turns_used=turns_used,
+        tokens_used=tokens_used,
+    )

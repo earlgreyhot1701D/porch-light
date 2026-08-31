@@ -1359,3 +1359,66 @@ If both fail, the floor is deterministic extraction for these known meetings (Op
 C) with the model-driven extractor deployed and its containment proven but item
 selection not model-driven — written into KNOWN-LIMITATIONS now, before the spike,
 the same way the network-egress layer was written honestly before it was resolved.
+
+
+---
+
+## 44. Condition-5 join landed (Option A): the extractor is a real tool-using agent, and what real data did to the verifier
+
+The spike passed 3/3 (Nova Lite reliably called tools and returned parseable
+structured output on real 3687 text, no prompt iteration), so we built Option A. The
+extractor now runs a genuine Strands tool loop — `find_listing_pages`,
+`get_document_pages`, `extract_items`, `record_items` — under the existing caps,
+validates with `validate_items`, and RETURNS structured items across the JSON invoke
+boundary (a `porchlight_result` envelope). Deployed, invoked on two real stored
+meetings, items + verified rewrites persisted to Aurora. Row counts after: 3685 =
+8 pages / 8 items / 8 rewrites; 3687 = 4 / 4 / 4; totals 12/12/12 (from 0).
+
+**The extractor did its job well.** On 3687 it recorded four clean items with correct
+per-item text and page ranges from a 4-page PDF (item 1 the minutes, items 2-4 the
+projects), turns=4 under the cap of 6, tokens=11,435, nothing rejected by
+`validate_items`. The captured envelope is the contract-test fixture
+(`tests/contracts/extractor_response_3687_strands-1.53.0_2026-08-31.json`).
+
+**The surprise was downstream, in the verifier, and it is the guard working.** EN
+verification came back 3685 = 5/8 verified, 3687 = **0/4** verified. I expected
+3687 to mirror W6's cleaner result; it did not. Diagnosing each 3687 item against
+the extractor's actual per-item text (not page text — my first diagnostic pass fed
+page text and mislabeled the cause, corrected) showed four DIFFERENT, all-legitimate
+rejections:
+
+- **Item 1 — containment (check 4):** the model wrote "The **City Council** will
+  consider…" for a **Planning Commission** item. The §41 body-consistency check
+  caught a real body hallucination. Correct reject.
+- **Item 2 — reading level:** a clean, entity-faithful rewrite of the Prohousing
+  item scored 14.9, well below the 33.8 EN floor. The source is genuinely dense and
+  Nova Lite could not simplify it enough. Honest reject.
+- **Items 3 & 4 — entity preservation (checks 2/3):** the rewrite named "Planning
+  Commission," but that phrase is not inside the single item's own page-range text,
+  so the entity check (which compares against the item's slice) flagged it as an
+  unsourced entity. This is the documented page-vs-item-text interaction plus the
+  greedy-proper-noun brittleness, surfacing together. Item 4 also missed the reading
+  floor by a hair (33.5 vs 33.8).
+
+**Every rejected item fell back to the original staff text with an honest note —
+never a fabricated summary, never fail-open (never.md #7), on real data.** That is
+the product's spine holding under real dense planning language.
+
+**What we did NOT do:** tune the verifier, lower a floor, or widen the entity check
+to rescue the 3687 number. That is the §28 anti-pattern (green tests over honest
+reality) and it would hide exactly the signal worth having: **Nova Lite's plain-
+language rewrite is reliable on Council consent items and struggles on dense Planning
+staff reports.** The 0/4 is a true measurement, not a defect to paper over. Two
+follow-ups are recorded as limitations, not fixed here: (a) the entity check should
+compare a body name against the record/registry (containment) rather than the item
+slice — the same principle as §41, extended; (b) per-item text isolation is already
+the "receipts point at a page" limitation. Both are v2.
+
+**Cost (measured, pre-rounding):** 3685 $0.000751, 3687 $0.000511, total $0.001263
+across 12 items → **$0.000631 per agenda** (2 agendas). Sub-cent per agenda on Nova
+Lite, consistent with the §"ledger rounds toward zero" limitation (per-call rows
+round to 0.0000; this figure is the summed pre-rounding cost from the harness).
+
+**One cosmetic surprise, nothing broke:** the model recorded items slightly out of
+order (1, 3, 2, 4) — harmless, each carries its own number and page range, and
+persistence is keyed by item number.
