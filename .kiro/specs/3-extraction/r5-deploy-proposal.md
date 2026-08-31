@@ -241,3 +241,32 @@ unblocks conditions 2 (live hook-allowlist proof) and 5 (end-to-end run through 
 deployed runtime). The network-egress layer (VPC + SG + PrivateLink, already
 designed and committed) goes on the POST-SUBMISSION list and is not reopened before
 the submission is otherwise complete.
+
+## PUBLIC deploy outcome (2026-08-31) — conditions 2 met, condition 5 partial
+
+**Deployed:** `porchlightspike_porchlight_extractor` (PUBLIC), READY. IAM invoke
+attached to `porchlight-dev-hunter-role` (that runtime ARN only). The product's
+extractor now runs on AgentCore Runtime — the "agent on AgentCore" claim is real.
+
+**Condition 2 — MET, proven live** (verbatim CloudWatch, deployed runtime):
+- our schema line: `{"event":"extractor_start","component":"extractor","run_id":...,"model_id":"amazon.nova-lite-v1:0",...}`
+- NEVER-trip: model called a non-allowlisted tool -> `{"event":"never_trip_tool_blocked","tool_name":"count_words","boundary":"tool_allowlist","level":"warning"}` -> run terminated, tool never executed.
+- Fail-closed also proven (a first deploy refused to run when the hook could not register).
+- Network-layer proof NOT attempted (PUBLIC mode; not pretending otherwise).
+
+**Condition 5 — PARTIAL, honest boundary.** The deployed runtime runs the real
+Aug-26 (3687) page text cleanly end-of-agent-loop (`extractor_start` ->
+`extractor_complete`, our schema, no false hook trip). BUT the full
+extract->rewrite->verify->persist "through the deployed runtime, from storage" is
+NOT completed, for two real reasons, neither faked:
+  1. `document_pages` / `items` / `item_rewrites` are EMPTY in Aurora — R2 persists
+     text only on a NEW changed-document ingestion, and none has run since; 3687 was
+     recorded pre-R2. Feeding stored text needs a one-fetch seed of 3687's pages first.
+  2. The deployed runtime STREAMS agent events but does not yet RETURN structured
+     items to the caller over the JSON invoke boundary (with empty `_tools`, the
+     `record_items` path is not wired across the seam). Making the pipeline consume
+     items from the deployed runtime is unbuilt work, not a config tweak.
+So the in-memory end-to-end (W6) is proven, and the deployed runtime is proven to
+RUN on real text with our logging + live containment — but the two are not yet
+joined into one from-storage pipeline. That join is the next real task, recorded
+rather than pretended.

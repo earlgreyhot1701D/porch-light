@@ -313,24 +313,43 @@ stating these plainly is the product working, not an apology.
   containment/registry checks wherever the field is deterministic, per the
   decisions principle.
 
-### Extractor network containment: one layer deployed, two designed
+### Extractor network containment: one layer deployed and tested, one designed, one structural
 
-The extractor reads untrusted PDF text, so its design calls for two independent
-containment layers: the Strands hook tool-allowlist (which blocks any tool call
-outside its four permitted tools) AND network-level egress control (the runtime
-cannot open an outbound connection at all). For v1, only the first layer is
-deployed. The AgentCore runtime runs in PUBLIC network mode, which permits outbound
-egress; network-level no-egress requires VPC network mode with a restricted security
-group and PrivateLink endpoints, which was designed and specified but not deployed
-within the hackathon window. The consequence, stated plainly: if a prompt injection
-defeated the hook allowlist, nothing at the network layer would stop an outbound
-call. The hook allowlist is real and tested; the second layer is designed and
-documented, not shipped. We chose to ship this honestly rather than claim a
-containment posture we had not deployed.
+The extractor reads untrusted PDF text. Its containment has three parts, and they
+are at different levels of "real" — stated exactly:
 
-Status note (2026-08-31): the no-egress security group and the design are built and
-recorded (`.kiro/specs/3-extraction/r5-deploy-proposal.md`); the VPC-mode runtime
-deploy hit a firm two-hour timebox and was stopped rather than run into an
-"almost-there" infrastructure spiral. The billable PrivateLink endpoints were torn
-down; nothing bills while the second layer is undeployed. A resume checklist exists
-to complete it in a later session.
+1. **Deployed AND tested live (the hook allowlist).** A Strands `BeforeToolCallEvent`
+   hook blocks any tool call whose name is not one of the four permitted tools. This
+   is proven against the DEPLOYED AgentCore runtime, not asserted: a benign
+   non-allowlisted tool the model actually called was blocked, logged as a NEVER-trip
+   (`event: never_trip_tool_blocked`, `boundary: tool_allowlist`), and the run
+   terminated before the tool executed (2026-08-31, CloudWatch). The runtime also
+   fails CLOSED if the hook cannot register (proven live on a first deploy: it
+   refused to run unguarded rather than run without the hook).
+
+2. **Designed and specified, NOT deployed (network-level egress control).** No-egress
+   requires VPC network mode + a restricted security group + PrivateLink endpoints.
+   The security group and the full config are designed and committed
+   (`r5-deploy-proposal.md`); the runtime is deployed in PUBLIC network mode, which
+   permits outbound egress. Deferred to post-submission by an explicit sequencing
+   decision (deploy PUBLIC now to make the "agent on AgentCore" claim real; add the
+   network layer after).
+
+3. **Structural, not a control, but it reduces exposure (the contract).** The
+   extractor receives STORED page text and its tool registry contains NO
+   network-capable tool. An injection would have to invoke a tool that does not
+   exist. This is not a security control (a control blocks a thing that is possible);
+   it is the absence of the capability in the first place. It narrows the blast
+   radius but is not a substitute for layer 2.
+
+**The consequence, unsoftened:** if a prompt defeated the hook allowlist AND a
+network-capable tool existed, nothing at the network layer would stop egress. Layer
+1 is real and tested; layer 2 is designed and not shipped; layer 3 reduces the
+chance layer 1 ever matters but is not itself a barrier. We ship this stated plainly
+rather than claim a network-containment posture we have not deployed.
+
+Status (2026-08-31): the extractor IS deployed to AgentCore Runtime
+(`porchlightspike_porchlight_extractor`, PUBLIC mode) and runs in our
+`porchlight.log` schema. The no-egress SG (`sg-08e491a424c16581f`) exists (free); the
+PrivateLink endpoints were torn down at the earlier timebox and are not currently
+billing. A resume checklist to add layer 2 is in `r5-deploy-proposal.md`.
