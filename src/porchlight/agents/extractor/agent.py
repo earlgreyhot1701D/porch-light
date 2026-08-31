@@ -21,6 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from porchlight.agents.extractor.session import RecordedOmission
+
 # Turn cap. Rationale: one document's read+extract fits in a few turns; 6 leaves
 # headroom while bounding a runaway loop (§3, tech.md turn caps).
 TURN_CAP = 6
@@ -189,6 +191,49 @@ def _turn_cap_hook(get_count, log):
     return _TurnCapHook()
 
 
+import re as _re
+
+# A line-start numbered-item token: "1.", "12.", optionally indented. This is the
+# form Ventura agendas use for a numbered item; it is intentionally CONSERVATIVE
+# (line start + number + period) so prose like "in 2026." is not caught. False
+# negatives (missing an oddly-formatted item) are safe — a missed backstop item is
+# no worse than today; false positives would create phantom omissions, so we err
+# toward the strict pattern.
+_NUMBERED_ITEM_LINE = _re.compile(r"(?m)^\s*(\d{1,3})\.\s+\S")
+
+
+def _backfill_unaccounted_omissions(session, log) -> None:
+    """Record an automatic omission for any line-start numbered item the model
+    neither recorded nor omitted (§46 deterministic backstop).
+
+    Normalizes item numbers by stripping a trailing '.' so "1" and "1." match.
+    """
+    def _norm(n: str) -> str:
+        return n.strip().rstrip(".")
+
+    accounted = {_norm(it.item_number) for it in session.recorded}
+    accounted |= {_norm(om.item_number) for om in session.omissions}
+
+    seen: set[str] = set()
+    for page_text in session.pages:
+        for m in _NUMBERED_ITEM_LINE.finditer(page_text or ""):
+            num = m.group(1)
+            if num in seen:
+                continue
+            seen.add(num)
+            if num not in accounted:
+                session.omissions.append(
+                    RecordedOmission(
+                        item_number=num,
+                        reason=(
+                            "not surfaced by the extractor; recorded automatically so "
+                            "the item is not silently dropped (deterministic backstop)"
+                        ),
+                    )
+                )
+                log.warning("extractor_omission_backfilled", item_number=num)
+
+
 def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> ExtractionResult:
     """Run the tool-using extractor over stored page text; return validated items.
 
@@ -199,7 +244,7 @@ def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> Ext
     and the caps bound the loop — the model never self-certifies fidelity.
     """
     from porchlight.agents.extractor.session import ExtractParseSession, build_tools
-    from porchlight.agents.extractor.tools import validate_items
+    from porchlight.agents.extractor.tools import validate_items  # noqa: F401 (used below)
 
     session = ExtractParseSession(pages=list(pages))
     tools = build_tools(session)
@@ -223,6 +268,17 @@ def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> Ext
     status = classify_completion(turns_used, tokens_used, model_done, source_url)
 
     validation = validate_items(session.recorded, session.full_text(), session.page_count)
+
+    # Deterministic no-silent-drop backstop (§46): the model was TOLD to record every
+    # numbered item or an explicit omission, but a prompt instruction is not a
+    # guarantee — on real data (meeting 3685) it silently dropped closed-session
+    # items 1-2. So CODE, not the model, enforces the invariant: any line-start
+    # numbered item in the source that the model neither recorded nor omitted is
+    # recorded as an automatic omission here. Relevance is never decided by a silent
+    # gap; an unsurfaced item becomes a visible, logged omission for the watcher to
+    # see. This is the same posture as validate_items: the guarantee is deterministic.
+    _backfill_unaccounted_omissions(session, log)
+
     # The extractor must not decide relevance silently: every deliberate omission is
     # surfaced and logged, so a skipped numbered item is visible, never lost (§46).
     for om in session.omissions:

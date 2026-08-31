@@ -11,14 +11,6 @@
         "text": "Ordinance for Second Reading – Ordinance to Amend Municipal Code for Victoria Avenue Corridor Plan and Development Code to allow General Retail Uses up to 140,000 SF as a Permitted use in the T5.3 Zone"
       },
       {
-        "item_number": "5",
-        "page_range": [
-          5,
-          5
-        ],
-        "text": "Revised Salary Resolution for Unrepresented Employees"
-      },
-      {
         "item_number": "4",
         "page_range": [
           4,
@@ -35,12 +27,36 @@
         "text": "First Amendment to Master Services Agreement and Statement of Work 2 with Cognizant Worldwide Limited"
       },
       {
+        "item_number": "5",
+        "page_range": [
+          5,
+          5
+        ],
+        "text": "Revised Salary Resolution for Unrepresented Employees"
+      },
+      {
         "item_number": "7",
         "page_range": [
           5,
           5
         ],
         "text": "Grand Jury Response - Countywide Response to Public Complaints About Fireworks"
+      },
+      {
+        "item_number": "8",
+        "page_range": [
+          6,
+          6
+        ],
+        "text": "Fourth Amendment to Reimbursement Agreement 2022 -053 Between the Ventura Unified School District and the City of Ventura Regarding Crossing Guards for Fiscal Year 2027"
+      },
+      {
+        "item_number": "11",
+        "page_range": [
+          7,
+          7
+        ],
+        "text": "2025 Housing Element Annual Progress Report Update"
       },
       {
         "item_number": "9",
@@ -54,28 +70,21 @@
         "item_number": "10",
         "page_range": [
           6,
-          6
+          7
         ],
         "text": "City Hall East Boiler Replacement Project (FA19 -1149) Alternatives Analysis"
-      },
-      {
-        "item_number": "8",
-        "page_range": [
-          6,
-          6
-        ],
-        "text": "Fourth Amendment to Reimbursement Agreement 2022 -053 Between the Ventura Unified School District and the City of Ventura Regarding Crossing Guards for Fiscal Year 2027"
       }
     ],
     "rejected": [],
+    "omissions": [],
     "status": {
       "partially_read": false,
       "stop_reason": "completed",
       "source_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685",
       "reason": ""
     },
-    "turns_used": 4,
-    "tokens_used": 11202,
+    "turns_used": 7,
+    "tokens_used": 25646,
     "model_id": "amazon.nova-lite-v1:0"
   }
 }

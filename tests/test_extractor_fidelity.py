@@ -187,3 +187,53 @@ def test_session_records_items_and_omissions_no_silent_drop() -> None:
     assert session.omissions[0].reason  # a reason is present, never blank-by-default
     # The union accounts for every numbered item the model acted on (no silent drop).
     assert recorded_nums | omitted_nums == {"1", "2"}
+
+
+def test_backstop_records_omission_for_a_silently_dropped_numbered_item() -> None:
+    """The no-silent-drop guarantee is CODE, not a prompt (decisions §46 backstop).
+
+    Real data (meeting 3685) showed the model silently dropping closed-session items
+    1-2 despite the prompt instruction. `_backfill_unaccounted_omissions` enforces
+    the invariant deterministically: a line-start numbered item in the source that
+    the model neither recorded nor omitted becomes an automatic, logged omission.
+    A prompt is not a guarantee; this is.
+    """
+    from porchlight.agents.extractor.agent import _backfill_unaccounted_omissions
+    from porchlight.agents.extractor.session import ExtractParseSession
+
+    class _L:
+        def warning(self, *a, **k) -> None: ...
+        def info(self, *a, **k) -> None: ...
+
+    session = ExtractParseSession(pages=[
+        "1. CONFERENCE WITH LEGAL COUNSEL\n2. CONFERENCE WITH LABOR NEGOTIATORS\n",
+        "3. Ordinance for Second Reading\n",
+    ])
+    # Model recorded only item 3; items 1 and 2 were silently dropped.
+    session.recorded.append(ExtractedItem(item_number="3", page_range=(2, 2), text="Ordinance..."))
+
+    _backfill_unaccounted_omissions(session, _L())
+
+    # Items 1 and 2 are now explicit omissions — never silently gone.
+    assert {om.item_number for om in session.omissions} == {"1", "2"}
+    assert all(om.reason for om in session.omissions)
+
+
+def test_backstop_does_not_duplicate_an_already_recorded_or_omitted_item() -> None:
+    """The backstop only fills UNaccounted items; a recorded or already-omitted item
+    (with or without a trailing '.') is not double-counted."""
+    from porchlight.agents.extractor.agent import _backfill_unaccounted_omissions
+    from porchlight.agents.extractor.session import ExtractParseSession, RecordedOmission
+
+    class _L:
+        def warning(self, *a, **k) -> None: ...
+        def info(self, *a, **k) -> None: ...
+
+    session = ExtractParseSession(pages=["1. Call to Order\n2. A real item\n3. Another\n"])
+    session.recorded.append(ExtractedItem(item_number="2.", page_range=(1, 1), text="A real item"))
+    session.omissions.append(RecordedOmission(item_number="1", reason="ceremonial"))
+
+    _backfill_unaccounted_omissions(session, _L())
+
+    # 1 already omitted, 2 already recorded ("2." normalizes to "2"); only 3 is new.
+    assert {om.item_number for om in session.omissions} == {"1", "3"}

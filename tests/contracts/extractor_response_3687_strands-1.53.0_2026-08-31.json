@@ -3,7 +3,15 @@
     "document_id": "doc_sha256_d17d08a52bab0e87f2b2f4ce5ea5c222785a1c30cab77a4afbf81226b4dfe457",
     "items": [
       {
-        "item_number": "1",
+        "item_number": "2.",
+        "page_range": [
+          2,
+          3
+        ],
+        "text": "Prohousing Designation, Citywide\n\nThe City is applying for a Prohousing Designation to the State of California Department of Housing and Community Development. This designation recognizes jurisdictions that are committed to accelerating housing production, removing barriers to development, and implementing housing-friendly policies. Staff is presenting the draft application for comments and review.  \n\nRecommendation: To approve the draft Prohousing Designation application and formal resolution.  \n\nStaff:  Andrea Palmer, Senior Management Analyst;  Rachel Wess, Management Analyst\nApplicant:  City of Ventura\n\nMaterials: staff report, application, resolution, public comment"
+      },
+      {
+        "item_number": "1.",
         "page_range": [
           2,
           2
@@ -11,23 +19,15 @@
         "text": "Approval of the Minutes\n\nApproval of the draft minutes from the June 24, 2026 meeting.\n\nRecommendation:  Approve, as presented.   \n\nMaterials: draft minutes"
       },
       {
-        "item_number": "3",
+        "item_number": "3.",
         "page_range": [
-          2,
+          3,
           3
         ],
-        "text": "PROJ-25-0914 Loretta Court Apartments Located at APN: 073-0-058-030\n\nRequest for Major Design Review to develop a new, 19-unit multi-family residential apartment development with 3 Warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 Exception (Parking Setback), on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan and is commonly identified as Assessor’s Parcel Number 073-0-058-030 (Project Site).\n\nCalifornia Environmental Quality Act: 15332 (Infill Projects)\n\nRecommendation: To approve the project, as conditioned.  \n\nPlanner:  Grant White, Acting Senior Planner \nApplicant:  Linda Blackbern of RRM Design Group on behalf of Merewether Trust\n\nMaterials: staff report, vicinity map, resolution, development standards, plans, public comment, public comment 2"
+        "text": "PROJ-25-0914 Loretta Court Apartments Located at APN: 073-0-058-030\n\nRequest for Major Design Review to develop a new, 19-unit multi-family residential apartment development with 3 Warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 Exception (Parking Setback), on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan and is commonly identified as Assessor’s Parcel Number 073-0-058-030 (Project Site).\n\nCalifornia Environmental Quality Act: 15332 (Infill Projects)\n\nRecommendation: To approve the project, as conditioned.  \n\nPlanner:  Grant White, Acting Senior Planner\nApplicant:  Linda Blackbern of RRM Design Group on behalf of Merewether Trust\n\nMaterials: staff report, vicinity map, resolution, development standards, plans, public comment, public comment 2"
       },
       {
-        "item_number": "2",
-        "page_range": [
-          2,
-          2
-        ],
-        "text": "Prohousing Designation, Citywide\n\nThe City is applying for a Prohousing Designation to the State of California Department of Housing and Community Development. This designation recognizes jurisdictions that are committed to accelerating housing production, removing barriers to development, and implementing housing-friendly policies. Staff is presenting the draft application for comments and review.  \n\nRecommendation: To approve the draft Prohousing Designation application and formal resolution.  \n\nStaff:  Andrea Palmer, Senior Management Analyst;  Rachel Wess, Management Analyst \nApplicant:  City of Ventura \n\nMaterials: staff report, application, resolution, public comment"
-      },
-      {
-        "item_number": "4",
+        "item_number": "4.",
         "page_range": [
           3,
           3
@@ -36,6 +36,7 @@
       }
     ],
     "rejected": [],
+    "omissions": [],
     "status": {
       "partially_read": false,
       "stop_reason": "completed",
@@ -43,7 +44,7 @@
       "reason": ""
     },
     "turns_used": 4,
-    "tokens_used": 11435,
+    "tokens_used": 10516,
     "model_id": "amazon.nova-lite-v1:0"
   }
 }
