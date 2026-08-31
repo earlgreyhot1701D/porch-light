@@ -1422,3 +1422,55 @@ round to 0.0000; this figure is the summed pre-rounding cost from the harness).
 **One cosmetic surprise, nothing broke:** the model recorded items slightly out of
 order (1, 3, 2, 4) — harmless, each carries its own number and page range, and
 persistence is keyed by item number.
+
+
+---
+
+## 45. Body names are not entities (a bug we created, fixed — not a v2 item)
+
+Filed §44 as a v2 limitation; that was the wrong call and is corrected here. We added
+"name the body as the record gives it" to both rewrite prompts. A single agenda
+item's source slice does not contain the body name, so checks 2/3/6 read the
+model-named body ("Planning Commission") as an invented/new entity and rejected —
+punishing the model for following our own instruction. That is a bug, not a residual.
+
+**Fix:** `checks._drop_body_names(entities)` removes any entity whose raw span is a
+KNOWN body (via `body_registry.find_named_bodies` — registry lookup, never a word
+list) from BOTH source and output sets before checks 2 and 3 compare; check 6
+inherits it by calling 2/3. **Check 4 still governs body names by CONTRADICTION**
+(§41) — a rewrite that names a DIFFERENT body still fails. One source of truth for
+bodies: the registry. Also removed the body-name entries from
+`entities._ROLE_OR_BODY` (the never-converging word list), keeping only genuine
+role/zone descriptive common nouns there. Calibrate after the fix: known-good
+rejection 0%, both adversarials still bite. On the join, 3687 item 1 EN verified for
+the first time.
+
+## 46. The extractor must not decide relevance (fixed with a deterministic backstop)
+
+The extractor silently dropped meeting 3685's closed-session items 1-2 as (implicitly)
+not worth surfacing. That is a model relevance judgment at the one point where nothing
+downstream can recover the item, and it left no trace. Relevance belongs to the
+watcher, with a receipt; bias-toward-showing is ours to keep. A silent drop is a
+failure, not a preference.
+
+**Fix, in two layers because the first was not enough:**
+1. A `record_omission` tool (fifth allowlisted tool) + prompt instruction: record
+   every numbered item, or record an explicit omission with number + reason.
+2. **Prompt alone did not work** — on real data the model still skipped 1-2 with no
+   omission. So a DETERMINISTIC backstop (`_backfill_unaccounted_omissions`) scans the
+   source for line-start numbered items the model neither recorded nor omitted and
+   records each as an automatic, logged omission. CODE enforces the invariant, same
+   posture as `validate_items`. The pipeline logs every omission
+   (`pipeline_extractor_omission`).
+
+**A false positive the backstop then produced, and its bound:** the first backstop
+flagged "711" as a missed item — an ADA relay-service notice ("711. Notification 72
+hours prior…") that starts a line with digits and a period. Fix: a candidate is a
+plausible missed item only if it is within the recorded item sequence or contiguous
+just above it (max recorded + 3). Catches trailing dropped items (recorded 3-10,
+missed 11/12) while rejecting far outliers. Tested both directions.
+
+**Lesson (testing/model-authority):** a prompt instruction is not a guarantee — if an
+invariant matters, code must enforce it. This is the §43 lesson (a capability must be
+exercised, not just named) applied to a behavior: the no-silent-drop rule is only real
+because deterministic code makes it so.
