@@ -1307,3 +1307,55 @@ post-submission — see KNOWN-LIMITATIONS three-layer entry). Tool-allowlist hoo
 proven live (NEVER-trip + fail-closed). Migrations 002/003/004 applied to Aurora.
 IAM invoke on the extractor runtime scoped to `porchlight-dev-hunter-role`, that ARN
 only. Containment promoted to a `make smoke` live test.
+
+
+---
+
+## 43. Green-and-broken finding #6: the extractor agent had no tools (an absence, not a defect)
+
+Found while mapping the condition-5 join (2026-08-31), before writing any code.
+This is the sixth green-and-broken finding of the build and the **first that is an
+absence rather than a defect** — nothing was wrong in what existed; the failure was
+in what was never there, and no test could go red because no test asserted the thing.
+
+**What we found.** The extractor's tool allowlist names four tools —
+`find_listing_pages`, `get_document_pages`, `extract_items`, `record_items`
+(`agents/extractor/tools.py`). **None of the four has a body.** `tools.py` contains
+only `is_tool_allowed`, the `ExtractedItem` dataclass, and `validate_items`. The
+deployed entrypoint calls `build_agent(MODEL_ID, tools)` with `tools = list(payload
+.get("_tools", []) or [])` — i.e. an **empty list** in normal operation (only the
+containment probe ever adds a tool). `build_agent` hands that empty list to the
+Strands `Agent` alongside a system prompt that instructs the model to "use only your
+provided tools." So the deployed extractor is an agent **with no tools, told to use
+its tools**, streaming events and returning no structured items across the invoke
+boundary.
+
+**Why every test stayed green.** The tests covered the allowlist (`is_tool_allowed`
+by name), `validate_items` (the source-fidelity guard), and — live — the containment
+hook (a probe tool the model calls and the hook blocks). All real, all passing. But
+**nothing asserted the agent actually had tools**, and nothing ran an extraction end
+to end through the model. W6 (`tests/golden/w6_live_run.py`) proved the rewrite→
+verify→persist half live, with the extracted `ITEMS` **hand-copied from the PDF** —
+the extraction step was literal data, never a model run. So "the extractor works"
+was true of every piece we tested and false of the whole, because the whole was
+never assembled or exercised.
+
+**The class of failure.** The five prior green-and-broken findings were defects: a
+check too strict, a glyph map too narrow, a hardcoded string missing diacritics.
+This one is an **absence** — the tools were named in an allowlist and referenced in a
+prompt, which reads as intent to a human skimming the file, but the implementation
+was simply not there, and the test suite mirrored the same gap (it tested the
+guardrails around the tools, never the tools). The lesson for testing.md: an
+allowlist entry and a prompt sentence are not evidence a capability exists; a test
+must exercise the capability itself. A named-but-absent thing is invisible to tests
+that only check the naming.
+
+**What we are doing about it.** Building the four tool bodies (Option A) so the
+extractor is a genuine tool-using agent — gated by a spike first (§working-style:
+spike before building; 15-minute Nova-Lite tool-use reality check, 3/3 pass/fail, no
+prompt iteration to rescue a FAIL). If the spike fails, we fall back to a
+structured-output extraction call (Option B) and say so plainly, not dressed as A.
+If both fail, the floor is deterministic extraction for these known meetings (Option
+C) with the model-driven extractor deployed and its containment proven but item
+selection not model-driven — written into KNOWN-LIMITATIONS now, before the spike,
+the same way the network-egress layer was written honestly before it was resolved.
