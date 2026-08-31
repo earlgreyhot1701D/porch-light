@@ -168,9 +168,12 @@ so that watching the city never becomes the city (or anyone) watching me.
    the list — the watcher matches from a transmitted watchlist, so "we never see it"
    is untrue (voice.md §26c note). The truer, weaker wording stands.
 5. THE watch input SHALL be validated **client-side AND server-side** (security.md,
-   never trust the front end): a per-term length cap, a per-list count cap, and
-   character validation, each with a stated value and a one-line rationale
-   (style.md). The caps are a requirement; their exact numbers are set in design.
+   never trust the front end): **at most 10 terms per list, at most 60 characters
+   per term**, plus character validation. Rationale (style.md, a value AND a
+   one-line reason): 10 terms covers a real neighbor's set of concerns without
+   giving the model a huge prompt to sweep on every request; 60 characters holds a
+   phrase like "short-term rentals near the beach" while blocking a pasted essay.
+   Both are PoC judgment calls, not tuned numbers — noted as such.
 
 ### Requirement 4: Share links carry the list in the fragment, and are confirmed (never.md #8)
 
@@ -339,6 +342,8 @@ complete and correct in Spanish as in English, so that the tool is mine too.
   requirement here does not assume it.
 - Any change to how items are extracted or rewritten (Spec 3) — the watcher reads
   verified rewrites and never re-summarizes.
-- Choosing the watcher's model on measured evidence — the model id is config-read
-  (Requirement 1.5); a watcher-specific model comparison, if wanted, is a design/
-  later decision, not a requirement of this block.
+- A watcher-specific model comparison — **resolved: NO.** The watcher runs **Nova
+  Lite** (`amazon.nova-lite-v1:0`), the same model as everything else, read from
+  config (Requirement 1.5). One model in the system; no second bake-off. The Spec 3
+  comparison already chose Nova Lite on measured evidence; re-deciding per component
+  would be rigor the block does not need.
