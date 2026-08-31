@@ -42,6 +42,23 @@ agent (temp ~0, no tools, no loop) so it lives in `rewrite/`, not `agents/`. The
 verifier, normalizer, and checks are pure code in `verify/` — the model never
 touches them.
 
+## Containment is a CONTRACT property, not only a network policy (R2 consequence, §41-adjacent)
+
+After R2 (ingestion persists per-page document text), the extractor receives its
+input as **stored text**, never a URL and never a fetchable document id it would
+have to resolve. The pipeline reads `document_pages` and passes the page text into
+the invoke; the extractor's contract accepts no argument that requires the network.
+
+This makes containment a property of the extractor's CONTRACT, not merely a
+configuration on its runtime. The no-egress networkMode and the tool allowlist are
+the enforcement layers, but the deeper fact is that **nothing in the extractor's
+job needs the network in the first place** — it reads text it was handed and writes
+items. A runtime with egress accidentally left on would still have nothing in the
+extractor's contract that wants to use it. Two independent enforcement layers
+(networkMode + hook) sit on top of a contract that has no network need at all. That
+is the strongest form of the §19c/§30d/R8.3 guarantee: not "we blocked the network"
+but "the work never asked for it."
+
 ## The extractor (R1) — an agent, in its own no-egress runtime
 
 - **Separate AgentCore runtime from the hunter.** The hunter is a Lambda with

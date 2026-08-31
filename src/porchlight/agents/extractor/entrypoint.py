@@ -77,26 +77,48 @@ try:
 
     @app.entrypoint
     async def invoke(payload: dict[str, Any], context: Any):
-        """Extract items from ONE document. Payload carries the document id/text."""
+        """Extract items from ONE document — from STORED TEXT, never a URL (R2, §containment-contract).
+
+        Contract (condition 1): the payload carries the document's PAGE TEXT that
+        the pipeline already read from `document_pages`. It carries NO URL and NO
+        fetchable id the extractor would resolve over the network. `document_id` is
+        accepted only as an opaque LABEL for logging/attribution — it is never
+        dereferenced, never fetched. There is nothing in this contract the network
+        is needed for; the no-egress runtime + allowlist hook enforce a network the
+        work does not even ask for.
+
+        Payload:
+          - `pages`: list[str], the per-page text (index 0 = page 1). REQUIRED.
+          - `document_id`: str, an opaque label for logs. Optional.
+        """
         run_id = generate_run_id()
         bind_context(component=COMPONENT, run_id=run_id, model_id=MODEL_ID)
         log = get_logger("porchlight.extractor")
-        log.info("extractor_start", document_id=payload.get("document_id", ""))
+
+        pages = payload.get("pages")
+        if not isinstance(pages, list) or not all(isinstance(p, str) for p in pages):
+            # Fail closed: the contract is text-in. A missing/ill-typed pages field
+            # is a caller error, never a signal to go find the text ourselves.
+            log.error("extractor_bad_payload", reason="pages must be a list[str] of page text")
+            raise ValueError("extractor payload requires 'pages': list[str] (stored text, never a URL)")
+
+        log.info("extractor_start", document_id=payload.get("document_id", ""), page_count=len(pages))
 
         from porchlight.agents.extractor.agent import build_agent
 
-        # Tools are constructed by the wiring layer (Spec 2 storage boundary) and
-        # passed in via the payload context in the deployed runtime.
         tools = payload.get("_tools", [])
         agent = build_agent(MODEL_ID, tools)
         _register_allowlist_hook(agent, log)
 
-        prompt = payload.get("prompt", "Extract the agenda items from this document.")
+        # The document text is supplied in the prompt context; the model reads text
+        # it was handed, it does not fetch. get_document_pages (a tool) serves ranges
+        # from THIS in-memory text, never the network.
+        prompt = payload.get("prompt", "Extract the agenda items from the provided document text.")
         async for event in agent.stream_async(prompt):
             if isinstance(event, dict) and "event" in event:
                 yield event
 
-        log.info("extractor_complete")
+        log.info("extractor_complete", document_id=payload.get("document_id", ""))
 
     if __name__ == "__main__":
         app.run()
