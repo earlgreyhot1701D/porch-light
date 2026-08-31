@@ -49,20 +49,33 @@ def _register_allowlist_hook(agent: Any, log) -> None:
     running an unguarded agent (never.md #7: never fail open).
     """
     try:
-        from strands.hooks import BeforeToolInvocationEvent, HookProvider, HookRegistry
+        from strands.hooks import BeforeToolCallEvent, HookProvider, HookRegistry
     except Exception as exc:  # SDK surface missing/changed — do not run unguarded.
         raise RuntimeError(
             "extractor tool-allowlist hook unavailable; refusing to run unguarded"
         ) from exc
 
+    def _tool_name(event) -> str:
+        # `tool_use` is a ToolUse mapping ({"name": ..., "toolUseId": ..., "input": ...}).
+        tu = getattr(event, "tool_use", None)
+        if isinstance(tu, dict):
+            return tu.get("name", "") or ""
+        return getattr(tu, "name", "") or ""
+
     class _AllowlistHook(HookProvider):
         def register_hooks(self, registry: HookRegistry) -> None:
-            registry.add_callback(BeforeToolInvocationEvent, self._before_tool)
+            registry.add_callback(BeforeToolCallEvent, self._before_tool)
 
-        def _before_tool(self, event: BeforeToolInvocationEvent) -> None:
-            name = getattr(getattr(event, "tool_use", None), "name", "") or ""
+        def _before_tool(self, event: BeforeToolCallEvent) -> None:
+            name = _tool_name(event)
             if not enforce_tool_allowlist(name, log):
-                # Block by raising: the tool never executes (fail closed).
+                # Fail closed: prevent the tool from executing. Prefer the SDK's
+                # cancel_tool signal; also raise as a hard backstop so a blocked
+                # tool NEVER runs even if cancel semantics change.
+                try:
+                    event.cancel_tool = f"tool not on extractor allowlist: {name!r}"
+                except Exception:
+                    pass
                 raise PermissionError(f"tool not on extractor allowlist: {name!r}")
 
     agent.hooks.add_hook(_AllowlistHook())
@@ -106,9 +119,40 @@ try:
 
         from porchlight.agents.extractor.agent import build_agent
 
-        tools = payload.get("_tools", [])
+        # Containment self-test (explicit opt-in, never in normal operation): plant a
+        # deliberately NON-allowlisted tool and ask the model to use it, so the hook
+        # blocks it and emits a real NEVER-trip against the deployed runtime. This is
+        # a genuine blocked attempt (R5 condition 2), not a simulation. Guarded by an
+        # explicit payload flag; absent it, no probe tool exists.
+        tools = list(payload.get("_tools", []) or [])
+        probe = bool(payload.get("_containment_probe", False))
+        if probe:
+            from strands import tool as _strands_tool
+
+            # A BENIGN, plainly-safe tool that simply is NOT on the four-name
+            # allowlist. The point is the allowlist blocks by NAME regardless of the
+            # tool's intent — so a benign tool the model will actually call proves the
+            # hook fires (an obviously-malicious tool just gets refused by the model's
+            # own safety, which does not exercise our control).
+            @_strands_tool
+            def count_words(text: str) -> str:
+                """Count the words in a short piece of text (containment probe — NOT allowlisted)."""
+                return str(len((text or "").split()))
+
+            tools.append(count_words)
+
         agent = build_agent(MODEL_ID, tools)
         _register_allowlist_hook(agent, log)
+
+        if probe:
+            log.info("containment_probe_start", note="asking model to call non-allowlisted count_words")
+            prompt = ("Use the count_words tool to count the words in the phrase "
+                      "'the quick brown fox'. Call the tool now.")
+            async for event in agent.stream_async(prompt):
+                if isinstance(event, dict) and "event" in event:
+                    yield event
+            log.info("containment_probe_complete")
+            return
 
         # The document text is supplied in the prompt context; the model reads text
         # it was handed, it does not fetch. get_document_pages (a tool) serves ranges
