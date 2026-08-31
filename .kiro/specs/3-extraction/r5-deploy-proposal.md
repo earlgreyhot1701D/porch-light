@@ -60,6 +60,42 @@ want the extractor's contract to be "parse handed text, return items, touch
 nothing" — which actually matches the containment-is-a-contract property best. Both
 are real work and a real cost; your call.
 
+## DECISION: Option 1 (recorded)
+
+**Chosen: Option 1** — VPC private subnet, security group egress restricted to the
+Bedrock and RDS-Data PrivateLink endpoints only.
+
+**Why NOT option 2 (recorded reasoning):** moving the model call out to the pipeline
+stops the extractor being an AGENT — it becomes a parser. That collapses the
+three-loops-two-agents architecture (§3) to one agent, in a hackathon track that is
+specifically about agents. The containment would be purer and the architecture would
+be gone. The ~$14/month is not the deciding factor; the ~$7 between now and judging
+is noise. The architecture is worth more than the marginal purity.
+
+**Timebox (firm):** two hours of actual VPC/subnet/endpoint/SG work. If it is not
+deployed and reachable by then, STOP and take Option 3 (the pre-written fallback
+below). Block Zero lost three days to exactly this "almost there" infrastructure;
+shipping Option 3 honestly beats losing days to networking.
+
+## Pre-written Option-3 fallback paragraph (use verbatim if the timebox blows)
+
+For README, KNOWN-LIMITATIONS, and the Devpost writeup — drafted BEFORE starting so
+the honest version exists under no pressure. Do not soften it.
+
+> **Extractor network containment: one layer deployed, two designed.** The extractor
+> reads untrusted PDF text, so its design calls for two independent containment
+> layers: the Strands hook tool-allowlist (which blocks any tool call outside its
+> four permitted tools) AND network-level egress control (the runtime cannot open an
+> outbound connection at all). For v1, only the first layer is deployed. The
+> AgentCore runtime runs in PUBLIC network mode, which permits outbound egress;
+> network-level no-egress requires VPC network mode with a restricted security group
+> and PrivateLink endpoints, which was designed and specified but not deployed within
+> the hackathon window. The consequence, stated plainly: if a prompt injection
+> defeated the hook allowlist, nothing at the network layer would stop an outbound
+> call. The hook allowlist is real and tested; the second layer is designed and
+> documented, not shipped. We chose to ship this honestly rather than claim a
+> containment posture we had not deployed.
+
 ## Condition 3 — the narrow IAM policy (written, attach after deploy)
 
 Attach to role **`porchlight-dev-hunter-role`** (the hunter Lambda's execution
