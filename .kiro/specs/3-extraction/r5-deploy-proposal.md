@@ -228,3 +228,16 @@ containment proof) and 5 (end-to-end run) are NOT met, and the IAM policy (condi
   aws ec2 delete-vpc-endpoints --vpc-endpoint-ids <bedrock-ep-id> <rds-ep-id> --region us-east-1
   aws ec2 delete-security-group --group-id sg-08e491a424c16581f --region us-east-1   # after ENIs detach
   ```
+
+## Sequencing decision: deploy PUBLIC now (2026-08-31, recorded)
+
+**Deploy PUBLIC first — this is sequencing, not the fallback as a retreat.** The
+extractor has never run on AgentCore inside the working product: W6 extracted in
+memory, and the only thing actually deployed to AgentCore Runtime is the Block-Zero
+Spike B. For an AWS agents hackathon, the "agent on Bedrock AgentCore Runtime" claim
+is currently true only of that spike. Deploying the extractor PUBLIC uses the path
+already proven in Spike B, makes that claim real for the actual product agent, and
+unblocks conditions 2 (live hook-allowlist proof) and 5 (end-to-end run through the
+deployed runtime). The network-egress layer (VPC + SG + PrivateLink, already
+designed and committed) goes on the POST-SUBMISSION list and is not reopened before
+the submission is otherwise complete.

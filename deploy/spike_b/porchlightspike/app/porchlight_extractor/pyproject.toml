@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "porchlight_extractor"
+version = "0.1.0"
+description = "Porch Light extractor agent — AgentCore Runtime (Spec 3 R5, PUBLIC networkMode)"
+requires-python = ">=3.14"
+# Pinned to the versions resolved in the workspace uv.lock (§32b). structlog's
+# redaction is a security control; strands drives the agent loop; pypdf is not
+# needed here because the runtime receives STORED page text (condition 1), it does
+# not parse PDFs — parsing happened at ingestion.
+dependencies = [
+    "bedrock-agentcore==1.22.0",
+    "strands-agents==1.53.0",
+    "structlog==26.1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

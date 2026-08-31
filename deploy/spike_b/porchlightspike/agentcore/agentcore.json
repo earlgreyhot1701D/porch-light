@@ -20,6 +20,15 @@
       "runtimeVersion": "PYTHON_3_14",
       "networkMode": "PUBLIC",
       "protocol": "HTTP"
+    },
+    {
+      "name": "porchlight_extractor",
+      "build": "CodeZip",
+      "entrypoint": "entrypoint.py",
+      "codeLocation": "app/porchlight_extractor/",
+      "runtimeVersion": "PYTHON_3_14",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP"
     }
   ],
   "memories": [],
