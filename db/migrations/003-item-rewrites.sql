@@ -4,6 +4,9 @@
 -- NULL es_text with es_verified FALSE is the honest ES fallback (never.md #7);
 -- an unverified rewrite is NEVER stored.
 
+-- Rollback (safe; new table, nothing references it): DROP TABLE IF EXISTS item_rewrites;
+-- Applied to Aurora porchlight-dev 2026-08-31 (order 002->003->004), run twice, idempotent.
+
 CREATE TABLE IF NOT EXISTS item_rewrites (
     item_id         TEXT PRIMARY KEY REFERENCES items(item_id),
     run_id          TEXT NOT NULL,
