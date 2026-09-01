@@ -96,33 +96,48 @@ def read_pages(be, document_id_val: str) -> list[str]:
 
 
 def invoke_extractor(pages: list[str], m) -> dict:
-    """Invoke the DEPLOYED runtime; return the porchlight_result envelope."""
+    """Invoke the DEPLOYED runtime; return the porchlight_result envelope.
+
+    Bounded retry on the transient Nova-Lite tool-use streaming fault
+    (modelStreamErrorException "Model produced invalid sequence as part of ToolUse"):
+    it fires intermittently mid-stream and a re-invoke usually succeeds. Same posture
+    as the Aurora wake-retry — a bounded, logged wait on a transient, not a silent
+    fallback. A run that never gets a clean stream still raises.
+    """
     client = boto3.client("bedrock-agentcore", region_name=REGION)
-    resp = client.invoke_agent_runtime(
-        agentRuntimeArn=EXTRACTOR_ARN,
-        contentType="application/json",
-        accept="application/json",
-        payload=json.dumps({
-            "pages": pages, "document_id": m["document_id"], "source_url": m["url"],
-        }).encode("utf-8"),
-    )
-    raw = resp["response"].read().decode("utf-8")
-    envelope = None
-    for line in raw.splitlines():
-        line = line.strip()
-        if line.startswith("data: "):
-            line = line[6:]
-        if not line:
-            continue
-        try:
-            obj = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(obj, dict) and "porchlight_result" in obj:
-            envelope = obj["porchlight_result"]
-    if envelope is None:
-        raise RuntimeError(f"{m['meeting_id']}: no porchlight_result in deployed response:\n{raw[:800]}")
-    return envelope
+    last_err = None
+    for attempt in range(4):
+        resp = client.invoke_agent_runtime(
+            agentRuntimeArn=EXTRACTOR_ARN,
+            contentType="application/json",
+            accept="application/json",
+            payload=json.dumps({
+                "pages": pages, "document_id": m["document_id"], "source_url": m["url"],
+            }).encode("utf-8"),
+        )
+        raw = resp["response"].read().decode("utf-8")
+        envelope = None
+        stream_error = None
+        for line in raw.splitlines():
+            line = line.strip()
+            if line.startswith("data: "):
+                line = line[6:]
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(obj, dict) and "porchlight_result" in obj:
+                envelope = obj["porchlight_result"]
+            elif isinstance(obj, dict) and obj.get("error") and "ToolUse" in str(obj.get("error", "")):
+                stream_error = obj["error"]
+        if envelope is not None:
+            return envelope
+        last_err = stream_error or raw[:300]
+        print(f"  [retry] {m['meeting_id']}: transient tool-use stream fault, re-invoking ({attempt+1}/4)")
+        time.sleep(4)
+    raise RuntimeError(f"{m['meeting_id']}: no porchlight_result after retries; last: {last_err}")
 
 
 def persist_items(be, m, items: list[dict], run_id: str) -> list[tuple[str, SourceRecord]]:
