@@ -8,30 +8,42 @@
           2,
           2
         ],
-        "text": "Approval of the draft minutes from the June 24, 2026 meeting. Recommendation: Approve, as presented. Materials: draft minutes"
+        "text": "1. Approval of the Minutes \n \nApproval of the draft minutes from the June 24, 2026 meeting. \n \nRecommendation:  Approve, as presented.   \n \nMaterials: draft minutes \n \nPUBLIC HEARING ITEMS"
       },
       {
-        "item_number": "3.",
+        "item_number": "2.",
         "page_range": [
-          3,
+          2,
           3
         ],
-        "text": "Request for Major Design Review to develop a new, 19-unit multi-family residential apartment development with 3 Warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 Exception (Parking Setback), on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan and is commonly identified as Assessor’s Parcel Number 073-0-058-030 (Project Site). California Environmental Quality Act: 15332 (Infill Projects) Recommendation: To approve the project, as conditioned. Planner: Grant White, Acting Senior Planner Applicant: Linda Blackbern of RRM Design Group on behalf of Merewether Trust Materials: staff report, vicinity map, resolution, development standards, plans, public comment, public comment 2"
+        "text": "2. Prohousing Designation, Citywide \n \nThe City is applying for a Prohousing Designation to the State of California \nDepartment of Housing and Community Development. This designation recognizes \njurisdictions that are committed to accelerating housing production, removing barriers \nto development, and implementing housing-friendly policies. Staff is presenting the \ndraft application for comments and review.  \n \nRecommendation: To approve the draft Prohousing Designation application and \nformal resolution.  \n \nStaff:  Andrea Palmer, Senior Management Analyst;  \nRachel Wess, Management Analyst \nApplicant:  City of Ventura \n \nMaterials: staff report, application, resolution, public comment"
       },
       {
         "item_number": "4.",
         "page_range": [
           3,
-          3
+          4
         ],
-        "text": "Request for a Major Variance to allow an increase in building height in the hillside area for a renovation project that includes construction of a 1,903-square-foot second-story addition to an existing single-story residence, along with interior renovations to the first floor (Project). The Project is located on a 0.28-acre lot in the R-1-10 (Single-Family Residential) zone with a land use designation of Neighborhood Very Low 2, located at 1193 Colina Vista and is commonly identified as Assessor's Parcel Number 065-0-224-095 (Project Site). California Environmental Quality Act: 15301 (Existing Facilities, Class 1) Recommendation: To continue to a date certain of October 28, 2026. Planner: Adams Bernhardt, Senior Planner Applicant: James McGarry, James McGarry Architecture Materials: continuance memo, public comment"
+        "text": "4. PROJ-25-0933 1193 Colina Vista Addition  \n \nRequest for a Major Variance to allow an increase in building height in the hillside area \nfor a renovation project that includes construction of a 1,903-square-foot second-story \naddition to an existing single-story residence, along with interior renovations to the \nfirst floor (Project). The Project is located on a 0.28-acre lot in the R-1-10 (Single-\nFamily Residential) zone with a land use designation of Neighborhood Very Low 2, \nlocated at 1193 Colina Vista and is commonly identified as Assessor's Parcel Number \n065-0-224-095 (Project Site).  \n \nCalifornia Environmental Quality Act: 15301 (Existing Facilities, Class 1) \n \nRecommendation: To continue to a date certain of October 28, 2026. \n \nPlanner:  Adams Bernhardt, Senior Planner \nApplicant:  James McGarry, James McGarry Architecture \n \nMaterials: continuance memo, public comment \n \nPLANNING COMMISSION COMMUNICATIONS \nPer Government Code Section 54954.2(a)(3), the Planning Commission \nCommunications section of the agenda provides the Planning Commissioners the \nopportunity to ask a question for clarification, provide a reference to staff or other \nresources for factual information, request staff to report back to the body at a subsequent \nmeeting concerning any matter, or take action to direct staff to place a matter of business \non a future agenda. \n \nSTAFF COMMUNICATION \n• Director’s Hearing Update \n \nADJOURNMENT \n \n \n \n \nAugust 26, 2026 Planning Commission Agenda Page 4 of 4 \nThis agenda was posted on Thursday, August 20, 2026 on the City Hall Public Notices Board \nat the rear entrance of City Hall and on the City website in the Public Meetings/Agenda Center at: \nhttps://www.cityofventura.ca.gov/714/Planning-Commission \n \nPursuant to the California Government Code, please take notice as follows: If you challenge \nthe action described in this notice in court, you may be limited to raising issues you or someone \nelse raised at the Public Hearing, or in written correspondence delivered to the City of San \nBuenaventura prior to the public hearing. \n \nIn compliance with the American with Disabilities Act, if you need assistance to participate in \nthis meeting, please contact the City Clerk at (805) 658-4787 or the California Relay Service at"
+      },
+      {
+        "item_number": "3.",
+        "page_range": [
+          3,
+          4
+        ],
+        "text": "PROJ-25-0914 Loretta Court Apartments Located at APN: 073-0-058-030\nRequest for Major Design Review to develop a new, 19-unit multi-family residential apartment development with 3 Warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 Exception (Parking Setback), on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan and is commonly identified as Assessor’s Parcel Number 073-0-058-030 (Project Site).\nCalifornia Environmental Quality Act: 15332 (Infill Projects)\nRecommendation: To approve the project, as conditioned.\nPlanner:  Grant White, Acting Senior Planner\nApplicant:  Linda Blackbern of RRM Design Group on behalf of Merewether Trust\nMaterials: staff report, vicinity map, resolution, development standards, plans, public comment, public comment 2"
       }
     ],
     "rejected": [],
     "omissions": [
       {
-        "item_number": "2",
-        "reason": "not surfaced by the extractor; recorded automatically so the item is not silently dropped (deterministic backstop)"
+        "item_number": "CALL TO ORDER",
+        "reason": "Ceremonial"
+      },
+      {
+        "item_number": "ROLL CALL",
+        "reason": "Ceremonial"
       }
     ],
     "status": {
@@ -40,8 +52,8 @@
       "source_url": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08262026-3687",
       "reason": ""
     },
-    "turns_used": 7,
-    "tokens_used": 19493,
+    "turns_used": 4,
+    "tokens_used": 11360,
     "model_id": "amazon.nova-lite-v1:0"
   }
 }

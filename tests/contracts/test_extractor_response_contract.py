@@ -73,11 +73,13 @@ def test_captured_values_are_the_real_3687_extraction(envelope: dict) -> None:
     assert r["model_id"] == "amazon.nova-lite-v1:0"
     assert r["status"]["partially_read"] is False
 
-    nums = sorted(it["item_number"].rstrip(".") for it in r["items"])
-    omitted = sorted(o["item_number"].rstrip(".") for o in r["omissions"])
-    # Every numbered item 1-4 is accounted for: recorded OR omitted, never lost (§46).
-    assert sorted(nums + omitted) == ["1", "2", "3", "4"], (
-        f"3687 items+omissions no longer cover 1-4: items={nums} omissions={omitted}"
+    nums = {it["item_number"].rstrip(".") for it in r["items"]}
+    omitted_nums = {o["item_number"].rstrip(".") for o in r["omissions"] if o["item_number"].rstrip(".").isdigit()}
+    # Every NUMBERED item 1-4 is accounted for: recorded OR numbered-omitted, never
+    # lost (§46). Non-numeric omissions ("CALL TO ORDER", "ROLL CALL") are fine and
+    # ignored here — they are ceremonial, not numbered agenda items.
+    assert {"1", "2", "3", "4"} <= (nums | omitted_nums), (
+        f"3687 no longer covers numbered items 1-4: items={sorted(nums)} omitted={sorted(omitted_nums)}"
     )
     # Item 1 is the minutes item (its text is the draft-minutes approval).
     item1 = next(it for it in r["items"] if it["item_number"].rstrip(".") == "1")
