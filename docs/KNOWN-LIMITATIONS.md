@@ -459,3 +459,52 @@ Two residual limitations this surfaced on real data:
   construction. Fluent review is a pass, not a rebuild.
 - **v2.** Fluent-speaker review of every watcher ES string and a sample of real match
   reasons; adjust the provisional greeting and any gendered forms.
+
+
+### Spec 4 (search) is CUT, not deferred
+
+- **What it is.** The planned search block — vocabulary bridge (deterministic table)
+  → lexical → vector → rank fusion — is **cut**. It was never scaffolded (no
+  `.kiro/specs/4-search/`), and it is not coming back for v1.
+- **What it affects.** There is no full-text/semantic search stack. Relevance is
+  decided by the watcher's matcher directly over the stored items (a browser
+  watchlist in, matched items with reason + receipt out). A resident's plain-words
+  search box, if wanted, would run the same matcher over the same items.
+- **Why accepted.** At this scope it is unnecessary: one city, one CivicPlus adapter,
+  and tens of items per meeting. A vocabulary-bridge + lexical + vector + fusion
+  ranker is engineering for a corpus we do not have. Building it now would be
+  complexity ahead of need.
+- **Why the cut is SAFE (both verified at the Spec 6 kickoff):**
+  1. **The matcher is a replaceable component.** Its seam is terms in →
+     `WatchAnswer(matches)` out, and each match carries its bilingual reason as whole
+     strings. The ONLY consumer of a reason is `watch/assemble.assemble_card`, which
+     reads `match.reason.en` / `match.reason.es` directly — **no caller reconstructs
+     the reason from string positions.** A future search ranker that emits
+     `WatchMatch` objects is a drop-in swap, not a rewrite.
+  2. **The embedding path is preserved for v2.** `items.embedding vector(1024)`
+     exists and is **nullable** (currently unpopulated; the pgvector index is
+     explicitly deferred). Per-item text is reconstructable from `document_pages`
+     (stored verbatim, 12 pages live for 3685/3687), so items can be embedded later
+     **without re-fetching the city** (§40b: persist once from fetched bytes, read
+     from storage thereafter).
+- **v2.** Build Spec 4 when the corpus is large enough to need it: populate
+  `items.embedding`, add the pgvector index, and add search ranking behind the same
+  matcher seam.
+
+### Task 8.2 (watcher runtime + fourth identity) is DEFERRED, not cut
+
+- **What it is.** For v1 the watcher runs against Aurora **without its own AgentCore
+  runtime**. The topology is: **one agent deployed on AgentCore (the extractor), one
+  agent running in the pipeline (the watcher)**. The watcher's own runtime, the
+  fourth IAM identity scoped to it, and its request-time spend sub-budget (§26c) are
+  deferred, not built.
+- **What it affects.** The §26c live-invocation posture (browser → server-side
+  fourth-identity → watcher runtime, no creds to the browser) is not yet realized;
+  v1 exercises the matcher directly. No correctness impact — the matcher is the same
+  code either way.
+- **Why accepted.** Deploying a second runtime + a fourth identity + a spend
+  sub-budget is billable persistent external state (INFRA-PROPOSE). It buys the
+  live-invocation topology, which the demo does not require to show the watcher
+  working on real data.
+- **v2 / revisit.** Sequence 8.2 with the Spec 6 web surface (they share the
+  request-time seam). Revisit only if Spec 6 lands early with time to spare.

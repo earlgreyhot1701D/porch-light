@@ -129,5 +129,12 @@ Tags: [PERMANENT] ships. [TEST]. [NEEDS-C5] needs real stored items to prove liv
 - The HTML surface, the search box, the client-side validation mirror, and the
   Vercel deployment (Spec 6). This block produces the matcher + the contract-shaped
   answer + the server-side invocation seam design; Spec 6 renders and deploys.
-- Embeddings / vector-lexical-fusion search ranking (Spec 4).
+- Embeddings / vector-lexical-fusion search ranking — **Spec 4 is CUT** (not
+  deferred): unnecessary at this scope (one city, one adapter, tens of items). The
+  watcher decides relevance directly over the stored items; a vocabulary bridge +
+  lexical + vector + rank-fusion search stack is engineering for a corpus we do not
+  have. Vector search is a v2 concern for when the corpus is large enough to need it.
+  See KNOWN-LIMITATIONS "Spec 4 (search) is cut, not deferred" for why the cut is
+  safe (the matcher is a replaceable seam; `items.embedding` exists unused; per-item
+  text is stored so embedding later needs no re-fetch).
 - Any change to extraction or rewrite (Spec 3); the watcher reads verified rewrites.
