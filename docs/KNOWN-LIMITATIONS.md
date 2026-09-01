@@ -442,3 +442,20 @@ Two residual limitations this surfaced on real data:
 - **v2.** Constrain the rewrite to a template that cannot introduce origin/causal
   claims (facts + receipt + logistics only), or add a claims-to-source entailment
   check. Until then, this gap is real and named.
+
+
+### Watcher Spanish strings are unreviewed by a fluent speaker (pending)
+
+- **What it is.** The watcher's bilingual strings (`watch/copy.py`: privacy line,
+  quiet-week, degraded, partial, greeting) and the model-produced match reasons are
+  Spanish that has NOT been reviewed by a fluent speaker. The greeting
+  "Buenas tardes, vecindad." and the verbatim privacy ES are provisional.
+- **What it affects.** Gendered second-person and role nouns are the risk (voice.md:
+  English can be gender-neutral by accident, Spanish cannot). "vecindad" is used as a
+  gender-neutral address rather than "vecinos/vecinas"; a fluent reviewer may prefer
+  otherwise. The match reason's Spanish is model-produced and carries no receipt
+  entities, so an awkward phrasing is a readability issue, not a factual one.
+- **Why accepted.** PoC; the strings are correct in substance and bilingual by
+  construction. Fluent review is a pass, not a rebuild.
+- **v2.** Fluent-speaker review of every watcher ES string and a sample of real match
+  reasons; adjust the provisional greeting and any gendered forms.
