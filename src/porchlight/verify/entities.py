@@ -174,6 +174,64 @@ _STREET = re.compile(
     r"(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Drive|Dr\.?|"
     r"Lane|Ln\.?|Way|Court|Ct\.?|Place|Pl\.?)\b"
 )
+# Spanish street/place forms use a leading generic ("Avenida Victoria", "Calle 5").
+# Captured so a TRANSLATED street in the ES rewrite ("Avenida Victoria") is a NAME
+# entity that will NOT match the English "Victoria Avenue" — the ES adversarial must
+# fail. Place names must not translate; a translated one is a real miss for a
+# resident looking up the street.
+_STREET_ES = re.compile(
+    r"\b(?:Avenida|Calle|Camino|Bulevar|Plaza|Parque|Paseo|Carretera)"
+    r"[^\S\n]+[A-Z][a-zA-Z]+(?:[^\S\n]+[A-Z][a-zA-Z]+)*\b"
+)
+
+# --- Raw-compare is ONLY for entities a reader must LOOK UP (spec-narrowing fix).
+# A capitalized multi-word span is a raw-compare NAME only if it is a street/place
+# (closed suffix list below), an org/company (closed org-suffix list), or carries an
+# identifier/code. Everything else is a DESCRIPTIVE phrase that translates freely
+# ("Master Services" -> "Servicios Maestros", "First Amendment" -> "Primera
+# Enmienda") and must NOT be raw-compared — otherwise the faithful Spanish
+# translation reads as a new/dropped entity (the whole ES 0/12 class). A place name
+# whose head noun translates ("Loretta Court Apartments" / "Apartamentos Loretta
+# Court") still matches on its closed-suffix core "Loretta Court". Victoria Avenue ->
+# Avenida Victoria still FAILS (the suffix word itself was translated).
+#
+# Closed street/place suffix list (per the instruction). Word-final, case-insensitive.
+_PLACE_SUFFIX = re.compile(
+    r"\b(avenue|ave|street|st|court|ct|road|rd|drive|dr|way|plaza|park|lane|ln|"
+    r"boulevard|blvd)\b\.?$",
+    re.IGNORECASE,
+)
+# Closed org/company suffix list — the tokens that mark a proper organization name.
+_ORG_SUFFIX = re.compile(
+    r"\b(inc|incorporated|llc|llp|ltd|limited|corp|corporation|company|co|"
+    r"consultants|consulting|group|trust|associates|partners|foundation|"
+    r"district|university|college|institute|department)\b\.?$",
+    re.IGNORECASE,
+)
+# An identifier/code fragment inside the span (APN, ordinance no., project code).
+_HAS_CODE = re.compile(r"\d|[/#-]")
+
+
+def _is_lookup_name(name: str) -> bool:
+    """True iff `name` is an entity a reader must look up (raw-compare), not a
+    descriptive phrase that translates freely.
+
+    Lookup = street/place (closed suffix), org/company (closed suffix), or carries an
+    identifier/code. A person name is admitted via the org path? No — person names
+    are handled by leaving a two-plus-word capitalized span that is neither place nor
+    org through ONLY when it has no lowercase connective; but to stay strict and
+    avoid re-admitting descriptive phrases, we treat a plain capitalized phrase as
+    NON-lookup. Person names in these agendas always arrive attached to a role title
+    (stripped elsewhere) or a company, so the miss is acceptable and documented; a
+    false ENTITY (descriptive phrase) is the costly direction we must avoid.
+    """
+    if _PLACE_SUFFIX.search(name):
+        return True
+    if _ORG_SUFFIX.search(name):
+        return True
+    if _HAS_CODE.search(name):
+        return True
+    return False
 # Proper-noun capture NEVER crosses a newline: a name is within-line. Using
 # [^\S\n] (whitespace except newline) as the inter-word gap stops a match from
 # spanning "RECOMMENDATION\n\nThe City Council" into one bogus name — the
@@ -266,6 +324,14 @@ def _clean_name(raw: str) -> str | None:
     # not a multi-word proper name.
     if len(name.split()) < 2:
         return None
+    # Raw-compare only for LOOKUP entities (street/place, org/company, identifier).
+    # A plain capitalized descriptive phrase ("Master Services", "Primera Enmienda")
+    # translates freely and is NOT an entity — dropping it here is the spec-narrowing
+    # fix that ends the ES descriptive-phrase rejection class. A street/place span
+    # from `_STREET` is admitted separately in `extract` (it has a closed suffix by
+    # construction), so this gate applies to general proper-noun spans.
+    if not _is_lookup_name(name):
+        return None
     return name
 
 
@@ -314,9 +380,10 @@ def extract(text: str) -> list[Entity]:
 
         # 3. Names: streets first (more specific), then general proper nouns.
         seen_name_spans: list[tuple[int, int]] = []
-        for start, end, raw in _find(_STREET, text):
-            seen_name_spans.append((start, end))
-            entities.append(Entity(EntityClass.NAME, raw))
+        for pat in (_STREET, _STREET_ES):
+            for start, end, raw in _find(pat, text):
+                seen_name_spans.append((start, end))
+                entities.append(Entity(EntityClass.NAME, raw))
         for m in _PROPER.finditer(text):
             if any(s <= m.start() < e for s, e in seen_name_spans):
                 continue

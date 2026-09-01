@@ -72,6 +72,29 @@ def check_entity_preservation(rewrite: Rewrite, source: SourceRecord) -> CheckRe
             False,
             f"output entities not found in source: {sorted(e.key for e in invented)}",
         )
+    # BIDIRECTIONAL (fix): the source's DATES and MONEY/PERCENT amounts must SURVIVE
+    # into the rewrite. A one-directional check (out ⊆ src) passes a rewrite that
+    # drops every deadline and dollar figure — the exact facts a resident could miss
+    # a decision over (never.md #1). Scoped to the miss-a-deadline class: dates, and
+    # numbers whose unit is currency ('|usd') or percent ('|pct'). A BARE plain
+    # number ('10|n') is often source noise (a page ref, an "SF" fragment) a faithful
+    # rewrite legitimately omits, so plain numbers are NOT required to survive —
+    # requiring them regressed a correct golden rewrite (golden-006 dropped a spurious
+    # '10'). Names are not required to survive either (a summary may omit a staff name).
+    from porchlight.verify.entities import EntityClass
+
+    must_survive = {
+        e for e in src
+        if e.entity_class is EntityClass.DATE
+        or (e.entity_class is EntityClass.NUMBER and e.key.endswith(("|usd", "|pct")))
+    }
+    dropped = must_survive - out
+    if dropped:
+        return CheckResult(
+            "entity_preservation",
+            False,
+            f"source dates/amounts dropped from rewrite: {sorted(e.key for e in dropped)}",
+        )
     return CheckResult("entity_preservation", True)
 
 

@@ -263,6 +263,64 @@ def _backfill_unaccounted_omissions(session, log) -> None:
             log.warning("extractor_omission_backfilled", item_number=num)
 
 
+# Matches a line that STARTS a numbered item, capturing the number, so we can slice
+# an item's full text from its own number line to the next item's number line.
+_ITEM_START = _re.compile(r"(?m)^[^\S\n]*(\d{1,3})\.[^\S\n]+\S")
+
+
+def _reconstruct_item_texts(session, log) -> None:
+    """Replace each recorded item's text with its FULL source span (§ item-text fix).
+
+    Root cause of weak EN verification: the model typed only an item's TITLE into
+    record_items, so staff/recommendation/applicant/materials/amounts/dates were
+    lost and a title-only "item" fails reading level and drops real entities. The
+    text an item carries is not a model choice — it is deterministic: from this
+    item's number line to the START of the next numbered item, within the item's
+    recorded page range. Code owns the span; the model only located the item.
+
+    Falls back to the model's text if the item's own number line cannot be found in
+    its page range (never blanks an item). Never crosses out of the recorded range.
+    """
+    from porchlight.agents.extractor.tools import ExtractedItem
+
+    def _norm(n: str) -> str:
+        return n.strip().rstrip(".")
+
+    rebuilt: list[ExtractedItem] = []
+    for it in session.recorded:
+        num = _norm(it.item_number)
+        first, last = it.page_range
+        # Concatenate the item's page range (1-based pages) into one block.
+        lo = max(1, first)
+        hi = min(session.page_count, last)
+        block = "\n".join(session.pages[p - 1] for p in range(lo, hi + 1)) if hi >= lo else ""
+
+        # Find this item's start line, then the next numbered item's start line.
+        start_idx = None
+        next_idx = None
+        for m in _ITEM_START.finditer(block):
+            if _norm(m.group(1)) == num and start_idx is None:
+                start_idx = m.start()
+                continue
+            if start_idx is not None and m.start() > start_idx:
+                next_idx = m.start()
+                break
+
+        if start_idx is None:
+            # Could not locate the item's own number line in its range: keep the
+            # model's text rather than blank it. Logged so it is visible.
+            log.warning("item_text_not_reconstructed", item_number=it.item_number)
+            rebuilt.append(it)
+            continue
+
+        span = block[start_idx:next_idx].strip() if next_idx else block[start_idx:].strip()
+        rebuilt.append(
+            ExtractedItem(item_number=it.item_number, page_range=it.page_range, text=span)
+        )
+
+    session.recorded = rebuilt
+
+
 def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> ExtractionResult:
     """Run the tool-using extractor over stored page text; return validated items.
 
@@ -295,6 +353,11 @@ def run_extraction(model_id: str, pages: list[str], source_url: str, log) -> Ext
     model_done = str(getattr(result, "stop_reason", "")) == "end_turn"
 
     status = classify_completion(turns_used, tokens_used, model_done, source_url)
+
+    # § item-text fix: the item's text is the deterministic source span (number line
+    # to the next item's number line), not whatever the model typed — so an item
+    # carries its staff/recommendation/amount/date body, not just its title.
+    _reconstruct_item_texts(session, log)
 
     validation = validate_items(session.recorded, session.full_text(), session.page_count)
 

@@ -385,3 +385,60 @@ Two residual limitations this surfaced on real data:
   named body is not flagged as unsourced. (b) Isolate per-item text better than a
   page range (the "receipts point at a page" limitation). (c) Consider a stronger
   model for the rewrite of dense items specifically, measured against the same floor.
+
+
+### item_number sometimes carries a trailing dot ("1." vs "1")
+
+- **What it is.** The extractor returns item numbers as the model read them; on some
+  documents that includes the trailing period ("1.", "2." on 3687), on others not
+  ("3", "4" on 3685). So `items.item_number` is not uniformly clean across documents.
+- **What it affects.** Cosmetic joins and any `item_number::int` cast (one diagnostic
+  query hit this). It does NOT affect correctness: `validate_items`, the §46 omission
+  backstop, and the item-text reconstruction all normalize a trailing dot before
+  comparing, so no item is mis-matched or dropped.
+- **Why accepted.** PoC; the value is right, only its formatting varies, and every
+  consumer already normalizes it.
+- **v2.** Normalize `item_number` (strip a trailing dot) at record time so the stored
+  column is uniform.
+
+### Nova Lite is not deterministic at temperature ~0 (run-to-run item and verify spread)
+
+- **What it is.** Successive extract+rewrite runs on the SAME two stored meetings
+  produce different results: item counts moved (3685 recorded 8 or 9 items; 3687 3 or
+  4), and EN-verified counts moved across runs (3687 EN was observed at 0/4, 2/4, and
+  1/4 on three runs). The model's own output varies even with temperature ~0 and
+  identical stored input.
+- **What it affects.** Any single run's coverage numbers are one sample from a
+  distribution, not a fixed value. A demo shows one run; a re-run may differ.
+- **Why accepted.** Inherent to the model; we do not control Bedrock's sampling. The
+  deterministic guards around it (validate_items, the six checks, the §46 omission
+  backstop, item-text reconstruction) hold regardless of which items a given run
+  surfaces, so variance changes coverage, never correctness — a shown item is always
+  verified or an honest fallback, and a missed item is always a logged omission.
+- **v2.** Report coverage as a range over N runs rather than a single number; consider
+  a stronger or more stable model for extraction if the spread matters for the demo.
+
+### The verifier checks entities and reading level, not MEANING (worked example)
+
+- **What it is.** The six checks confirm every date/amount/name/id in the rewrite is
+  faithful to the source and the reading level is right. They do NOT confirm the
+  rewrite's CLAIMS are true — a plausible inference that invents no entity passes.
+- **Worked example (real, this build).** 3685 item 8's verified English reads: the
+  crossing-guard agreement "is the fourth time they are making changes to this
+  agreement, which was **originally made in 2022**." The source supports "fourth
+  amendment" but the "originally made in 2022" origin date is a plausible inference,
+  not a copied fact — and because "2022" either appears somewhere in the source range
+  or is a bare plain number (not a miss-a-deadline entity), it passes every check. A
+  reader is told a specific origin year the item may not actually state.
+- **What it affects.** A rewrite can carry a confident, wrong-in-substance sentence as
+  long as its entities check out. This is the ceiling of an entity-plus-reading-level
+  verifier; it is why the model's three jobs never include asserting a fact a reader
+  could act on (dates/deadlines/numbers are copied or not shown, never.md #1) — but a
+  free-text rewrite can still imply one.
+- **Why accepted.** Meaning-level verification needs either a second model grading
+  (banned as confabulation-adjacent and cost) or human review (not at PoC scale). The
+  honest floor is: entities are guaranteed, prose claims are not, and the shown text
+  is always either verified-faithful-on-entities or the original staff text.
+- **v2.** Constrain the rewrite to a template that cannot introduce origin/causal
+  claims (facts + receipt + logistics only), or add a claims-to-source entailment
+  check. Until then, this gap is real and named.

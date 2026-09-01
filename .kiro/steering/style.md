@@ -28,6 +28,9 @@ inclusion: always
   - **OPEN** — questions for me / what is unfinished, and who owns it
   - **NEXT** — the single next task
   - Then the raw `git status --short` output, PASTED verbatim, not summarized and not reflowed onto one line. I am reading the tool's words, not yours.
+- **RECAP cap: ~300 words.** FINDINGS only for things Shara does not already know. Do not restate prior context, do not explain what a fix does, do not narrate what you read. Raw `git status --short` at the end, as always.
+- **KNOWN-LIMITATIONS.md is the v2 / tech-debt destination. Default there.** When a limitation is **VISIBLE** to a reader of the output or an auditor of the repo, write an entry (what it is, what it affects, why accepted, what v2 does) and move on, without asking. When the failure is **SILENT** — a wrong claim shown as verified, an item dropped without a trace, a control that does not run where it is supposed to — do NOT file there; stop and report instead.
+- **This is a proof of concept, not production SaaS. Documented warts are often better than delay.**
 - At the design stage the old rule still holds: never deliver a finished implementation of an approach not yet approved.
 - **DO NOT refactor code outside the current task's scope.** This is the single most important rule in this file.
 - If something contradicts the decisions doc or a steering file, say so instead of going along with it. If a task asks for anything in never.md, refuse and cite it.
