@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#14120E">
+  <title>Porch Light</title>
+  <meta name="description" content="A calm, privacy first watcher for public meeting agendas.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiA5NiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJQb3JjaCBMaWdodCI+CiAgPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiByeD0iMTgiIGZpbGw9IiMxNDEyMEUiLz4KICA8cGF0aCBkPSJNMTcgMjVoMTlNNjAgMjVoMTRsMTAgMTB2NDZIMTdWMjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y3RjJFNyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNzQgMjV2MTBoMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y3RjJFNyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNDggN3YxMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxyZWN0IHg9IjQzIiB5PSIxNyIgd2lkdGg9IjEwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjNUVEM0I0Ii8+CiAgPGNpcmNsZSBjeD0iNDgiIGN5PSIyOSIgcj0iOCIgZmlsbD0iI0Y3RjJFNyIvPgogIDxwYXRoIGQ9Ik00OCA0MXY0TTM4LjUgMzguNWwtMy41IDMuNU01Ny41IDM4LjVsMy41IDMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOSA1MmgzOE0yOSA3MmgzOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjdGMkU3IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOCA2Mmg0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to main content</a>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#main" aria-label="Porch Light home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>PORCH LIGHT</span>
+      </a>
+      <nav aria-label="Primary navigation" data-aria-i18n="navLabel">
+        <ul>
+          <li><button type="button" id="state-quiet" aria-current="true" data-i18n="navQuiet">Quiet week</button></li>
+          <li><button type="button" id="state-changed" data-i18n="navChanges">Changed</button></li>
+          <li><span class="nav-disabled" aria-disabled="true"><span data-i18n="navCalendar">Calendar</span>&nbsp;<span class="visually-hidden" data-i18n="navUnavailable">(not available in this preview)</span></span></li>
+          <li><span class="nav-disabled" aria-disabled="true"><span data-i18n="navBodies">All bodies</span>&nbsp;<span class="visually-hidden" data-i18n="navUnavailable">(not available in this preview)</span></span></li>
+          <li><a href="#about" data-i18n="navHow">How it works</a></li>
+        </ul>
+      </nav>
+      <div class="top-actions">
+        <div class="toggle" role="group" aria-label="Language" data-aria-i18n="languageLabel">
+          <button type="button" id="lang-en" aria-pressed="true" lang="en">EN</button>
+          <button type="button" id="lang-es" aria-pressed="false" lang="es">ES</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="page-head">
+        <div class="greeting-block">
+          <div class="sample-notice" role="note">
+            <span class="notice-i" aria-hidden="true">i</span>
+            <span data-i18n="sample">Real City of Ventura agenda items, read and verified by Porch Light.</span>
+          </div>
+          <p class="greeting" id="greeting" data-i18n="greeting">Good afternoon, neighbor.</p>
+        </div>
+        <section class="heartbeat" aria-labelledby="heartbeat-title" aria-live="polite">
+          <span id="heartbeat-title" class="visually-hidden" data-i18n="heartbeatTitle">System heartbeat</span>
+          <div class="heartbeat-row"><span class="status-shape book" aria-hidden="true"></span><div><strong data-i18n="cityRead">City read from stored agendas</strong><small data-i18n="readCount">2 meetings read</small></div></div>
+          <div class="heartbeat-row"><span class="status-shape clock" aria-hidden="true"></span><div><strong data-i18n="nextCheck">Next check: hourly, on schedule</strong></div></div>
+        </section>
+      </div>
+
+      <section class="panel watch-strip scroll-region" tabindex="0" role="region" aria-labelledby="watch-title">
+        <div class="watch-lead">
+          <p class="watch-kicker" data-i18n="watchKicker">Start here</p>
+          <h2 id="watch-title" data-i18n="watchTitle">Tell Porch Light what matters.</h2>
+          <p data-i18n="watchIntro">Describe a project, place, concern, or question in your own words. Porch Light checks the public record and brings back relevant changes.</p>
+        </div>
+        <form class="watch-form" id="watch-form">
+          <label for="watch-input" data-i18n="watchLabel">What should Porch Light watch for?</label>
+          <div class="watch-entry">
+            <div class="input-wrap"><input id="watch-input" name="watch" type="text" maxlength="60" required autocomplete="off" placeholder="Can they put a bar next to my house?" data-placeholder-i18n="watchPlaceholder"></div>
+            <button class="primary-button" type="submit" data-i18n="startWatching">Start watching</button>
+          </div>
+          <p class="helper" data-i18n="helper">Use your own words. Porch Light keeps checking.</p>
+          <p class="form-status" id="watch-status" aria-live="polite"></p>
+        </form>
+        <div class="watch-current">
+          <p class="saved-title" id="saved-title" data-i18n="saved">Currently watching</p>
+          <div class="watch-empty" id="watch-empty" hidden>
+            <strong data-i18n="firstRunTitle">Start with one thing you care about.</strong>
+            <span data-i18n="firstRunBody">A watch is a phrase Porch Light checks against new agenda items. For example: "street trees on Juniper Avenue." Type your own words above.</span>
+          </div>
+          <ul class="watch-list" id="watch-list"></ul>
+          <p class="privacy"><span class="lock" aria-hidden="true"></span><span data-i18n="privacy">Your list stays on your device. We use it to answer, and never store it.</span></p>
+        </div>
+      </section>
+
+      <div class="dashboard">
+        <section class="panel main-panel" id="quiet" aria-labelledby="quiet-title">
+          <p class="visually-hidden" id="state-status" aria-live="polite"></p>
+          <div class="quiet-state" id="quiet-state">
+            <div class="paper-stack" aria-hidden="true" lang="en">
+              <div class="paper-mini">
+                <div class="doc-title">CITY OF VENTURA<br>PLANNING COMMISSION AGENDA</div>
+                <div style="text-align:center">AUGUST 26, 2026<br>COUNCIL CHAMBERS</div>
+                <hr>
+                <b>1. Approval of the Minutes</b>
+                <p><mark>Approval of the draft minutes from the June 24, 2026 meeting.</mark></p>
+              </div>
+            </div>
+            <div class="quiet-copy">
+              <h1 id="quiet-title" data-i18n="quietTitle">Nothing new for you this week.</h1>
+              <p data-i18n="quietBody">We read the City Council and Planning Commission agendas. Add a watch above, or open Changed to see what landed.</p>
+              <p class="scale-note" data-i18n="scaleNote">Porch Light breaks each agenda into individual items and points every summary back to its page.</p>
+            </div>
+          </div>
+
+          <div class="section-body scroll-region" id="checks" tabindex="0" role="region" aria-label="Recent checks and source status" data-aria-i18n="checksRegion">
+            <div class="section-head"><h2 data-i18n="recentChecks">Recent checks</h2></div>
+            <ul class="check-list" id="check-list"></ul>
+            <div class="history-extra" id="history-extra" hidden></div>
+            <button class="history-toggle" id="history-toggle" type="button" aria-expanded="false" aria-controls="history-extra" data-i18n="history">See full check history</button>
+          </div>
+
+          <div class="changed-state" id="changed-state" role="region" aria-labelledby="changed-title" hidden>
+            <div class="changed-intro">
+              <h1 id="changed-title" data-i18n="changedTitle">Real agenda items, read and verified.</h1>
+              <p data-i18n="changedIntro">Items Porch Light read from the city's agendas, each pointing back to its source page.</p>
+            </div>
+            <div class="change-list" id="change-list" aria-label="Agenda items read from the city record" data-aria-i18n="changesRegion"></div>
+          </div>
+        </section>
+
+        <section class="packet-wrap" id="packet" aria-labelledby="packet-section-title">
+          <h2 class="packet-heading" id="packet-section-title" data-i18n="packetHeading">The last thing we read</h2>
+          <p class="source-label" data-i18n="sourceLabel">Original source document as published by the city.</p>
+          <details class="packet-details" id="packet-details" open>
+            <summary data-i18n="packetSummary">Open the source document</summary>
+            <article class="packet" lang="en" aria-labelledby="packet-title">
+              <header>
+                <div class="doc-title" id="packet-title">CITY OF VENTURA<br>CITY COUNCIL AGENDA</div>
+                <div>AUGUST 25, 2026<br>CITY COUNCIL CHAMBERS<br>501 POLI STREET, VENTURA, CA 93001</div>
+              </header>
+              <hr>
+              <div class="packet-item"><b>6.</b><div><strong>First Amendment to Master Services Agreement with Cognizant Worldwide Limited</strong><p><mark>Authorize the City Manager to sign an amendment extending the agreement dated September 5, 2024 through September 4, 2027, and Statement of Work 2 for $145,800 through August 31, 2027, raising the total not-to-exceed amount to $590,130.</mark></p></div></div>
+              <div class="packet-item"><b>7.</b><div><strong>Grand Jury Response — Public Complaints About Fireworks</strong><p>Authorize the Mayor to sign and send the City's response to the Ventura County Civil Grand Jury.</p></div></div>
+              <footer class="receipt">
+                <div>City Council · 25 Aug 2026 · Item 6 · pp. 5-5</div>
+                <a href="https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=5" target="_blank" rel="noreferrer">open the agenda at page 5</a>
+              </footer>
+            </article>
+          </details>
+          <div class="receipt-mobile" lang="en">
+            <div>City Council · 25 Aug 2026 · Item 6 · pp. 5-5</div>
+            <a href="https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=5" target="_blank" rel="noreferrer">open the agenda at page 5</a>
+          </div>
+        </section>
+
+        <aside class="side" aria-label="Your Porch Light tools" data-aria-i18n="toolsRegion">
+          <section class="panel side-panel draft-panel scroll-region" tabindex="0" role="region" aria-labelledby="draft-title">
+            <div class="section-head"><h2 id="draft-title" data-i18n="draftTitle">Drafts are yours to finish and send.</h2></div>
+            <p class="draft-explainer" data-i18n="draftExplainer">Porch Light fills in the facts and the deadline from the source. The opinion is yours to write, and only you can send it.</p>
+            <ul class="draft-list" id="draft-list"></ul>
+            <button class="secondary-button" id="start-draft" type="button" data-i18n="startDraft">＋ Start a draft</button>
+            <p class="form-status" id="draft-status" aria-live="polite"></p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="about-footer" id="about">
+      <section class="about-intro" aria-labelledby="about-title">
+        <h2 id="about-title" data-i18n="aboutTitle">What this is</h2>
+        <p data-i18n="aboutBody">Porch Light reads the public agenda packets your city posts, breaks them into individual items, and watches for the things you care about. Every summary points back to the page it came from. It drafts. You write your position, and you decide whether to send it.</p>
+      </section>
+      <section aria-labelledby="limits-title">
+        <h3 id="limits-title" data-i18n="limitsTitle">What it does not do</h3>
+        <ul>
+          <li data-i18n="limitOne">It never scores, grades, or ranks a public body.</li>
+          <li data-i18n="limitTwo">It never sends anything to a government office. There is no send button anywhere in the code.</li>
+          <li data-i18n="limitThree">It never generates a date, a deadline, an item number, or a page range. Those are copied from the source or not shown.</li>
+          <li data-i18n="limitFour">It never stores your watch list. That list lives on your device.</li>
+        </ul>
+      </section>
+      <section aria-labelledby="disclaimer-title">
+        <h3 id="disclaimer-title" data-i18n="disclaimerTitle">Independent project</h3>
+        <p data-i18n="disclaimer">Porch Light is an independent project. It is not affiliated with, endorsed by, or operated by any city or public agency. Always confirm dates and deadlines against the city's own posting.</p>
+      </section>
+      <section aria-labelledby="built-title">
+        <h3 id="built-title" data-i18n="builtTitle">Built by</h3>
+        <p data-i18n="built">Built by Shara Cordero. AI assisted. Human approved. Powered by NLP.</p>
+      </section>
+      <section aria-labelledby="links-title">
+        <h3 id="links-title" data-i18n="linksTitle">Links</h3>
+        <ul>
+          <li><span class="link-pending" data-i18n="linkedinPending">LinkedIn · URL to be supplied</span></li>
+          <li><a href="https://earlgreyhot1701d.github.io/Clew-Labs/" target="_blank" rel="noreferrer">Clew Labs</a></li>
+          <li><span class="link-pending" data-i18n="sourcePending">Source code · URL to be supplied</span></li>
+          <li><a href="https://www.cityofventura.ca.gov/AgendaCenter" target="_blank" rel="noreferrer" data-i18n="cityAgenda">The city's own agenda page</a></li>
+        </ul>
+      </section>
+      <p class="about-closing" data-i18n="sample">Real City of Ventura agenda items, read and verified by Porch Light.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

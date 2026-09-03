@@ -1,0 +1,455 @@
+{
+  "is_quiet": false,
+  "synthetic": false,
+  "heartbeat": {
+    "city_read": {
+      "en": "City read from stored agendas",
+      "es": "Ciudad leida de agendas almacenadas"
+    },
+    "read_count": {
+      "en": "2 meetings read",
+      "es": "2 reuniones leidas"
+    },
+    "next_check": {
+      "en": "Hourly, on schedule",
+      "es": "Cada hora, segun lo programado"
+    }
+  },
+  "recent_checks": [],
+  "changed": [
+    {
+      "id": "3685-3",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "City Council agenda item 3",
+        "es": "Concejo Municipal, punto 3"
+      },
+      "heading": {
+        "en": "The City Council of San Buenaventura, California, is considering an ordinance to change the rules for the Victoria Avenue Corridor. This change would allow general retail stores up to 140,000 square feet in the T5.3 zone. The City Clerk, Michael MacDonald, recommends waiving the second reading and adopting this ordinance. This would amend Chapter 24.600, \"Victoria Avenue Corridor Development Code,\" specifically Section 24.600.180, \"Land Use Table,\" to permit general retail uses between 100,000 and 140,000 square feet within the Urban Center Zone (T5.3).",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 4 of the agenda.",
+        "es": "Este punto esta en p. 4 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "City Council · Aug 25, 2026 · Item 3 · p. 4",
+          "es": "Concejo Municipal · 25 ago 2026 · Punto 3 · p. 4"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=4",
+        "source_label": {
+          "en": "open the agenda at page 4",
+          "es": "abrir la agenda en la pagina 4"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    },
+    {
+      "id": "3685-4",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "City Council agenda item 4",
+        "es": "Concejo Municipal, punto 4"
+      },
+      "heading": {
+        "en": "The San Buenaventura City Council is considering an ordinance that would change the rules for parking in city-owned lots. This ordinance would allow the city to change the time limits for parking and to start charging for parking in these lots. The City Council is being asked to waive the second reading and adopt this ordinance. The proposed ordinance is titled \"AN ORDINANCE OF THE CITY COUNCIL OF THE CITY OF SAN BUENAVENTURA, CALIFORNIA AMENDING TITLE 16, SECTION 16.210.070, ‘CITY PARKING LOTS,’ TO CLARIFY THE PROCESS FOR THE ESTABLISHMENT OF REGULATIONS FOR OFF-STREET PARKING IN THE CITY.\" The City Clerk, Michael MacDonald, is responsible for this item.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 4 of the agenda.",
+        "es": "Este punto esta en p. 4 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "City Council · Aug 25, 2026 · Item 4 · p. 4",
+          "es": "Concejo Municipal · 25 ago 2026 · Punto 4 · p. 4"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=4",
+        "source_label": {
+          "en": "open the agenda at page 4",
+          "es": "abrir la agenda en la pagina 4"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    },
+    {
+      "id": "3685-5",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "City Council agenda item 5",
+        "es": "Concejo Municipal, punto 5"
+      },
+      "heading": {
+        "en": "The City Council is considering a new resolution to update the classification of positions and the salaries for certain city employees who do not have a union. This resolution would take effect on August 30, 2026. Valerie Barroso, the Human Resources Director, is the staff member who has prepared this proposal. The City Council will discuss and decide whether to adopt this revised resolution.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 5 of the agenda.",
+        "es": "Este punto esta en p. 5 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "City Council · Aug 25, 2026 · Item 5 · p. 5",
+          "es": "Concejo Municipal · 25 ago 2026 · Punto 5 · p. 5"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=5",
+        "source_label": {
+          "en": "open the agenda at page 5",
+          "es": "abrir la agenda en la pagina 5"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    },
+    {
+      "id": "3685-6",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "City Council agenda item 6",
+        "es": "Concejo Municipal, punto 6"
+      },
+      "heading": {
+        "en": "The City Council is considering two actions regarding agreements with Cognizant Worldwide Limited. First, they are looking at authorizing the City Manager or their representative to sign an amendment to the Master Services Agreement, which is currently dated September 5, 2024. This amendment would extend the agreement's term until September 4, 2027. Second, they are considering authorizing the City Manager or their representative to sign Statement of Work 2 with Cognizant Worldwide Limited, which is for $145,800 and would run through August 31, 2027. This would increase the total not-to-exceed amount of the agreement to $590,130.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 5 of the agenda.",
+        "es": "Este punto esta en p. 5 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "City Council · Aug 25, 2026 · Item 6 · p. 5",
+          "es": "Concejo Municipal · 25 ago 2026 · Punto 6 · p. 5"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=5",
+        "source_label": {
+          "en": "open the agenda at page 5",
+          "es": "abrir la agenda en la pagina 5"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    },
+    {
+      "id": "3685-7",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "City Council agenda item 7",
+        "es": "Concejo Municipal, punto 7"
+      },
+      "heading": {
+        "en": "The City Council is considering a response to a report from the Ventura County Civil Grand Jury regarding public complaints about fireworks. The report was addressed to the Countywide Response team, with David Dickey, Chief of Police, as the staff contact. The City Council is being asked to authorize the Mayor to sign and send the City's response to the Grand Jury.",
+        "es": "El Ayuntamiento está considerando una respuesta a un informe del Gran Jurado Civil del Condado de Ventura sobre las quejas del público acerca de los fuegos artificiales. El informe fue dirigido al equipo de Respuesta del Condado, con David Dickey, Jefe de Policía, como el contacto del personal. Se le está pidiendo al Ayuntamiento que autorice al Alcalde a firmar y enviar la respuesta de la Ciudad al Gran Jurado."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 5 of the agenda.",
+        "es": "Este punto esta en p. 5 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "City Council · Aug 25, 2026 · Item 7 · p. 5",
+          "es": "Concejo Municipal · 25 ago 2026 · Punto 7 · p. 5"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=5",
+        "source_label": {
+          "en": "open the agenda at page 5",
+          "es": "abrir la agenda en la pagina 5"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": null,
+      "en_verified": true,
+      "es_verified": true
+    },
+    {
+      "id": "3685-8",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "City Council agenda item 8",
+        "es": "Concejo Municipal, punto 8"
+      },
+      "heading": {
+        "en": "The Ventura City Council is considering authorizing the City Manager, or their representative, to sign the Fourth Amendment to Reimbursement Agreement 2022-053. This agreement is between the Ventura Unified School District and the City of Ventura. It involves additional payments for crossing guard services until the end of Fiscal Year 2027, which is June 30, 2027. The additional amount to be reimbursed is $117,619, bringing the total amount of the agreement to no more than $521,679.",
+        "es": "El Concejo Municipal de Ventura está considerando autorizar al Gerente de la Ciudad, o a su representante, para firmar la Cuarta Enmienda al Acuerdo de Reembolso 2022-053. Este acuerdo es entre el Distrito Escolar Unificado de Ventura y la Ciudad de Ventura. Se trata de pagos adicionales por servicios de guardia de cruce hasta el final del Año Fiscal 2027, que es el 30 de junio de 2027. La cantidad adicional a reembolsar es de $117,619, llevando el monto total del acuerdo a no más de $521,679."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 6 of the agenda.",
+        "es": "Este punto esta en p. 6 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "City Council · Aug 25, 2026 · Item 8 · p. 6",
+          "es": "Concejo Municipal · 25 ago 2026 · Punto 8 · p. 6"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08252026-3685#page=6",
+        "source_label": {
+          "en": "open the agenda at page 6",
+          "es": "abrir la agenda en la pagina 6"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": null,
+      "en_verified": true,
+      "es_verified": true
+    },
+    {
+      "id": "3687-1",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "Planning Commission agenda item 1",
+        "es": "Comision de Planificacion, punto 1"
+      },
+      "heading": {
+        "en": "The Planning Commission will consider approving the draft minutes from the June 24, 2026 meeting. The recommendation is to approve the minutes as presented. The materials available for this discussion are the draft minutes.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on p. 2 of the agenda.",
+        "es": "Este punto esta en p. 2 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "Planning Commission · Aug 26, 2026 · Item 1 · p. 2",
+          "es": "Comision de Planificacion · 26 ago 2026 · Punto 1 · p. 2"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08262026-3687#page=2",
+        "source_label": {
+          "en": "open the agenda at page 2",
+          "es": "abrir la agenda en la pagina 2"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    },
+    {
+      "id": "3687-2",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "Shown as published by the city",
+        "es": "Mostrado tal como lo publico la ciudad"
+      },
+      "official_term": {
+        "en": "Planning Commission agenda item 2",
+        "es": "Comision de Planificacion, punto 2"
+      },
+      "heading": {
+        "en": "2. Prohousing Designation, Citywide \n \nThe City is applying for a Prohousing Designation to the State of California \nDepartment of Housing and Community Development. This designation recognizes \njurisdictions that are committed to accelerating housing production, removing barriers \nto development, and implementing housing-friendly policies. Staff is presenting the \ndraft application for comments and review.  \n \nRecommendation: To approve the draft Prohousing Designation application and \nformal resolution.  \n \nStaff:  Andrea Palmer, Senior Management Analyst;  \nRachel Wess, Management Analyst \nApplicant:  City of Ventura \n \nMaterials: staff report, application, resolution, public comment",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on pp. 2-3 of the agenda.",
+        "es": "Este punto esta en pp. 2-3 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "Planning Commission · Aug 26, 2026 · Item 2 · pp. 2-3",
+          "es": "Comision de Planificacion · 26 ago 2026 · Punto 2 · pp. 2-3"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08262026-3687#page=2",
+        "source_label": {
+          "en": "open the agenda at page 2",
+          "es": "abrir la agenda en la pagina 2"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "A verified plain-English summary could not be produced for this item; showing the original text as published by the city.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": false,
+      "es_verified": false
+    },
+    {
+      "id": "3687-3",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "Planning Commission agenda item 3",
+        "es": "Comision de Planificacion, punto 3"
+      },
+      "heading": {
+        "en": "The Planning Commission is considering a request for a Major Design Review for a new 19-unit multi-family residential apartment development at Loretta Court Apartments, located at APN: 073-0-058-030. The project involves 3 warrants (Lot width, Tuck-Under Parking, & 60% 3rd story) and 1 exception (Parking Setback) on a 12,540-square foot site in the Urban General 1 (T4.1 Main St. Frontage) Zone within the Downtown Specific Plan. The project is identified as Assessor’s Parcel Number 073-0-058-030. The California Environmental Quality Act categorizes this as an infill project under 15332. The recommendation is to approve the project, subject to certain conditions. The planner for this review is Grant White, Acting Senior Planner. The applicant is Linda Blackbern of RRM Design Group on behalf of Merewether Trust. Materials available for review include the staff report, vicinity map, resolution, development standards, plans, public comment, and a second public comment.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on pp. 3-4 of the agenda.",
+        "es": "Este punto esta en pp. 3-4 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "Planning Commission · Aug 26, 2026 · Item 3 · pp. 3-4",
+          "es": "Comision de Planificacion · 26 ago 2026 · Punto 3 · pp. 3-4"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08262026-3687#page=3",
+        "source_label": {
+          "en": "open the agenda at page 3",
+          "es": "abrir la agenda en la pagina 3"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    },
+    {
+      "id": "3687-4",
+      "tone": "calm",
+      "mark": "added",
+      "status": {
+        "en": "New material added",
+        "es": "Material nuevo agregado"
+      },
+      "official_term": {
+        "en": "Planning Commission agenda item 4",
+        "es": "Comision de Planificacion, punto 4"
+      },
+      "heading": {
+        "en": "On August 26, 2026, the Planning Commission will consider a request for a Major Variance to allow an increase in building height in the hillside area for a renovation project at 1193 Colina Vista. The project includes constructing a 1,903-square-foot second-story addition to an existing single-story residence and making interior renovations to the first floor. The property is on a 0.28-acre lot in the R-1-10 (Single-Family Residential) zone with a land use designation of Neighborhood Very Low 2, identified as Assessor's Parcel Number 065-0-224-095. The California Environmental Quality Act classifies this as Existing Facilities, Class 1. The recommendation is to continue the review to a date certain of October 28, 2026. The planner for this item is Adams Bernhardt, Senior Planner, and the applicant is James McGarry from James McGarry Architecture. The agenda includes a continuance memo and an opportunity for public comment. The Planning Commission Communications section allows commissioners to ask questions, request staff reports, or direct staff to place matters on future agendas. The staff communication includes a Director’s Hearing Update. The agenda was posted on August 20, 2026, on the City Hall Public Notices Board and the City website. If you challenge the action in court, you may only raise issues you or someone else raised at the Public Hearing or in written correspondence before the public hearing. If you need assistance to participate in this meeting, contact the City Clerk at (805) 658-4787 or the California Relay Service.",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "match_reason": {
+        "en": "Shown from the city's real agenda record.",
+        "es": "Mostrado desde el registro real de la agenda de la ciudad."
+      },
+      "scale_note": {
+        "en": "This item is on pp. 3-4 of the agenda.",
+        "es": "Este punto esta en pp. 3-4 de la agenda."
+      },
+      "receipt": {
+        "line": {
+          "en": "Planning Commission · Aug 26, 2026 · Item 4 · pp. 3-4",
+          "es": "Comision de Planificacion · 26 ago 2026 · Punto 4 · pp. 3-4"
+        },
+        "source_href": "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_08262026-3687#page=3",
+        "source_label": {
+          "en": "open the agenda at page 3",
+          "es": "abrir la agenda en la pagina 3"
+        }
+      },
+      "deadline": null,
+      "deadline_actionable": false,
+      "fallback_note": {
+        "en": "",
+        "es": "A verified Spanish version was not produced for this item. No se pudo producir una versión verificada en español para este punto."
+      },
+      "en_verified": true,
+      "es_verified": false
+    }
+  ]
+}
