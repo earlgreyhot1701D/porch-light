@@ -37,7 +37,9 @@ const COPY = {
     greeting: "Good afternoon, neighbor.", heartbeatTitle: "System heartbeat",
     cityRead: "City read from stored agendas", readCount: "2 meetings read", nextCheck: "Next check: hourly, on schedule",
     quietTitle: "Nothing new for you this week.",
-    quietBody: "We read the City Council and Planning Commission agendas. Add a watch above, or open Changed to see what landed.",
+    quietBody: "We read the City Council and Planning Commission agendas. Nothing matched what you're watching. We'll keep checking.",
+    onboardTitle: "Tell Porch Light what to watch for.",
+    onboardBody: "We read the City Council and Planning Commission agendas and broke them into items. Nothing can match until you add a watch above — Porch Light watches for you, not for everyone.",
     scaleNote: "Porch Light breaks each agenda into individual items and points every summary back to its page.",
     quietStateLoaded: "Quiet week view shown.", changedStateLoaded: "Changed view shown.",
     changedTitle: "Real agenda items, read and verified.",
@@ -93,7 +95,9 @@ const COPY = {
     greeting: "Buenas tardes, vecindad.", heartbeatTitle: "Estado del sistema",
     cityRead: "Ciudad le\u00EDda de agendas almacenadas", readCount: "2 reuniones le\u00EDdas", nextCheck: "Pr\u00F3xima revisi\u00F3n: cada hora, seg\u00FAn lo programado",
     quietTitle: "Nada nuevo para usted esta semana.",
-    quietBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n. Agregue un tema arriba o abra Cambios para ver lo que lleg\u00F3.",
+    quietBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n. Nada coincidi\u00F3 con lo que usted sigue. Seguiremos revisando.",
+    onboardTitle: "D\u00EDgale a Porch Light qu\u00E9 vigilar.",
+    onboardBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n y las dividimos en puntos. Nada puede coincidir hasta que agregue un tema arriba: Porch Light vigila para usted, no para todos.",
     scaleNote: "Porch Light divide cada agenda en puntos individuales y remite cada resumen a su p\u00E1gina.",
     quietStateLoaded: "Se muestra la vista de semana tranquila.", changedStateLoaded: "Se muestra la vista de cambios.",
     changedTitle: "Puntos reales de la agenda, le\u00EDdos y verificados.",
@@ -207,8 +211,39 @@ function setStatus(id, msg) {
   n.lang = language;
 }
 
+/* ---- relevance: which stored items match the watchlist ----
+ * TRANSPARENT keyword match for the static demo — NOT the model. The real relevance
+ * decision is the watcher agent (watch/matcher.py), which runs server-side against
+ * Aurora; wiring the browser to it is deferred (task 8.2). Here, an item matches a
+ * term if the term's words appear in the item's shown text. This is deliberately
+ * simple and honest: it is why-this-matched by literal overlap, so a first-time
+ * visitor with no terms sees NO cards (the product watches for one person, it does
+ * not hand everyone the same feed). */
+function itemMatchesTerm(item, term) {
+  const hay = ((item.heading && (item.heading.en + " " + item.heading.es)) || "").toLocaleLowerCase();
+  // Whole-word overlap, not substring: "park" must not match "parking". Words <=2
+  // chars and a small stoplist are ignored so common filler doesn't force matches.
+  const stop = new Set(["the", "and", "for", "you", "your", "can", "put", "next", "who", "why", "how", "what", "los", "las", "una", "por", "con", "del"]);
+  const words = term.toLocaleLowerCase().split(/[^a-z\u00E0-\u00FF0-9]+/).filter((w) => w.length >= 3 && !stop.has(w));
+  if (!words.length) return false;
+  return words.some((w) => {
+    const re = new RegExp("(?:^|[^a-z\u00E0-\u00FF0-9])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:[^a-z\u00E0-\u00FF0-9]|$)", "i");
+    return re.test(hay);
+  });
+}
+function matchedItems() {
+  if (!watches.length) return [];
+  const terms = watches.map((w) => w.text);
+  const out = [];
+  for (const item of changed) {
+    const hits = terms.filter((term) => itemMatchesTerm(item, term));
+    if (hits.length) out.push({ item, terms: hits });
+  }
+  return out;
+}
+
 /* ---- changed cards (real items from sample.json) ---- */
-function createChangeCard(item) {
+function createChangeCard(item, matchedTerms) {
   const card = document.createElement("article");
   card.className = "change-card " + (item.deadline_actionable ? "hot" : "calm");
   card.lang = language;
@@ -229,12 +264,16 @@ function createChangeCard(item) {
   official.textContent = item.official_term ? item.official_term[language] : "";
   statusRow.append(chip, official);
 
-  // Heading = the shown summary (verified rewrite or honest fallback text).
-  const heading = document.createElement("h2");
-  heading.textContent = item.heading ? item.heading[language] : "";
-  heading.lang = language;
+  // The shown summary (verified rewrite or honest fallback text) is BODY TEXT —
+  // the product's main output, a paragraph, not a display heading. Set as <p> with
+  // the .change-summary body style, not <h2> (which is the mock's short-string
+  // pull-quote treatment and is wrong for a 100-word paragraph).
+  const summary = document.createElement("p");
+  summary.className = "change-summary";
+  summary.textContent = item.heading ? item.heading[language] : "";
+  summary.lang = language;
 
-  card.append(statusRow, heading);
+  card.append(statusRow, summary);
 
   // Fallback note, when the shown text is original staff text (never.md #7).
   if (item.fallback_note && item.fallback_note[language]) {
@@ -245,11 +284,15 @@ function createChangeCard(item) {
     card.appendChild(note);
   }
 
-  // Match reason (emitted with the item; on the static page, why it is shown).
-  if (item.match_reason && item.match_reason[language]) {
+  // "Why this matched" — names the watch term(s) that brought this item in. Every
+  // shown card keeps this line (the product never shows a match without its reason).
+  if (matchedTerms && matchedTerms.length) {
     const match = document.createElement("p");
     match.className = "watch-match";
-    match.textContent = item.match_reason[language];
+    const quoted = matchedTerms.map((x) => "\u201C" + x + "\u201D").join(", ");
+    match.textContent = (language === "es")
+      ? "Usted est\u00E1 siguiendo: " + quoted + "."
+      : "You're watching: " + quoted + ".";
     match.lang = language;
     card.appendChild(match);
   }
@@ -392,7 +435,63 @@ function createCommentScaffold(item) {
 function renderChanged() {
   const list = document.getElementById("change-list");
   if (!list) return;
-  list.replaceChildren(...changed.map(createChangeCard));
+  const matches = matchedItems();
+  list.replaceChildren(...matches.map((m) => createChangeCard(m.item, m.terms)));
+}
+
+/* ---- the three states, driven by the watchlist (never a shared feed) ----
+ * 1. no terms      -> onboarding + reading log, ZERO cards.
+ * 2. terms, 0 match -> quiet-state ("Nothing new for you this week") + reading log.
+ * 3. terms + match  -> the matched change cards, each with its why-matched line.
+ */
+function deriveAndRenderState(announce) {
+  const hasTerms = watches.length > 0;
+  const matches = matchedItems();
+  const quiet = document.getElementById("quiet-state");
+  const changedState = document.getElementById("changed-state");
+  const checks = document.getElementById("checks");        // reading log region
+  const quietCopy = quiet ? quiet.querySelector(".quiet-copy") : null;
+  const onboarding = quiet ? quiet.querySelector(".paper-stack") : null;
+
+  if (hasTerms && matches.length) {
+    // State 3: matched cards.
+    activeState = "changed";
+    quiet.hidden = true;
+    changedState.hidden = false;
+    if (checks) checks.hidden = true;
+    renderChanged();
+  } else {
+    // States 1 & 2: no cards. The reading log carries the proof either way.
+    activeState = "quiet";
+    changedState.hidden = true;
+    quiet.hidden = false;
+    if (checks) checks.hidden = false;
+    // The quiet copy differs by whether the reader has said what matters yet. The
+    // onboarding cue lives in the watch strip (.watch-empty); here we set the
+    // headline/body to match state 1 vs 2 without inventing new DOM.
+    setQuietCopyForState(hasTerms);
+  }
+  // Keep the nav chips honest about which state is showing.
+  document.getElementById("state-quiet").setAttribute("aria-current", String(activeState === "quiet"));
+  document.getElementById("state-changed").setAttribute("aria-current", String(activeState === "changed"));
+  if (announce !== false) {
+    setStatus("state-status", activeState === "changed" ? t("changedStateLoaded") : t("quietStateLoaded"));
+  }
+}
+
+function setQuietCopyForState(hasTerms) {
+  const titleEl = document.getElementById("quiet-title");
+  const bodyEl = titleEl ? titleEl.parentElement.querySelector("p") : null;
+  if (!titleEl) return;
+  if (hasTerms) {
+    titleEl.textContent = t("quietTitle");          // "Nothing new for you this week."
+    if (bodyEl) bodyEl.textContent = t("quietBody");
+  } else {
+    titleEl.textContent = t("onboardTitle");
+    if (bodyEl) bodyEl.textContent = t("onboardBody");
+  }
+  titleEl.lang = language;
+  if (bodyEl) bodyEl.lang = language;
 }
 function renderWatches() {
   const list = document.getElementById("watch-list");
@@ -407,7 +506,7 @@ function renderWatches() {
     remove.className = "remove-watch";
     remove.textContent = "\u00D7";
     remove.setAttribute("aria-label", t("remove") + ": " + watch.text);
-    remove.addEventListener("click", () => { watches.splice(index, 1); saveWatchesToStorage(); renderWatches(); });
+    remove.addEventListener("click", () => { watches.splice(index, 1); saveWatchesToStorage(); renderWatches(); deriveAndRenderState(); });
     li.append(text, remove);
     return li;
   });
@@ -454,15 +553,10 @@ function renderChecks() {
 }
 
 function setMainState(next, announce) {
-  activeState = next;
-  const quiet = document.getElementById("quiet-state");
-  const changedState = document.getElementById("changed-state");
-  const isChanged = next === "changed";
-  quiet.hidden = isChanged;
-  changedState.hidden = !isChanged;
-  document.getElementById("state-quiet").setAttribute("aria-current", String(!isChanged));
-  document.getElementById("state-changed").setAttribute("aria-current", String(isChanged));
-  if (announce !== false) setStatus("state-status", isChanged ? t("changedStateLoaded") : t("quietStateLoaded"));
+  // State is derived from the watchlist, never forced to a shared feed. The nav
+  // buttons re-derive; they cannot manufacture change cards the reader didn't earn
+  // with a watch term (that was the new-user bug). announce carries through.
+  deriveAndRenderState(announce);
 }
 
 function setLanguage(next) {
@@ -485,7 +579,8 @@ function setLanguage(next) {
   const toggle = document.getElementById("history-toggle");
   const expanded = toggle.getAttribute("aria-expanded") === "true";
   toggle.textContent = expanded ? t("historyClose") : t("history");
-  renderChecks(); renderWatches(); renderDrafts(); renderChanged();
+  renderChecks(); renderWatches(); renderDrafts();
+  deriveAndRenderState(false);   // re-render cards/quiet/onboard in the new language
   setStatus("watch-status", ""); setStatus("draft-status", "");
 }
 
@@ -504,6 +599,7 @@ function offerSharedList(terms) {
     watches = terms.slice(0, MAX_TERMS).map((text) => ({ text, lang: language }));
     saveWatchesToStorage();
     renderWatches();
+    deriveAndRenderState();
     setStatus("watch-status", t("shareApplied"));
   });
   const dismiss = document.createElement("button");
@@ -527,8 +623,13 @@ function wireEvents() {
     watches.push({ text: value, lang: language });
     input.value = "";
     saveWatchesToStorage();
-    setStatus("watch-status", t("added"));
     renderWatches();
+    deriveAndRenderState();
+    // Tell the reader whether the new watch matched anything right now.
+    const m = matchedItems();
+    setStatus("watch-status", m.length
+      ? (language === "es" ? t("added") + " " + m.length + " coincidencia(s)." : t("added") + " " + m.length + " match(es).")
+      : t("added"));
   });
   document.getElementById("history-toggle").addEventListener("click", (event) => {
     const button = event.currentTarget;
@@ -547,8 +648,8 @@ function wireEvents() {
   });
   document.getElementById("lang-en").addEventListener("click", () => setLanguage("en"));
   document.getElementById("lang-es").addEventListener("click", () => setLanguage("es"));
-  document.getElementById("state-quiet").addEventListener("click", () => setMainState("quiet"));
-  document.getElementById("state-changed").addEventListener("click", () => setMainState("changed"));
+  document.getElementById("state-quiet").addEventListener("click", () => deriveAndRenderState());
+  document.getElementById("state-changed").addEventListener("click", () => deriveAndRenderState());
 }
 
 /* ---- boot ---- */
@@ -572,8 +673,8 @@ async function boot() {
   watches = loadWatchesFromStorage();
   await loadChanged();
   setLanguage("en");
-  setMainState("changed", false); // real items exist; show them
   renderWatches();
+  deriveAndRenderState(false);   // new user (no terms) -> onboarding + reading log, ZERO cards
   if (shared && shared.length) offerSharedList(shared);
 }
 
