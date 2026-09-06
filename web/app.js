@@ -636,18 +636,23 @@ function announceResult(term) {
   const matches = matchedItems();
   const status = document.getElementById("state-status");   // aria-live=polite
   if (matches.length) {
-    const msg = matches.length === 1
-      ? t("matchCountOne")
-      : t("matchCountMany").replace("{n}", String(matches.length));
-    if (status) { status.textContent = msg; status.lang = language; }
-    setStatus("watch-status", t("added"));
+    // Bug 3: the VISIBLE watch-status line carries the count (not just the near-top
+    // aria-live region). Restores "Watch added. N match(es)."
+    const n = matches.length;
+    const countMsg = n === 1 ? t("matchCountOne") : t("matchCountMany").replace("{n}", String(n));
+    setStatus("watch-status", t("added") + " " + countMsg);
+    // aria-live announcement (existing region, not a new one).
+    if (status) { status.textContent = countMsg; status.lang = language; }
+    // Bug 4 (match case): focus the results heading and bring it into view.
     const heading = document.getElementById("changed-title");
     if (heading) {
       heading.scrollIntoView({ behavior: "smooth", block: "start" });
       heading.focus({ preventScroll: true });
     }
   } else {
-    // No match: say so at the quiet region the user can see, naming the term.
+    // Zero-match (Amendment 3): honest empty state at the quiet region, naming the
+    // term. deriveAndRenderState already hid the cards and showed the quiet panel,
+    // so no stale results remain and it is never a blank panel.
     const titleEl = document.getElementById("quiet-title");
     const bodyEl = titleEl ? titleEl.parentElement.querySelector("p") : null;
     if (titleEl) {
@@ -659,8 +664,10 @@ function announceResult(term) {
       bodyEl.textContent = t("noMatchBody").replace("{term}", term);
       bodyEl.lang = language;
     }
+    // Bug 3 (zero case): the visible line says so too.
+    setStatus("watch-status", t("added") + " " + t("noMatchTitle"));
     if (status) { status.textContent = t("noMatchTitle"); status.lang = language; }
-    setStatus("watch-status", t("added"));
+    // Bug 4 (zero-match case): focus the quiet-state heading, defined behavior.
     if (titleEl) { titleEl.scrollIntoView({ behavior: "smooth", block: "start" }); titleEl.focus({ preventScroll: true }); }
   }
 }

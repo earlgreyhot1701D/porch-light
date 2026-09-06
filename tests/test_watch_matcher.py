@@ -69,6 +69,27 @@ def test_record_match_tool_ignores_unknown_item_id():
     assert session.matches[0].reason.en and session.matches[0].reason.es
 
 
+def test_is_recordable_match_predicate():
+    # Bug 1: the single definition of a real match. Non-empty matched terms only.
+    from porchlight.watch.matcher import is_recordable_match
+    assert is_recordable_match(["parking"]) is True
+    assert is_recordable_match(["parking", ""]) is True
+    assert is_recordable_match([]) is False
+    assert is_recordable_match(["", "  "]) is False
+    assert is_recordable_match(None) is False
+
+
+def test_record_match_with_empty_matched_terms_is_not_recorded():
+    # Bug 1, site (a): the model calling record_match with no matched terms (a
+    # "...not parking." non-match) records NOTHING, regardless of the reason text.
+    session = MatchSession(items={"3685-3": "an item about zoning, not parking"}, matches=[])
+    tools = {t.tool_name: t._tool_func for t in M._build_tools(session)}
+    tools["record_match"](item_id="3685-3", matched_terms=[], reason_en="This is not parking.", reason_es="No es estacionamiento.")
+    assert session.matches == []
+    tools["record_match"](item_id="3685-3", matched_terms=["  "], reason_en="unrelated", reason_es="no relacionado")
+    assert session.matches == []
+
+
 # --- Live (captured items + a real model): bias-to-show, injection-as-data ---
 
 CAPTURED_ITEMS = {

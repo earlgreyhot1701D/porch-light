@@ -578,3 +578,20 @@ Kept for the record.
   deployed watcher Function URL; the matcher seam is already a drop-in
   (`WatchAnswer`), so only the data source changes. Then this entry describes the
   live endpoint and the `demoScope` line is removed.
+
+
+### Temperature: calibration ran at 0.0; the watcher was mis-shipped, now corrected
+
+The spec-0 golden-set rewrites and the Nova Lite / Nova Pro comparison
+(`tests/golden/compare_models.py`) both go through `rewrite/model.invoke`, which sets
+`inferenceConfig.temperature = 0.0` explicitly — so the reading-level floors and the
+Nova Lite model choice were **derived at temperature 0.0**. The watcher, however, was
+a separate path: it built a Strands `Agent` from a bare model-id string, which used
+Strands' default temperature (not 0.0), despite a "Temp ~0" comment. That is the
+run-to-run variance (Bug 2). The fix sets the watcher explicitly to `temperature=0.0`
+via `BedrockModel`, which brings it into line with the calibration — so no threshold
+was derived from a differently-configured model; only the watcher was misconfigured,
+and it is now consistent with everything else. Note the watcher does not use the
+rewrite floors anyway (it decides relevance, not reading level), so even the
+mismatch never touched a derived threshold. v2: assert temperature at the call site
+in a test so a future agent path cannot silently inherit a non-zero default again.

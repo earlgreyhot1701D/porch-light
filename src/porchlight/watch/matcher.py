@@ -46,6 +46,19 @@ def is_tool_allowed(tool_name: str) -> bool:
     return tool_name in ALLOWED_TOOLS
 
 
+def is_recordable_match(matched_terms) -> bool:
+    """The single definition of what counts as a real match (Bug 1).
+
+    An item is a match ONLY if at least one non-empty watch term matched it. The
+    model sometimes calls record_match on an item it reasoned about and judged
+    NON-matching, passing matched_terms=[] with a reason like "...not parking." Such
+    a call is not a match regardless of the reason text. Used at exactly two trust
+    boundaries: record_match (the source, in matcher.py) and the response boundary
+    (handler.py). One rule, two placements.
+    """
+    return any(str(t).strip() for t in (matched_terms or []))
+
+
 @dataclass
 class MatchSession:
     """Per-invocation state: the candidate items and the matches the model records.
@@ -66,11 +79,16 @@ with the item's id, the watch terms it is relevant to, and a short plain-languag
 reason (in English AND Spanish) for why it matches.
 
 Rules:
+- Call record_match ONLY for an item that IS relevant to at least one watch term,
+  and pass the specific matched terms in matched_terms. NEVER call record_match for
+  an item that does not match — do not call it with an empty matched_terms list, and
+  do not call it just to explain why something is NOT relevant. A non-matching item
+  gets no call at all.
 - Decide relevance, then record the match and its reason in the SAME step. Never
   explain a match separately afterward.
-- When you are UNSURE whether an item is relevant, RECORD IT. Showing a borderline
-  item is a mild annoyance; missing a relevant one could make the person miss a
-  deadline. Err toward showing.
+- When you are UNSURE whether an item is relevant, RECORD IT (with the term it might
+  match). Showing a borderline item is a mild annoyance; missing a relevant one
+  could make the person miss a deadline. Err toward showing.
 - The reason is plain language only. Do NOT put any date, deadline, item number,
   page number, body name, or URL in the reason — those are shown separately.
 - If no item is relevant, record nothing.
@@ -105,6 +123,10 @@ def _build_tools(session: MatchSession):
             # The model referenced an item that was not in the candidate set: ignore
             # it (we never fabricate a match for an item we did not show).
             return f"unknown item_id {item_id!r}; ignored"
+        # Bug 1, site (a): an item with no matched terms is NOT a match, whatever the
+        # reason text says. Record nothing; tell the model why.
+        if not is_recordable_match(matched_terms):
+            return f"not recorded for {iid}: no matched terms means it is not a match"
         terms = tuple(str(t).strip() for t in (matched_terms or []) if str(t).strip())
         session.matches.append(
             WatchMatch(
@@ -175,14 +197,22 @@ def _turn_cap_hook(get_count, log):
 
 
 def build_agent(model_id: str, tools: list):
-    """Assemble the Strands watcher agent (lazy SDK import). Temp ~0."""
+    """Assemble the Strands watcher agent (lazy SDK import). Temperature 0.0."""
     from strands import Agent
+    from strands.models import BedrockModel
+
+    # Bug 2: build an EXPLICIT BedrockModel with temperature=0.0. Passing a bare
+    # model-id string lets Strands use its DEFAULT temperature (not 0), which was the
+    # run-to-run variance — the "Temp ~0" comment was aspirational, nothing enforced
+    # it. This brings the watcher in line with the rewrite path (rewrite/model.invoke
+    # also sets temperature 0.0).
+    model = BedrockModel(model_id=model_id, temperature=0.0)
 
     # callback_handler=None DISABLES Strands' default stdout trace. That trace prints
     # the model's <thinking>, which QUOTES the watch terms — on Lambda stdout goes to
     # CloudWatch, so the default handler is a no-store leak (never.md #8). The terms
     # must never reach logs by ANY path; silencing the callback closes the stdout one.
-    return Agent(model=model_id, tools=tools, system_prompt=_SYSTEM_PROMPT, callback_handler=None)
+    return Agent(model=model, tools=tools, system_prompt=_SYSTEM_PROMPT, callback_handler=None)
 
 
 def match_watchlist(
