@@ -61,19 +61,26 @@
           <p data-i18n="watchIntro">Describe a project, place, concern, or question in your own words. Porch Light checks the public record and brings back relevant changes.</p>
         </div>
         <form class="watch-form" id="watch-form">
-          <label for="watch-input" data-i18n="watchLabel">What should Porch Light watch for?</label>
+          <label for="watch-input" data-i18n="watchLabel">Ask a question, or name a thing you want watched</label>
+          <p class="watch-examples">
+            <span data-i18n="exampleIntro">For example:</span>
+            <button type="button" class="example-chip" data-example="q">&#8220;Can they put a bar next to my house?&#8221;</button>
+            <span class="example-and" data-i18n="exampleAnd">or</span>
+            <button type="button" class="example-chip" data-example="p">&#8220;street trees on Juniper Avenue&#8221;</button>
+          </p>
           <div class="watch-entry">
-            <div class="input-wrap"><input id="watch-input" name="watch" type="text" maxlength="60" required autocomplete="off" placeholder="Can they put a bar next to my house?" data-placeholder-i18n="watchPlaceholder"></div>
+            <div class="input-wrap"><input id="watch-input" name="watch" type="text" maxlength="100" required autocomplete="off" placeholder="Can they put a bar next to my house?" data-placeholder-i18n="watchPlaceholder" aria-describedby="watch-count watch-helper"></div>
             <button class="primary-button" type="submit" data-i18n="startWatching">Start watching</button>
           </div>
-          <p class="helper" data-i18n="helper">Use your own words. Porch Light keeps checking.</p>
+          <p class="watch-count" id="watch-count" aria-live="polite"><span id="watch-count-num">0</span><span data-i18n="countSuffix"> / 100 characters</span></p>
+          <p class="helper" id="watch-helper" data-i18n="helper">Porch Light re-checks this against every new agenda item and tells you when something matches.</p>
           <p class="form-status" id="watch-status" aria-live="polite"></p>
         </form>
         <div class="watch-current">
           <p class="saved-title" id="saved-title" data-i18n="saved">Currently watching</p>
           <div class="watch-empty" id="watch-empty" hidden>
             <strong data-i18n="firstRunTitle">Start with one thing you care about.</strong>
-            <span data-i18n="firstRunBody">A watch is a phrase Porch Light checks against new agenda items. For example: "street trees on Juniper Avenue." Type your own words above.</span>
+            <span data-i18n="firstRunBody">A watch can be a question ("Can they put a bar next to my house?") or a phrase ("street trees on Juniper Avenue"). Porch Light checks it against every new agenda item. Type your own words above.</span>
           </div>
           <ul class="watch-list" id="watch-list"></ul>
           <p class="privacy"><span class="lock" aria-hidden="true"></span><span data-i18n="privacy">Your list stays on your device. We use it to answer, and never store it.</span></p>

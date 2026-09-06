@@ -25,7 +25,7 @@ let scaffoldOpenId = null; // which card's scaffold is open, if any
 
 const WATCH_KEY = "porchlight.watches.v1";
 const MAX_TERMS = 10;
-const MAX_TERM_CHARS = 60;
+const MAX_TERM_CHARS = 100;   // mirrors watch/validate.py (raised from 60; see there)
 
 /* ---- copy (bilingual, verbatim strings load-bearing) ---- */
 const COPY = {
@@ -61,16 +61,19 @@ const COPY = {
     toolsRegion: "Your drafts and writing tools", watchRegion: "Start and manage watches",
     watchKicker: "Start here", watchTitle: "Tell Porch Light what matters.",
     watchIntro: "Describe a project, place, concern, or question in your own words. Porch Light checks the public record and brings back relevant changes.",
-    watchLabel: "What should Porch Light watch for?", watchPlaceholder: "Can they put a bar next to my house?",
-    startWatching: "Start watching", helper: "Use your own words. Porch Light keeps checking.", saved: "Currently watching",
+    watchLabel: "Ask a question, or name a thing you want watched", watchPlaceholder: "Can they put a bar next to my house?",
+    exampleIntro: "For example:", exampleAnd: "or", countSuffix: " / 100 characters",
+    startWatching: "Start watching",
+    helper: "Porch Light re-checks this against every new agenda item and tells you when something matches.",
+    saved: "Currently watching",
     firstRunTitle: "Start with one thing you care about.",
-    firstRunBody: "A watch is a phrase Porch Light checks against new agenda items. For example: \u201cstreet trees on Juniper Avenue.\u201d Type your own words above.",
+    firstRunBody: "A watch can be a question (\u201cCan they put a bar next to my house?\u201d) or a phrase (\u201cstreet trees on Juniper Avenue\u201d). Porch Light checks it against every new agenda item. Type your own words above.",
     privacy: "Your list stays on your device. We use it to answer, and never store it.",
     draftTitle: "Drafts are yours to finish and send.",
     draftExplainer: "Porch Light fills in the facts and the deadline from the source. The opinion is yours to write, and only you can send it.",
     startDraft: "\uFF0B Start a draft",
     remove: "Remove watch", added: "Watch added.", empty: "Enter something you want Porch Light to watch.",
-    tooLong: "That watch is too long (max 60 characters).", tooMany: "You can watch up to 10 things.", duplicate: "You're already watching that.",
+    tooLong: "That's a bit long. Try shortening it to 100 characters or fewer.", tooMany: "You can watch up to 10 things. Remove one to add another.", duplicate: "You're already watching that.",
     draftAdded: "A blank draft was added.", untitledDraft: "Untitled public comment", editedNow: "Edited now",
     shareConfirm: "A shared list was found in this link. Apply it? This replaces your current list.",
     shareApply: "Apply shared list", shareDismiss: "Keep my list", shareApplied: "Shared list applied.", shareDismissed: "Kept your list.",
@@ -119,16 +122,19 @@ const COPY = {
     toolsRegion: "Sus borradores y herramientas de escritura", watchRegion: "Iniciar y administrar temas de seguimiento",
     watchKicker: "Empiece aqu\u00ED", watchTitle: "D\u00EDgale a Porch Light lo que le importa.",
     watchIntro: "Describa un proyecto, lugar, inquietud o pregunta con sus propias palabras. Porch Light revisa el registro p\u00FAblico y le presenta los cambios pertinentes.",
-    watchLabel: "\u00BFQu\u00E9 debe vigilar Porch Light?", watchPlaceholder: "\u00BFPueden poner un bar al lado de mi casa?",
-    startWatching: "Empezar a vigilar", helper: "Use sus propias palabras. Porch Light sigue revisando.", saved: "En seguimiento",
+    watchLabel: "Haga una pregunta o nombre algo que quiera vigilar", watchPlaceholder: "\u00BFPueden poner un bar al lado de mi casa?",
+    exampleIntro: "Por ejemplo:", exampleAnd: "o", countSuffix: " / 100 caracteres",
+    startWatching: "Empezar a vigilar",
+    helper: "Porch Light lo compara con cada nuevo asunto de la agenda y le avisa cuando algo coincide.",
+    saved: "En seguimiento",
     firstRunTitle: "Empiece con algo que le importe.",
-    firstRunBody: "Un tema es una frase que Porch Light compara con nuevos asuntos de las agendas. Por ejemplo: \u201c\u00E1rboles en la avenida Juniper\u201D. Escriba sus propias palabras arriba.",
+    firstRunBody: "Un tema puede ser una pregunta (\u201c\u00BFPueden poner un bar al lado de mi casa?\u201D) o una frase (\u201c\u00E1rboles en la avenida Juniper\u201D). Porch Light lo compara con cada nuevo asunto de la agenda. Escriba sus propias palabras arriba.",
     privacy: "Su lista permanece en su dispositivo. La usamos para responderle y nunca la guardamos.",
     draftTitle: "Usted termina y env\u00EDa sus borradores.",
     draftExplainer: "Porch Light completa los hechos y el plazo a partir de la fuente. La opini\u00F3n la escribe usted y solamente usted puede enviarla.",
     startDraft: "\uFF0B Iniciar un borrador",
     remove: "Eliminar tema", added: "Tema agregado.", empty: "Escriba algo que desea que Porch Light vigile.",
-    tooLong: "Ese tema es demasiado largo (m\u00E1ximo 60 caracteres).", tooMany: "Puede vigilar hasta 10 cosas.", duplicate: "Ya est\u00E1 vigilando eso.",
+    tooLong: "Es un poco largo. Int\u00E9ntelo con 100 caracteres o menos.", tooMany: "Puede vigilar hasta 10 cosas. Elimine uno para agregar otro.", duplicate: "Ya est\u00E1 vigilando eso.",
     draftAdded: "Se agreg\u00F3 un borrador en blanco.", untitledDraft: "Comentario p\u00FAblico sin t\u00EDtulo", editedNow: "Editado ahora",
     shareConfirm: "Se encontr\u00F3 una lista compartida en este enlace. \u00BFAplicarla? Esto reemplaza su lista actual.",
     shareApply: "Aplicar lista compartida", shareDismiss: "Conservar mi lista", shareApplied: "Lista compartida aplicada.", shareDismissed: "Conserv\u00F3 su lista.",
@@ -612,8 +618,34 @@ function offerSharedList(terms) {
   host.lang = language;
 }
 
+/* ---- live character counter (mirrors the server cap; no amber, voice.md) ---- */
+function updateCharCount() {
+  const input = document.getElementById("watch-input");
+  const num = document.getElementById("watch-count-num");
+  const wrap = document.getElementById("watch-count");
+  if (!input || !num || !wrap) return;
+  const n = input.value.length;
+  num.textContent = String(n);
+  wrap.classList.toggle("over", n >= MAX_TERM_CHARS);
+}
+
 /* ---- events ---- */
 function wireEvents() {
+  const watchInput = document.getElementById("watch-input");
+  if (watchInput) watchInput.addEventListener("input", updateCharCount);
+  // Example chips fill the input so a first-time user sees both a question and a
+  // phrase are valid, then can edit from there.
+  document.querySelectorAll(".example-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const input = document.getElementById("watch-input");
+      if (!input) return;
+      // Strip the surrounding smart quotes from the chip label.
+      input.value = chip.textContent.replace(/^[\u201C"]|[\u201D"]$/g, "").trim();
+      updateCharCount();
+      input.focus();
+    });
+  });
+
   document.getElementById("watch-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const input = document.getElementById("watch-input");
@@ -622,6 +654,7 @@ function wireEvents() {
     if (err) { setStatus("watch-status", t(err)); input.focus(); return; }
     watches.push({ text: value, lang: language });
     input.value = "";
+    updateCharCount();
     saveWatchesToStorage();
     renderWatches();
     deriveAndRenderState();
@@ -673,6 +706,7 @@ async function boot() {
   watches = loadWatchesFromStorage();
   await loadChanged();
   setLanguage("en");
+  updateCharCount();
   renderWatches();
   deriveAndRenderState(false);   // new user (no terms) -> onboarding + reading log, ZERO cards
   if (shared && shared.length) offerSharedList(shared);

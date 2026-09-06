@@ -8,8 +8,12 @@ Caps, each a value AND a one-line rationale (style.md — guessed is fine, unlab
 is not; PoC judgment calls, Requirement 3.5):
   - MAX_TERMS = 10:  covers a real neighbor's set of concerns without handing the
                      model a huge prompt to sweep on every live request.
-  - MAX_TERM_CHARS = 60:  holds a phrase like "short-term rentals near the beach"
-                     while blocking a pasted essay.
+  - MAX_TERM_CHARS = 100:  the interface invites natural QUESTIONS ("Are they
+                     changing the parking rules on Victoria Avenue near the mall?"
+                     is 68 chars), so 60 was too tight and rejected exactly what the
+                     placeholder asks for. 100 holds a full question with headroom
+                     while still blocking a pasted paragraph. (Raised from 60 on
+                     evidence, not silently.)
 Character rule: a term must be printable and contain no control characters — an
 injected newline/escape is data we refuse at the door, not something we clean and
 pass on.
@@ -20,7 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 MAX_TERMS = 10
-MAX_TERM_CHARS = 60
+MAX_TERM_CHARS = 100
 
 
 @dataclass(frozen=True)

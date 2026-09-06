@@ -41,3 +41,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Local UI-inspection screenshots (not repo content)
+Claude outputs/
