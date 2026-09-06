@@ -595,3 +595,39 @@ and it is now consistent with everything else. Note the watcher does not use the
 rewrite floors anyway (it decides relevance, not reading level), so even the
 mismatch never touched a derived threshold. v2: assert temperature at the call site
 in a test so a future agent path cannot silently inherit a non-zero default again.
+
+---
+
+### Matches are model-judged, not quote-verified, and vary run to run
+
+- **What it is.** The watcher's matcher decides relevance with Nova Lite at
+  temperature 0.0 and writes a bilingual reason. It does not verify that the
+  reason quotes anything in the source. Reasons can hedge ("the Victoria Avenue
+  Corridor, which may include parking rules"), and identical queries against an
+  unchanged corpus return different match sets. Measured over five deployed
+  calls on one query: `[3685-4]` four times, `[3685-3, 3685-4]` once. The
+  variance is confined to marginal items.
+
+- **What it affects.** Every match shown in the UI. A judge running the same
+  query twice may see a different number of cards.
+
+- **Why we accepted it.** We built the fix and measured what it cost. The
+  design: `record_match` requires an `evidence_quote`, checked in code as a
+  verbatim substring of the item's stored source text `document_pages`, the
+  same ground truth the golden set uses), at two trust boundaries, dropping any
+  match that fails. It works offline; 39 tests pass including the drop-the-hedge
+  case. It does not work deployed. Requiring the model to quote source means
+  showing it source, roughly 2KB per item across nine items, which pushed the
+  agent loop past the 60-second Lambda budget: zero completions in ten minutes
+  after the change. Reverted rather than tuned, because tuning a timeout to make
+  a demo pass is how a limitation becomes a footnote. A model that judges
+  relevance and says so plainly is honest. A model that claims a receipt it
+  cannot produce is not, so the receipt claim is scoped to what the pipeline
+  actually verifies: extraction and rewriting, where the verifier checks entities
+  against source deterministically. Matching is model judgment, labeled as such.
+
+- **v2.** Branch `v2/evidence-quote` (commit e4ac450) holds the working
+  implementation. Making it viable needs the model to stop reading full source:
+  a deterministic term prefilter so the model ranks a short candidate list
+  rather than scanning everything, or per-item source narrowed to the matched
+  span. Either is a design change, not a tuning pass.
