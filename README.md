@@ -209,6 +209,33 @@ created, in order.
    The city is the source of truth (§13): losing the database costs nothing to
    correctness, only a re-ingest. There is no backup-restore path to maintain.
 
+4. **Watcher Lambda + its role (the request-time Nova Lite matcher behind the
+   Vercel `/api/watch` proxy).** Idle cost ~$0 (pay-per-invoke, no schedule):
+   ```bash
+   aws lambda delete-function --function-name porchlight-<env>-watcher
+   aws iam delete-role-policy --role-name porchlight-<env>-watcher-role --policy-name porchlight-watcher-least-priv
+   aws iam delete-role --role-name porchlight-<env>-watcher-role
+   ```
+
+5. **The Vercel-proxy IAM user and its ACCESS KEY (a long-lived credential — the
+   one standing secret in this build).** This key lives in Vercel env vars and can
+   invoke the watcher Lambda. Delete it whenever the live watcher is retired or the
+   key is rotated; the site keeps working in keyword-fallback mode without it:
+   ```bash
+   # list keys, then delete each, then the inline policy, then the user:
+   aws iam list-access-keys --user-name porchlight-vercel-watcher-invoke
+   aws iam delete-access-key --user-name porchlight-vercel-watcher-invoke --access-key-id <ACCESS_KEY_ID>
+   aws iam delete-user-policy --user-name porchlight-vercel-watcher-invoke --policy-name invoke-watcher-only
+   aws iam delete-user --user-name porchlight-vercel-watcher-invoke
+   # and remove the three PORCHLIGHT_AWS_* env vars from the Vercel project.
+   ```
+
+6. **Deploy-artifacts S3 bucket (holds the watcher zip; a few cents/month).**
+   ```bash
+   aws s3 rm s3://porchlight-<env>-deploy-<account> --recursive
+   aws s3api delete-bucket --bucket porchlight-<env>-deploy-<account>
+   ```
+
 Keep / park / take-down decision (per §13) is made deliberately, not in the moment;
 the monthly costs above are the inputs.
 

@@ -510,41 +510,39 @@ Two residual limitations this surfaced on real data:
   request-time seam). Revisit only if Spec 6 lands early with time to spare.
 
 
-### Watcher live endpoint: deployed and proven, but the browser path falls back to keyword
+### Watcher live endpoint: deployed, proven, and reached via a Vercel proxy (403 routed around)
 
-**Outcome of the Block B live-wire attempt (updated from the pre-attempt fallback).**
-The watcher Lambda IS deployed and the real Nova Lite matcher runs at request time —
-proven by direct invoke (real matches with the model's own bilingual reasons,
-`source: aurora`). Two account constraints mean the BROWSER can't reach it yet, so the
-page falls back to the keyword filter and says so:
+The watcher Lambda is deployed and the real Nova Lite matcher runs at request time.
+The account blocks public (`AuthType=NONE`) Function URLs, so instead of a public URL
+the browser calls a **same-origin Vercel serverless proxy at `/api/watch`**, which
+invokes the Lambda directly with a dedicated, least-privilege IAM user
+(`lambda:InvokeFunction` on the one function ARN; IAM simulation confirms `allowed` on
+the watcher, `implicitDeny` on any other function). The public Function URL and its
+public-invoke permission were deleted — nothing public remains on the Lambda.
 
-1. **Public Function URL returns 403.** The resource policy is correct
-   (`Principal:*`, `InvokeFunctionUrl`, `AuthType:NONE`), the CORS preflight returns
-   200, and direct `Invoke` works — but the public URL is Forbidden. This account
-   blocks `AuthType=NONE` public Function URLs (an org/SCP guardrail I can't lift).
-   The page calls the URL and, on the 403 (or any timeout/CORS/degraded), falls back
-   to the transparent keyword filter and states the mode in both languages. Set
-   `web/config.js` `PORCHLIGHT_WATCHER_URL` when an account/proxy serves it publicly;
-   the live path then lights up with no page change.
-2. **Reserved concurrency could not be set.** The account's total concurrency limit
-   is 10, and AWS requires ≥10 unreserved, so reserving 2 (addition 4) is rejected.
-   The account-wide cap of 10 is the ceiling instead; the in-Lambda per-IP counter is
-   the only in-app layer (see next entry).
+- **Proven end to end** through the proxy IAM user's own credentials: 200 with real
+  matches (`source: aurora`, the model's own bilingual reasons). NO-STORE re-proven
+  through the proxy path: a proxy-canary term grep of the Lambda log group returns 0
+  for every fragment; the proxy logs only static strings (never the body/terms).
+- **Requires** three Vercel env vars (`PORCHLIGHT_AWS_ACCESS_KEY_ID`,
+  `PORCHLIGHT_AWS_SECRET_ACCESS_KEY`, `PORCHLIGHT_AWS_REGION`) — set in the Vercel
+  dashboard, never in the repo. The access key is a long-lived credential; its
+  deletion is in the README wind-down list.
+- **Fallback intact.** If the proxy fails, times out, or returns degraded, the page
+  falls back to the keyword filter over already-read-and-verified items and says so,
+  in both languages. Never a blank list, never a hanging spinner.
+- **Reserved concurrency could not be set.** The account's total concurrency limit is
+  10 and AWS requires ≥10 unreserved, so reserving 2 (addition 4) is rejected. The
+  account-wide cap of 10 is the ceiling; the proxy's per-IP rate limit is the in-app
+  layer (see next entry).
 
-- **What the page does today.** Live mode when the endpoint answers; otherwise the
-  keyword filter over items Porch Light has already read and verified, with a banner
-  saying which mode produced the matches. Never a blank list, never a hanging spinner.
-- **What was proven regardless.** The agent runs at request time; NO-STORE holds over
-  HTTP (canary proof below); budget gate + fail-closed; allowlist + turn cap; CORS
-  locked to the Vercel origin.
+### Watcher rate limit is per-instance (proxy), not durable
 
-### Watcher IP rate counter resets on cold start (second layer only)
-
-The per-IP rate limit in the watcher Lambda (10 req / 60s / IP) is an in-memory
-per-instance window, so it resets when a new execution environment cold-starts and
-does not coordinate across concurrent instances. It is a SECOND layer; the intended
-primary cap was reserved concurrency (blocked, above), leaving the account-wide
-concurrency limit of 10 as the real ceiling. A durable per-IP limit (DynamoDB or API
+The per-IP rate limit now lives in the Vercel proxy (10 req / 60s / IP), a better
+choke point than the old in-Lambda per-instance counter because the proxy sees the
+true client IP. It is still in-memory per proxy instance, so under concurrency Vercel
+may run several instances and the effective limit is looser than 10/60s globally. It
+is a courtesy throttle, not a hard guarantee; a durable limit (Vercel KV or an API
 Gateway usage plan) is the v2 fix. Acceptable at demo scale.
 
 ---
