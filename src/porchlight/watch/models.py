@@ -50,6 +50,12 @@ class WatchMatch:
     item_id: str
     reason: BilingualReason
     matched_terms: tuple[str, ...] = ()
+    # A short phrase the model quotes to justify the match. It is CODE-CHECKED to be
+    # a verbatim substring of the item's STORED SOURCE TEXT (not the summary) before
+    # a match is kept — the receipt on the match, matching Porch Light's claim that
+    # every match cites the record. A match whose quote is not in the source is
+    # dropped (never fabricated).
+    evidence_quote: str = ""
 
 
 @dataclass(frozen=True)
