@@ -44,3 +44,11 @@ Thumbs.db
 
 # Local UI-inspection screenshots (not repo content)
 Claude outputs/
+
+# Watcher Lambda (Block B) — account-bearing outputs, build artifacts (regenerable)
+deploy/watcher_lambda/_*.json
+deploy/watcher_lambda/watcher_lambda.zip
+deploy/watcher_lambda/_stage/
+deploy/watcher_lambda/items.json
+!deploy/watcher_lambda/_policy.json.example
+!deploy/watcher_lambda/_trust.json.example

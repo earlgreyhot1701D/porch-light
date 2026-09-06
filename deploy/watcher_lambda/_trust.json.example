@@ -1,0 +1,11 @@
+{
+  "_comment": "Trust policy for porchlight-dev-watcher-role — Lambda service assumes it. Copy to _trust.json (gitignored).",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "lambda.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}

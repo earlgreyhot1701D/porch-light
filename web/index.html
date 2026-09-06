@@ -74,11 +74,14 @@
           <p class="watch-count" id="watch-count" aria-live="polite"><span id="watch-count-num">0</span><span data-i18n="countSuffix"> / 100 characters</span></p>
           <p class="helper" id="watch-helper" data-i18n="helper">Porch Light re-checks this against every new agenda item and tells you when something matches.</p>
           <p class="form-status" id="watch-status" aria-live="polite"></p>
+          <p class="watch-mode" id="watch-mode" hidden></p>
         </form>
         <div class="watch-current">
           <p class="saved-title" id="saved-title" data-i18n="saved">Currently watching</p>
           <ul class="watch-list" id="watch-list"></ul>
           <p class="privacy"><span class="lock" aria-hidden="true"></span><span data-i18n="privacy">Your list stays on your device. We use it to answer, and never store it.</span></p>
+          <button type="button" class="clear-all" id="clear-all" data-i18n="clearAll">Clear everything on this device</button>
+          <p class="form-status" id="clear-status" aria-live="polite"></p>
         </div>
       </section>
 
@@ -190,6 +193,7 @@
     </footer>
   </div>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

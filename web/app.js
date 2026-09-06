@@ -67,6 +67,9 @@ const COPY = {
     // KNOWN-LIMITATIONS "Watcher relevance in the web demo"). Wired only in the
     // fallback posture so a judge is never misled that the browser ran the model.
     demoScope: "This demo checks your watch against agenda items Porch Light has already read and verified.",
+    clearAll: "Clear everything on this device",
+    clearConfirm: "Clear your watch list, drafts, and this link's shared terms from this device? This cannot be undone.",
+    clearYes: "Clear everything", clearNo: "Keep my data", cleared: "Cleared. This device is back to a fresh start.",
     startWatching: "Start watching",
     helper: "Porch Light re-checks this against every new agenda item and tells you when something matches.",
     saved: "Currently watching",
@@ -79,6 +82,10 @@ const COPY = {
     remove: "Remove watch", added: "Watch added.", empty: "Enter something you want Porch Light to watch.",
     matchCountOne: "1 item matches what you're watching.", matchCountMany: "{n} items match what you're watching.",
     noMatchTitle: "Nothing matches that yet.", noMatchBody: "We read the City Council and Planning Commission agendas and found nothing matching \u201C{term}\u201D. We'll keep checking.",
+    checkingLive: "Checking the live watcher\u2026",
+    modeLive: "Matched by the live Nova Lite watcher, reading the city's agenda items.",
+    modeKeyword: "Matched by keyword against agenda items Porch Light has already read and verified.",
+    modeFallback: "The live watcher was unavailable, so this matched by keyword against items Porch Light has already read and verified.",
     tooLong: "That's a bit long. Try shortening it to 100 characters or fewer.", tooMany: "You can watch up to 10 things. Remove one to add another.", duplicate: "You're already watching that.",
     draftAdded: "A blank draft was added.", untitledDraft: "Untitled public comment", editedNow: "Edited now",
     shareConfirm: "A shared list was found in this link. Apply it? This replaces your current list.",
@@ -131,6 +138,9 @@ const COPY = {
     watchLabel: "Haga una pregunta o nombre algo que quiera vigilar", watchPlaceholder: "\u00BFPueden poner un bar al lado de mi casa?",
     exampleIntro: "Por ejemplo:", exampleAnd: "o", countSuffix: " / 100 caracteres",
     demoScope: "Esta demostraci\u00F3n compara su tema con los asuntos de la agenda que Porch Light ya ley\u00F3 y verific\u00F3.",
+    clearAll: "Borrar todo en este dispositivo",
+    clearConfirm: "\u00BFBorrar su lista de temas, sus borradores y los temas compartidos de este enlace de este dispositivo? Esto no se puede deshacer.",
+    clearYes: "Borrar todo", clearNo: "Conservar mis datos", cleared: "Borrado. Este dispositivo vuelve a empezar de cero.",
     startWatching: "Empezar a vigilar",
     helper: "Porch Light lo compara con cada nuevo asunto de la agenda y le avisa cuando algo coincide.",
     saved: "En seguimiento",
@@ -143,6 +153,10 @@ const COPY = {
     remove: "Eliminar tema", added: "Tema agregado.", empty: "Escriba algo que desea que Porch Light vigile.",
     matchCountOne: "1 punto coincide con lo que usted sigue.", matchCountMany: "{n} puntos coinciden con lo que usted sigue.",
     noMatchTitle: "Todav\u00EDa no hay coincidencias.", noMatchBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n y no encontramos nada que coincida con \u201C{term}\u201D. Seguiremos revisando.",
+    checkingLive: "Consultando el watcher en vivo\u2026",
+    modeLive: "Coincidencia del watcher Nova Lite en vivo, leyendo los asuntos de la agenda de la ciudad.",
+    modeKeyword: "Coincidencia por palabra clave con los asuntos de la agenda que Porch Light ya ley\u00F3 y verific\u00F3.",
+    modeFallback: "El watcher en vivo no estuvo disponible, as\u00ED que la coincidencia fue por palabra clave con los asuntos que Porch Light ya ley\u00F3 y verific\u00F3.",
     tooLong: "Es un poco largo. Int\u00E9ntelo con 100 caracteres o menos.", tooMany: "Puede vigilar hasta 10 cosas. Elimine uno para agregar otro.", duplicate: "Ya est\u00E1 vigilando eso.",
     draftAdded: "Se agreg\u00F3 un borrador en blanco.", untitledDraft: "Comentario p\u00FAblico sin t\u00EDtulo", editedNow: "Editado ahora",
     shareConfirm: "Se encontr\u00F3 una lista compartida en este enlace. \u00BFAplicarla? Esto reemplaza su lista actual.",
@@ -246,7 +260,7 @@ function itemMatchesTerm(item, term) {
     return re.test(hay);
   });
 }
-function matchedItems() {
+function keywordMatches() {
   if (!watches.length) return [];
   const terms = watches.map((w) => w.text);
   const out = [];
@@ -257,8 +271,66 @@ function matchedItems() {
   return out;
 }
 
+/* ---- live vs keyword mode ----
+ * `liveResult` caches the last successful live-matcher answer, keyed to the exact
+ * watchlist it was computed for. When it matches the current list, matchedItems()
+ * returns the model's matches (with the model's own reasons). Otherwise we fall
+ * back to the transparent keyword filter. The page always states which mode it is
+ * in (addition 5), never a blank list, never a hanging spinner. */
+let liveResult = null; // { key, matches:[{item_id,reason:{en,es},matched_terms}], source }
+let watchMode = "keyword"; // "live" | "keyword"
+
+function _watchKey() {
+  return watches.map((w) => w.text).join("\u0001");
+}
+
+function matchedItems() {
+  if (!watches.length) return [];
+  if (watchMode === "live" && liveResult && liveResult.key === _watchKey()) {
+    const byId = new Map(changed.map((it) => [it.id, it]));
+    const out = [];
+    for (const m of liveResult.matches) {
+      const item = byId.get(m.item_id);
+      if (item) out.push({ item, terms: m.matched_terms || [], liveReason: m.reason });
+    }
+    return out;
+  }
+  return keywordMatches();
+}
+
+const WATCHER_URL = (window.PORCHLIGHT_CONFIG && window.PORCHLIGHT_CONFIG.PORCHLIGHT_WATCHER_URL) || "";
+const LIVE_TIMEOUT_MS = 8000;
+
+/* Call the deployed watcher. Resolves to {ok, matches, source} on a usable answer,
+ * or {ok:false, reason} on any failure/timeout/CORS/degraded — the caller then
+ * falls back to keyword mode. Never throws. Terms go in the POST BODY only. */
+async function callLiveWatcher(terms) {
+  if (!WATCHER_URL) return { ok: false, reason: "no_endpoint" };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), LIVE_TIMEOUT_MS);
+  try {
+    const res = await fetch(WATCHER_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ terms }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { ok: false, reason: "http_" + res.status };
+    const data = await res.json();
+    if (data.degraded) return { ok: false, reason: data.reason || "degraded" };
+    return { ok: true, matches: data.matches || [], source: data.source || "aurora" };
+  } catch (err) {
+    clearTimeout(timer);
+    return { ok: false, reason: "network_or_cors" };
+  }
+}
+
 /* ---- changed cards (real items from sample.json) ---- */
-function createChangeCard(item, matchedTerms) {
+function createChangeCard(match) {
+  const item = match.item;
+  const matchedTerms = match.terms;
+  const liveReason = match.liveReason;  // the model's own reason, when live mode
   const card = document.createElement("article");
   card.className = "change-card " + (item.deadline_actionable ? "hot" : "calm");
   card.lang = language;
@@ -299,17 +371,24 @@ function createChangeCard(item, matchedTerms) {
     card.appendChild(note);
   }
 
-  // "Why this matched" — names the watch term(s) that brought this item in. Every
+  // "Why this matched". In LIVE mode this is the model's own bilingual reason
+  // (emitted with the match). In keyword mode it names the watch term(s). Every
   // shown card keeps this line (the product never shows a match without its reason).
-  if (matchedTerms && matchedTerms.length) {
-    const match = document.createElement("p");
-    match.className = "watch-match";
+  if (liveReason && (liveReason.en || liveReason.es)) {
+    const m = document.createElement("p");
+    m.className = "watch-match";
+    m.textContent = liveReason[language] || liveReason.en || liveReason.es;
+    m.lang = language;
+    card.appendChild(m);
+  } else if (matchedTerms && matchedTerms.length) {
+    const m = document.createElement("p");
+    m.className = "watch-match";
     const quoted = matchedTerms.map((x) => "\u201C" + x + "\u201D").join(", ");
-    match.textContent = (language === "es")
+    m.textContent = (language === "es")
       ? "Usted est\u00E1 siguiendo: " + quoted + "."
       : "You're watching: " + quoted + ".";
-    match.lang = language;
-    card.appendChild(match);
+    m.lang = language;
+    card.appendChild(m);
   }
 
   // Scale note.
@@ -451,7 +530,7 @@ function renderChanged() {
   const list = document.getElementById("change-list");
   if (!list) return;
   const matches = matchedItems();
-  list.replaceChildren(...matches.map((m) => createChangeCard(m.item, m.terms)));
+  list.replaceChildren(...matches.map((m) => createChangeCard(m)));
 }
 
 /* ---- the three states, driven by the watchlist (never a shared feed) ----
@@ -497,6 +576,57 @@ function deriveAndRenderState(announce) {
  * status line (A2). On a match, focus the results heading (scrolls it into view)
  * and announce the count via the aria-live region. On no match, set the quiet-state
  * copy to a plain "nothing matches that yet" naming the term, and focus it. */
+
+/* runWatch: the submit orchestrator. Shows a visible working state (addition 6),
+ * tries the live watcher, sets live/keyword mode, renders, announces completion,
+ * and shows a mode banner. On ANY live failure it falls back to the keyword filter
+ * and says so — never a blank list, never a hanging spinner (addition 5). */
+async function runWatch(addedTerm) {
+  const terms = watches.map((w) => w.text);
+  const busy = WATCHER_URL ? true : false;
+  if (busy) {
+    setStatus("watch-status", t("checkingLive"));
+    setBusy(true);
+  }
+  let mode = "keyword";
+  let source = "keyword";
+  if (WATCHER_URL) {
+    const r = await callLiveWatcher(terms);
+    if (r.ok) {
+      liveResult = { key: _watchKey(), matches: r.matches, source: r.source };
+      mode = "live";
+      source = r.source;
+    } else {
+      liveResult = null;   // fall back to keyword
+      mode = "keyword";
+      source = "keyword-fallback";
+    }
+  }
+  watchMode = mode;
+  setBusy(false);
+  renderModeBanner(mode, source);
+  deriveAndRenderState(false);
+  announceResult(addedTerm);
+}
+
+function setBusy(on) {
+  const btn = document.querySelector("#watch-form button[type=submit]");
+  if (btn) { btn.disabled = on; btn.setAttribute("aria-busy", String(on)); }
+}
+
+/* The mode banner names which engine answered, both languages (addition 5). */
+function renderModeBanner(mode, source) {
+  const el = document.getElementById("watch-mode");
+  if (!el) return;
+  let key;
+  if (mode === "live") key = "modeLive";
+  else if (source === "keyword-fallback") key = "modeFallback";
+  else key = "modeKeyword";
+  el.textContent = t(key);
+  el.lang = language;
+  el.hidden = false;
+}
+
 function announceResult(term) {
   const matches = matchedItems();
   const status = document.getElementById("state-status");   // aria-live=polite
@@ -699,13 +829,11 @@ function wireEvents() {
     const err = validateNewTerm(value);
     if (err) { setStatus("watch-status", t(err)); input.focus(); return; }
     watches.push({ text: value, lang: language });
-    const addedTerm = value;
     input.value = "";
     updateCharCount();
     saveWatchesToStorage();
     renderWatches();
-    deriveAndRenderState(false);   // render cards/quiet without stealing the announce
-    announceResult(addedTerm);
+    runWatch(value);   // async: loading -> live call (fallback to keyword) -> announce
   });
   document.getElementById("history-toggle").addEventListener("click", (event) => {
     const button = event.currentTarget;
@@ -726,6 +854,45 @@ function wireEvents() {
   document.getElementById("lang-es").addEventListener("click", () => setLanguage("es"));
   document.getElementById("state-quiet").addEventListener("click", () => deriveAndRenderState());
   document.getElementById("state-changed").addEventListener("click", () => deriveAndRenderState());
+
+  // Clear-everything: confirm, then wipe watchlist + drafts + URL fragment +
+  // localStorage back to the true new-user state (addition 8). A privacy-first
+  // product must let a person clear their own data without opening devtools.
+  const clearBtn = document.getElementById("clear-all");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      const host = document.getElementById("clear-status");
+      const wrap = document.createElement("span");
+      wrap.className = "clear-confirm";
+      const msg = document.createElement("span");
+      msg.textContent = t("clearConfirm"); msg.lang = language;
+      const yes = document.createElement("button");
+      yes.type = "button"; yes.className = "text-link"; yes.textContent = t("clearYes"); yes.lang = language;
+      yes.addEventListener("click", clearEverything);
+      const no = document.createElement("button");
+      no.type = "button"; no.className = "text-link"; no.textContent = t("clearNo"); no.lang = language;
+      no.addEventListener("click", () => { host.replaceChildren(); });
+      wrap.append(msg, yes, no);
+      host.replaceChildren(wrap);
+    });
+  }
+}
+
+function clearEverything() {
+  watches = [];
+  drafts = [];
+  liveResult = null;
+  watchMode = "keyword";
+  commentDraft.position = commentDraft.matters = commentDraft.ask = "";
+  try { localStorage.removeItem(WATCH_KEY); } catch (e) { /* storage may be blocked */ }
+  // Wipe the URL fragment (shared terms) without reloading.
+  history.replaceState(null, "", location.pathname + location.search);
+  const modeEl = document.getElementById("watch-mode");
+  if (modeEl) modeEl.hidden = true;
+  renderWatches();
+  renderDrafts();
+  deriveAndRenderState(false);   // -> true new-user onboarding state
+  setStatus("clear-status", t("cleared"));
 }
 
 /* ---- boot ---- */

@@ -377,6 +377,11 @@ h3 { margin: 0; font-size: 1.25rem; }
 .example-chip:hover { border-color: var(--primary); }
 .example-and { color: var(--muted); }
 .watch-count { margin: .35rem 0 0; color: var(--muted); font-size: .74rem; }
+.watch-mode { margin: .4rem 0 0; padding: .4rem .6rem; border-radius: .4rem; border: 1px solid var(--line); background: rgba(94,211,180,.05); color: var(--muted); font-size: .78rem; }
+.clear-all { margin: .7rem 0 0; padding: .4rem 0; background: transparent; border: 0; color: var(--link); font-size: .78rem; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; }
+.clear-all:hover { text-decoration-thickness: 2px; }
+.clear-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0 0; }
+.primary-button[aria-busy="true"] { opacity: .7; cursor: progress; }
 /* Over-limit emphasis must NOT use --deadline amber (reserved for actionable comment
    deadlines only, voice.md). Use the ink color + weight so it reads as "attention"
    and still survives greyscale via the weight change. */

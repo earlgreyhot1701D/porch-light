@@ -178,7 +178,11 @@ def build_agent(model_id: str, tools: list):
     """Assemble the Strands watcher agent (lazy SDK import). Temp ~0."""
     from strands import Agent
 
-    return Agent(model=model_id, tools=tools, system_prompt=_SYSTEM_PROMPT)
+    # callback_handler=None DISABLES Strands' default stdout trace. That trace prints
+    # the model's <thinking>, which QUOTES the watch terms — on Lambda stdout goes to
+    # CloudWatch, so the default handler is a no-store leak (never.md #8). The terms
+    # must never reach logs by ANY path; silencing the callback closes the stdout one.
+    return Agent(model=model_id, tools=tools, system_prompt=_SYSTEM_PROMPT, callback_handler=None)
 
 
 def match_watchlist(

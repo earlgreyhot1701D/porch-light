@@ -1,0 +1,30 @@
+{
+  "_comment": "Least-privilege inline policy for porchlight-dev-watcher-role. Copy to _policy.json (gitignored) and replace <AWS_ACCOUNT_ID>. InvokeModel on Nova Lite ONLY; rds-data read + secret read for the budget gate and the Aurora-first items read; own log group only. NO write to documents/items, no S3, no other model.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeNovaLiteOnly",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": ["arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0"]
+    },
+    {
+      "Sid": "RdsDataApiReadForBudgetAndItems",
+      "Effect": "Allow",
+      "Action": ["rds-data:ExecuteStatement"],
+      "Resource": "arn:aws:rds:us-east-1:<AWS_ACCOUNT_ID>:cluster:porchlight-dev"
+    },
+    {
+      "Sid": "ReadRdsManagedSecret",
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:rds!cluster-*"
+    },
+    {
+      "Sid": "OwnLogGroupOnly",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-1:<AWS_ACCOUNT_ID>:log-group:/aws/lambda/porchlight-dev-watcher:*"
+    }
+  ]
+}

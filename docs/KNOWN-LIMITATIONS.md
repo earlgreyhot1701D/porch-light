@@ -510,12 +510,51 @@ Two residual limitations this surfaced on real data:
   request-time seam). Revisit only if Spec 6 lands early with time to spare.
 
 
-### Watcher relevance in the web demo (FALLBACK — written before the live-wire attempt)
+### Watcher live endpoint: deployed and proven, but the browser path falls back to keyword
 
-This entry is written BEFORE attempting to live-wire the watcher (Block B), so the
-honest fallback is on record no matter how that attempt lands — the same discipline
-as the network-egress and Option-C floor entries. If the live endpoint ships, this
-entry is trimmed to describe it; if the timebox blows, this is what we ship.
+**Outcome of the Block B live-wire attempt (updated from the pre-attempt fallback).**
+The watcher Lambda IS deployed and the real Nova Lite matcher runs at request time —
+proven by direct invoke (real matches with the model's own bilingual reasons,
+`source: aurora`). Two account constraints mean the BROWSER can't reach it yet, so the
+page falls back to the keyword filter and says so:
+
+1. **Public Function URL returns 403.** The resource policy is correct
+   (`Principal:*`, `InvokeFunctionUrl`, `AuthType:NONE`), the CORS preflight returns
+   200, and direct `Invoke` works — but the public URL is Forbidden. This account
+   blocks `AuthType=NONE` public Function URLs (an org/SCP guardrail I can't lift).
+   The page calls the URL and, on the 403 (or any timeout/CORS/degraded), falls back
+   to the transparent keyword filter and states the mode in both languages. Set
+   `web/config.js` `PORCHLIGHT_WATCHER_URL` when an account/proxy serves it publicly;
+   the live path then lights up with no page change.
+2. **Reserved concurrency could not be set.** The account's total concurrency limit
+   is 10, and AWS requires ≥10 unreserved, so reserving 2 (addition 4) is rejected.
+   The account-wide cap of 10 is the ceiling instead; the in-Lambda per-IP counter is
+   the only in-app layer (see next entry).
+
+- **What the page does today.** Live mode when the endpoint answers; otherwise the
+  keyword filter over items Porch Light has already read and verified, with a banner
+  saying which mode produced the matches. Never a blank list, never a hanging spinner.
+- **What was proven regardless.** The agent runs at request time; NO-STORE holds over
+  HTTP (canary proof below); budget gate + fail-closed; allowlist + turn cap; CORS
+  locked to the Vercel origin.
+
+### Watcher IP rate counter resets on cold start (second layer only)
+
+The per-IP rate limit in the watcher Lambda (10 req / 60s / IP) is an in-memory
+per-instance window, so it resets when a new execution environment cold-starts and
+does not coordinate across concurrent instances. It is a SECOND layer; the intended
+primary cap was reserved concurrency (blocked, above), leaving the account-wide
+concurrency limit of 10 as the real ceiling. A durable per-IP limit (DynamoDB or API
+Gateway usage plan) is the v2 fix. Acceptable at demo scale.
+
+---
+
+### (superseded) Watcher relevance fallback — pre-attempt note, kept for the record
+
+This was written BEFORE the live-wire attempt, on the discipline that the honest
+fallback should exist no matter how the attempt landed. The attempt landed as the
+entry above describes (deployed + proven, browser falls back to keyword on the 403).
+Kept for the record.
 
 - **What it is.** The public web surface lets a resident type a watch term and see
   which stored agenda items match. In the FALLBACK posture, that match is a
