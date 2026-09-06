@@ -298,7 +298,12 @@ function matchedItems() {
   return keywordMatches();
 }
 
-const WATCHER_URL = (window.PORCHLIGHT_CONFIG && window.PORCHLIGHT_CONFIG.PORCHLIGHT_WATCHER_URL) || "";
+// Same-origin proxy by default (Vercel /api/watch invokes the watcher Lambda; no
+// CORS). config.js may override for local testing; "" disables the live path
+// (keyword-only). The page always falls back to the keyword filter on any failure.
+const WATCHER_URL = (window.PORCHLIGHT_CONFIG && typeof window.PORCHLIGHT_CONFIG.PORCHLIGHT_WATCHER_URL === "string")
+  ? window.PORCHLIGHT_CONFIG.PORCHLIGHT_WATCHER_URL
+  : "/api/watch";
 const LIVE_TIMEOUT_MS = 8000;
 
 /* Call the deployed watcher. Resolves to {ok, matches, source} on a usable answer,

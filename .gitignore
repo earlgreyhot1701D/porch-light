@@ -52,3 +52,7 @@ deploy/watcher_lambda/_stage/
 deploy/watcher_lambda/items.json
 !deploy/watcher_lambda/_policy.json.example
 !deploy/watcher_lambda/_trust.json.example
+
+# Node deps for the Vercel proxy
+node_modules/
+

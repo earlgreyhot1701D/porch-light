@@ -10,6 +10,6 @@
  * also keeps any account-identifying host out of the repo). Commit config.example.js.
  */
 window.PORCHLIGHT_CONFIG = {
-  // e.g. "https://xxxxxxxx.lambda-url.us-east-1.on.aws/"  — leave "" for keyword-only.
-  PORCHLIGHT_WATCHER_URL: ""
+  // "/api/watch" = the same-origin Vercel proxy (default). "" = keyword-only.
+  PORCHLIGHT_WATCHER_URL: "/api/watch"
 };
