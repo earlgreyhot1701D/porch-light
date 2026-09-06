@@ -57,24 +57,16 @@ def test_model_failure_yields_degraded_never_fabricates(monkeypatch):
     assert not ans.is_quiet  # degraded is DISTINCT from quiet
 
 
-# Source text (not summaries) is what the session now holds and the evidence quote
-# is checked against (Bug 7).
-_SRC = {"3685-6": "Approve the First Amendment to the Master Services Agreement with Cognizant Worldwide Limited."}
-
-
 def test_record_match_tool_ignores_unknown_item_id():
     # The tool never fabricates a match for an item that was not shown.
-    session = MatchSession(items=dict(_SRC), matches=[])
+    session = MatchSession(items={"3685-6": "contract"}, matches=[])
     tools = {t.tool_name: t._tool_func for t in M._build_tools(session)}
-    tools["record_match"](item_id="9999-1", matched_terms=["x"], reason_en="a", reason_es="b",
-                          evidence_quote="Master Services Agreement")
+    tools["record_match"](item_id="9999-1", matched_terms=["x"], reason_en="a", reason_es="b")
     assert session.matches == []
-    tools["record_match"](item_id="3685-6", matched_terms=["contract"], reason_en="a", reason_es="b",
-                          evidence_quote="Master Services Agreement with Cognizant")
+    tools["record_match"](item_id="3685-6", matched_terms=["contract"], reason_en="a", reason_es="b")
     assert len(session.matches) == 1
     assert session.matches[0].item_id == "3685-6"
     assert session.matches[0].reason.en and session.matches[0].reason.es
-    assert session.matches[0].evidence_quote
 
 
 def test_is_recordable_match_predicate():
@@ -87,40 +79,15 @@ def test_is_recordable_match_predicate():
     assert is_recordable_match(None) is False
 
 
-def test_quote_in_source_checks_verbatim_against_source():
-    # Bug 7: the quote must be a verbatim (whitespace-collapsed) substring of source,
-    # long enough to prove something. Case/whitespace-insensitive, not paraphrase.
-    from porchlight.watch.matcher import quote_in_source
-    src = "The City Council will consider changes to parking rules in city-owned lots."
-    assert quote_in_source("parking rules in city-owned lots", src) is True
-    assert quote_in_source("PARKING RULES in  city-owned lots", src) is True  # ws/case
-    assert quote_in_source("Victoria Avenue", src) is False                    # not present
-    assert quote_in_source("parking", src) is False                            # too short (<12)
-    assert quote_in_source("", src) is False
-
-
 def test_record_match_with_empty_matched_terms_is_not_recorded():
-    # Bug 1: no matched terms is not a match, regardless of reason text.
-    session = MatchSession(items={"3685-3": "an item about zoning, not parking, at length"}, matches=[])
+    # Bug 1, site (a): the model calling record_match with no matched terms (a
+    # "...not parking." non-match) records NOTHING, regardless of the reason text.
+    session = MatchSession(items={"3685-3": "an item about zoning, not parking"}, matches=[])
     tools = {t.tool_name: t._tool_func for t in M._build_tools(session)}
-    tools["record_match"](item_id="3685-3", matched_terms=[], reason_en="This is not parking.",
-                          reason_es="No es estacionamiento.", evidence_quote="item about zoning")
+    tools["record_match"](item_id="3685-3", matched_terms=[], reason_en="This is not parking.", reason_es="No es estacionamiento.")
     assert session.matches == []
-
-
-def test_record_match_dropped_when_quote_not_in_source():
-    # Bug 7: a hedge match whose quote is not verbatim in the item's source is dropped.
-    session = MatchSession(items={"3685-4": "Amend Section 16.210.070 governing city parking lots."}, matches=[])
-    tools = {t.tool_name: t._tool_func for t in M._build_tools(session)}
-    # The model hedges with a phrase NOT in the source ("may include Victoria Avenue").
-    tools["record_match"](item_id="3685-4", matched_terms=["Victoria Avenue"], reason_en="may include Victoria Avenue",
-                          reason_es="puede incluir", evidence_quote="which may include Victoria Avenue")
+    tools["record_match"](item_id="3685-3", matched_terms=["  "], reason_en="unrelated", reason_es="no relacionado")
     assert session.matches == []
-    # A real quote from the source is kept.
-    tools["record_match"](item_id="3685-4", matched_terms=["parking"], reason_en="about parking lots",
-                          reason_es="sobre estacionamiento", evidence_quote="governing city parking lots")
-    assert len(session.matches) == 1
-    assert session.matches[0].evidence_quote == "governing city parking lots"
 
 
 # --- Live (captured items + a real model): bias-to-show, injection-as-data ---

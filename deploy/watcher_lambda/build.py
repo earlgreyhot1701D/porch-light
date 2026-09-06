@@ -52,32 +52,20 @@ def bake_items() -> tuple[int, str]:
             from db import data_api
 
             be = data_api.get_backend()
-            # Bake the STORED SOURCE text (document_pages over each item's page range)
-            # — the ground truth the evidence_quote is checked against (Bug 7), same
-            # as the live Aurora path. en_text kept for reference only.
             r = be.query(
-                "SELECT i.item_id, ir.en_text, "
-                " (SELECT string_agg(dp.text, E'\n' ORDER BY dp.page_number) "
-                "    FROM document_pages dp "
-                "   WHERE dp.document_id = i.document_id "
-                "     AND dp.page_number BETWEEN i.page_start AND i.page_end) AS source_text "
-                "FROM item_rewrites ir JOIN items i ON i.item_id = ir.item_id "
+                "SELECT i.item_id, ir.en_text FROM item_rewrites ir "
+                "JOIN items i ON i.item_id = ir.item_id "
                 "WHERE ir.en_verified = true AND ir.en_text IS NOT NULL"
             )
-            rows = [{"item_id": row["item_id"], "en_text": row["en_text"],
-                     "source_text": row["source_text"] or ""}
-                    for row in r.rows if row["source_text"]]
+            rows = [{"item_id": row["item_id"], "en_text": row["en_text"]} for row in r.rows]
         except Exception as exc:
             print(f"  (Aurora bake failed: {type(exc).__name__}; falling back to web/sample.json)")
             rows = []
     if not rows:
         source = "web/sample.json"
         sample = json.loads((ROOT / "web" / "sample.json").read_text(encoding="utf-8"))
-        # Fallback only: sample.json has no source text, so the baked source is the
-        # summary. The evidence check then runs against the summary in this degraded
-        # bake — noted; the Aurora bake (the real path) uses true source text.
-        rows = [{"item_id": c["id"], "en_text": c["heading"]["en"], "source_text": c["heading"]["en"]}
-                for c in sample.get("changed", [])]
+        # sample.json's heading.en IS the verified summary text the matcher reads.
+        rows = [{"item_id": c["id"], "en_text": c["heading"]["en"]} for c in sample.get("changed", [])]
     ITEMS.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
     return len(rows), source
 

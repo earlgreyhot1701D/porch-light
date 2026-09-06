@@ -85,15 +85,11 @@ def _resp(status: int, body: dict) -> dict:
 
 
 def _baked_items() -> dict[str, str]:
-    """The verified items baked into the zip at build time (fallback source).
-
-    Returns item_id -> STORED SOURCE text (the ground truth the evidence_quote is
-    checked against, Bug 7), matching what the Aurora path returns.
-    """
+    """The verified items baked into the zip at build time (fallback source)."""
     try:
         with open(os.path.join(os.path.dirname(__file__), "items.json"), encoding="utf-8") as f:
             data = json.load(f)
-        return {row["item_id"]: row["source_text"] for row in data if row.get("source_text")}
+        return {row["item_id"]: row["en_text"] for row in data if row.get("en_text")}
     except Exception:
         return {}
 
@@ -113,21 +109,12 @@ def _aurora_items_with_timeout() -> dict[str, str] | None:
         try:
             import data_api  # from db/
             be = data_api.get_backend()
-            # The model reads (and the evidence_quote is checked against) the item's
-            # STORED SOURCE text = document_pages joined over the item's page range —
-            # the ground truth, not the summary (Bug 7). Only items that also have a
-            # verified rewrite are shown (so the card can display a clean summary).
             r = be.query(
-                "SELECT i.item_id, "
-                " (SELECT string_agg(dp.text, E'\n' ORDER BY dp.page_number) "
-                "    FROM document_pages dp "
-                "   WHERE dp.document_id = i.document_id "
-                "     AND dp.page_number BETWEEN i.page_start AND i.page_end) AS source_text "
-                "FROM item_rewrites ir JOIN items i ON i.item_id = ir.item_id "
+                "SELECT i.item_id, ir.en_text FROM item_rewrites ir "
+                "JOIN items i ON i.item_id = ir.item_id "
                 "WHERE ir.en_verified = true AND ir.en_text IS NOT NULL"
             )
-            result["items"] = {row["item_id"]: (row["source_text"] or "")
-                               for row in r.rows if row["source_text"]}
+            result["items"] = {row["item_id"]: row["en_text"] for row in r.rows}
         except Exception as exc:  # logged as class name only, no message
             result["error"] = type(exc).__name__
 
@@ -247,21 +234,20 @@ def handler(event, context):
         return _resp(200, {"degraded": True, "reason": "matcher_degraded", "source": source,
                            "note": "The live watcher could not fully check your list."})
 
-    # Response-boundary trust check (a different boundary than record_match, so it
-    # earns its line). An item is a match only if it has non-empty matched_terms AND
-    # its evidence_quote is verbatim in the item's stored source text — the same
-    # predicate, re-checked against the source `items` this handler loaded.
-    from porchlight.watch.matcher import is_evidenced_match
+    # Bug 1, site (b): the response-boundary trust check. An item is a match only if
+    # it has non-empty matched_terms — the same single predicate the matcher's
+    # record_match uses. A different trust boundary (what leaves the proxy), so it
+    # earns its own placement.
+    from porchlight.watch.matcher import is_recordable_match
 
     matches = [
         {
             "item_id": m.item_id,
             "matched_terms": list(m.matched_terms),
             "reason": {"en": m.reason.en, "es": m.reason.es},
-            "evidence_quote": m.evidence_quote,
         }
         for m in answer.matches
-        if is_evidenced_match(m.matched_terms, m.evidence_quote, items.get(m.item_id, ""))
+        if is_recordable_match(m.matched_terms)
     ]
     log.info("watch_response", matches=len(matches), is_partial=answer.is_partial, source=source)
     return _resp(200, {

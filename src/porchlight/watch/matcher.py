@@ -59,46 +59,12 @@ def is_recordable_match(matched_terms) -> bool:
     return any(str(t).strip() for t in (matched_terms or []))
 
 
-def _normalize_ws(s: str) -> str:
-    """Collapse whitespace so a quote survives PDF line-wrap/spacing differences.
-
-    The stored source text carries the PDF's line breaks and double spaces; the
-    model's quote will not reproduce them exactly. Comparing on whitespace-collapsed,
-    casefolded text checks the WORDS are verbatim from source without failing on
-    layout artifacts. It does not weaken to a paraphrase: every non-space character
-    must still be present, in order.
-    """
-    return " ".join((s or "").split()).casefold()
-
-
-def quote_in_source(evidence_quote: str, source_text: str, *, min_chars: int = 12) -> bool:
-    """True iff `evidence_quote` is a verbatim substring of `source_text` (Bug 7).
-
-    Checked against the item's STORED SOURCE TEXT (document_pages over its page
-    range) — the same ground truth the golden set uses — NEVER the model's own
-    summary (checking the model against itself proves nothing). Whitespace-collapsed
-    and casefolded so PDF layout does not cause false drops. A too-short quote
-    (< min_chars) is rejected: a two-word fragment could appear anywhere.
-    """
-    q = _normalize_ws(evidence_quote)
-    if len(q) < min_chars:
-        return False
-    return q in _normalize_ws(source_text)
-
-
-def is_evidenced_match(matched_terms, evidence_quote: str, source_text: str) -> bool:
-    """Full Bug-7 predicate: a match is kept only if it has non-empty matched terms
-    AND a verbatim source-quote. Used at both trust boundaries."""
-    return is_recordable_match(matched_terms) and quote_in_source(evidence_quote, source_text)
-
-
 @dataclass
 class MatchSession:
     """Per-invocation state: the candidate items and the matches the model records.
 
-    `items` maps item_id -> the text SHOWN to the model to match against (the stored
-    source text — the ground truth the evidence quote is checked against, Bug 7).
-    `matches` accumulates the model's recorded matches. Nothing here is persisted.
+    `items` maps item_id -> summary text shown to the model. `matches` accumulates
+    the model's recorded matches. Nothing here is persisted; it lives for one call.
     """
 
     items: dict[str, str]
@@ -107,22 +73,22 @@ class MatchSession:
 
 _SYSTEM_PROMPT = """You help ONE person watch a city's meeting agendas.
 
-You are given that person's watch terms and a list of agenda items (the exact text
-of each item). For EACH item that is relevant to ANY of the watch terms, call
-record_match with the item's id, the watch terms it is relevant to, a short
-plain-language reason (in English AND Spanish), and an evidence_quote.
+You are given that person's watch terms and a list of already-summarized agenda
+items. For EACH item that is relevant to ANY of the watch terms, call record_match
+with the item's id, the watch terms it is relevant to, and a short plain-language
+reason (in English AND Spanish) for why it matches.
 
 Rules:
-- evidence_quote MUST be a short phrase copied WORD-FOR-WORD from the item's text
-  that shows why it matches — the actual words that are in the item. If you cannot
-  find such a phrase in the item's text, the item does NOT match: do not call
-  record_match for it. Do not match on possibility or on what an item "may include";
-  match only on words that are actually present.
 - Call record_match ONLY for an item that IS relevant to at least one watch term,
   and pass the specific matched terms in matched_terms. NEVER call record_match for
   an item that does not match — do not call it with an empty matched_terms list, and
-  do not call it just to explain why something is NOT relevant.
-- Decide relevance, then record the match and its reason in the SAME step.
+  do not call it just to explain why something is NOT relevant. A non-matching item
+  gets no call at all.
+- Decide relevance, then record the match and its reason in the SAME step. Never
+  explain a match separately afterward.
+- When you are UNSURE whether an item is relevant, RECORD IT (with the term it might
+  match). Showing a borderline item is a mild annoyance; missing a relevant one
+  could make the person miss a deadline. Err toward showing.
 - The reason is plain language only. Do NOT put any date, deadline, item number,
   page number, body name, or URL in the reason — those are shown separately.
 - If no item is relevant, record nothing.
@@ -132,19 +98,14 @@ Rules:
 
 
 def build_matcher_prompt(terms: list[str], items: dict[str, str]) -> str:
-    """The user prompt: the watchlist and the candidate items (id + item text).
-
-    The shown text is the item's stored SOURCE text — the words the evidence_quote
-    must be copied from.
-    """
+    """The user prompt: the watchlist and the candidate items (id + summary)."""
     term_lines = "\n".join(f"- {t}" for t in terms)
-    item_lines = "\n".join(f"[{iid}] {text}" for iid, text in items.items())
+    item_lines = "\n".join(f"[{iid}] {summary}" for iid, summary in items.items())
     return (
         f"Watch terms:\n{term_lines}\n\n"
-        f"Agenda items (exact text):\n{item_lines}\n\n"
+        f"Agenda items:\n{item_lines}\n\n"
         "For each relevant item, call record_match(item_id, matched_terms, "
-        "reason_en, reason_es, evidence_quote) where evidence_quote is copied "
-        "word-for-word from that item's text above. When done, say DONE."
+        "reason_en, reason_es). When done, say DONE."
     )
 
 
@@ -153,34 +114,25 @@ def _build_tools(session: MatchSession):
     from strands import tool
 
     @tool
-    def record_match(item_id: str, matched_terms: list[str], reason_en: str, reason_es: str,
-                     evidence_quote: str) -> str:
-        """Record ONE relevant agenda item. evidence_quote MUST be a phrase copied
-        word-for-word from the item's text that shows the match. matched_terms are the
-        watch terms it is relevant to. reason_en/reason_es are short plain-language and
-        contain NO date, deadline, item number, page number, body name, or URL."""
+    def record_match(item_id: str, matched_terms: list[str], reason_en: str, reason_es: str) -> str:
+        """Record ONE relevant agenda item with the watch terms it matches and a short
+        plain-language reason in English and Spanish. The reason must contain NO date,
+        deadline, item number, page number, body name, or URL."""
         iid = str(item_id).strip()
         if iid not in session.items:
             # The model referenced an item that was not in the candidate set: ignore
             # it (we never fabricate a match for an item we did not show).
             return f"unknown item_id {item_id!r}; ignored"
-        # Bug 1: no matched terms is not a match, whatever the reason says.
+        # Bug 1, site (a): an item with no matched terms is NOT a match, whatever the
+        # reason text says. Record nothing; tell the model why.
         if not is_recordable_match(matched_terms):
             return f"not recorded for {iid}: no matched terms means it is not a match"
-        # Bug 7: the evidence quote must be VERBATIM in the item's STORED SOURCE text
-        # (session.items[iid] is the source text, the ground truth — not the summary,
-        # which would be checking the model against itself). Drop the match if not.
-        source_text = session.items.get(iid, "")
-        if not quote_in_source(evidence_quote, source_text):
-            return (f"not recorded for {iid}: evidence_quote is not a verbatim phrase "
-                    f"from the item's text — match only on words actually present")
         terms = tuple(str(t).strip() for t in (matched_terms or []) if str(t).strip())
         session.matches.append(
             WatchMatch(
                 item_id=iid,
                 reason=BilingualReason(en=(reason_en or "").strip(), es=(reason_es or "").strip()),
                 matched_terms=terms,
-                evidence_quote=(evidence_quote or "").strip(),
             )
         )
         return f"recorded match for {iid}; {len(session.matches)} so far"
