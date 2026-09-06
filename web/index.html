@@ -58,7 +58,6 @@
         <div class="watch-lead">
           <p class="watch-kicker" data-i18n="watchKicker">Start here</p>
           <h2 id="watch-title" data-i18n="watchTitle">Tell Porch Light what matters.</h2>
-          <p data-i18n="watchIntro">Describe a project, place, concern, or question in your own words. Porch Light checks the public record and brings back relevant changes.</p>
         </div>
         <form class="watch-form" id="watch-form">
           <label for="watch-input" data-i18n="watchLabel">Ask a question, or name a thing you want watched</label>
@@ -78,10 +77,6 @@
         </form>
         <div class="watch-current">
           <p class="saved-title" id="saved-title" data-i18n="saved">Currently watching</p>
-          <div class="watch-empty" id="watch-empty" hidden>
-            <strong data-i18n="firstRunTitle">Start with one thing you care about.</strong>
-            <span data-i18n="firstRunBody">A watch can be a question ("Can they put a bar next to my house?") or a phrase ("street trees on Juniper Avenue"). Porch Light checks it against every new agenda item. Type your own words above.</span>
-          </div>
           <ul class="watch-list" id="watch-list"></ul>
           <p class="privacy"><span class="lock" aria-hidden="true"></span><span data-i18n="privacy">Your list stays on your device. We use it to answer, and never store it.</span></p>
         </div>
@@ -116,8 +111,8 @@
 
           <div class="changed-state" id="changed-state" role="region" aria-labelledby="changed-title" hidden>
             <div class="changed-intro">
-              <h1 id="changed-title" data-i18n="changedTitle">Real agenda items, read and verified.</h1>
-              <p data-i18n="changedIntro">Items Porch Light read from the city's agendas, each pointing back to its source page.</p>
+              <h1 id="changed-title" data-i18n="changedTitle" tabindex="-1">Real agenda items, read and verified.</h1>
+              <p id="changed-intro" data-i18n="changedIntro">Items Porch Light read from the city's agendas, each pointing back to its source page.</p>
             </div>
             <div class="change-list" id="change-list" aria-label="Agenda items read from the city record" data-aria-i18n="changesRegion"></div>
           </div>

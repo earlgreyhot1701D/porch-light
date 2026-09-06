@@ -508,3 +508,36 @@ Two residual limitations this surfaced on real data:
   working on real data.
 - **v2 / revisit.** Sequence 8.2 with the Spec 6 web surface (they share the
   request-time seam). Revisit only if Spec 6 lands early with time to spare.
+
+
+### Watcher relevance in the web demo (FALLBACK — written before the live-wire attempt)
+
+This entry is written BEFORE attempting to live-wire the watcher (Block B), so the
+honest fallback is on record no matter how that attempt lands — the same discipline
+as the network-egress and Option-C floor entries. If the live endpoint ships, this
+entry is trimmed to describe it; if the timebox blows, this is what we ship.
+
+- **What it is.** The public web surface lets a resident type a watch term and see
+  which stored agenda items match. In the FALLBACK posture, that match is a
+  transparent whole-word keyword overlap computed IN THE BROWSER against items Porch
+  Light has already read and verified — **not** the Nova Lite matcher. The real
+  relevance agent (`watch/matcher.py`) runs and is tested, but is not reachable from
+  the browser in this posture.
+- **What it affects.** The web demo's matches are literal keyword overlaps, so a
+  synonym or a paraphrase the model would catch may be missed, and the "why this
+  matched" line names the term rather than the model's reasoning. Correctness of what
+  IS shown is unaffected: every shown item is a real verified rewrite with its
+  receipt; nothing is fabricated.
+- **Why accepted.** Standing up a request-time agent endpoint (Lambda + Function URL
+  + IAM + CORS + rate limit + no-store audit) is real work with a real containment
+  surface. If it does not land cleanly in the timebox, a keyword demo over real
+  verified items still shows the product's spine honestly, and the model-driven
+  matcher is proven by the live smoke test (`tests/live/test_smoke_watcher.py`).
+- **The page says so, plainly.** In the fallback posture the surface carries one
+  line (copy key `demoScope`): "This demo checks your watch against agenda items
+  Porch Light has already read and verified." — so a judge is never misled into
+  thinking the browser ran the model.
+- **v2 / if Block B lands.** Replace the browser keyword match with a call to the
+  deployed watcher Function URL; the matcher seam is already a drop-in
+  (`WatchAnswer`), so only the data source changes. Then this entry describes the
+  live endpoint and the `demoScope` line is removed.
