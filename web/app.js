@@ -648,7 +648,10 @@ function announceResult(term) {
     // bottom edge); focus with preventScroll so it doesn't override that scroll.
     const heading = document.getElementById("changed-title");
     if (heading) {
-      heading.scrollIntoView({ block: "start", behavior: "smooth" });
+      // behavior:"auto" (instant), not "smooth": a smooth scroll is still in flight
+      // when focus() fires on the next line and gets cancelled (preventScroll stops
+      // focus from scrolling, it does not stop it aborting a scroll already running).
+      heading.scrollIntoView({ block: "start", behavior: "auto" });
       heading.focus({ preventScroll: true });
     }
   } else {
@@ -670,7 +673,7 @@ function announceResult(term) {
     setStatus("watch-status", t("added") + " " + t("noMatchTitle"));
     if (status) { status.textContent = t("noMatchTitle"); status.lang = language; }
     // Bug 4 (zero-match case): focus the quiet-state heading, defined behavior.
-    if (titleEl) { titleEl.scrollIntoView({ behavior: "smooth", block: "start" }); titleEl.focus({ preventScroll: true }); }
+    if (titleEl) { titleEl.scrollIntoView({ block: "start", behavior: "auto" }); titleEl.focus({ preventScroll: true }); }
   }
 }
 
