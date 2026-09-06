@@ -643,10 +643,12 @@ function announceResult(term) {
     setStatus("watch-status", t("added") + " " + countMsg);
     // aria-live announcement (existing region, not a new one).
     if (status) { status.textContent = countMsg; status.lang = language; }
-    // Bug 4 (match case): focus the results heading and bring it into view.
+    // Bug 4 (match case): focus the results heading. Scroll it to the TOP of the
+    // viewport unconditionally so the heading LEADS the view (not pinned to the
+    // bottom edge); focus with preventScroll so it doesn't override that scroll.
     const heading = document.getElementById("changed-title");
     if (heading) {
-      heading.scrollIntoView({ behavior: "smooth", block: "start" });
+      heading.scrollIntoView({ block: "start", behavior: "smooth" });
       heading.focus({ preventScroll: true });
     }
   } else {
