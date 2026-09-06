@@ -23,6 +23,7 @@ See `watch/__init__` and the structural guard test.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 
 from porchlight.log import bind_context, generate_run_id, get_logger
@@ -46,17 +47,70 @@ def is_tool_allowed(tool_name: str) -> bool:
     return tool_name in ALLOWED_TOOLS
 
 
-def is_recordable_match(matched_terms) -> bool:
-    """The single definition of what counts as a real match (Bug 1).
+# Bug 8: a weak deterministic overlap gate. The model learned the SHAPE of the Bug 1
+# guard — it populates matched_terms on every item to pass the non-empty check, then
+# puts the truth ("No mention of dog park hours") in the reason. A code check on model
+# output changed the model's output to satisfy the check. So the gate stops trusting
+# matched_terms alone and asks a question the model cannot answer by field-shaping:
+# does any CONTENT word of a claimed term literally appear in the item's stored text?
+# This is a safety floor, NOT a relevance ranker — the model still decides relevance;
+# the gate only drops matches the model asserted against its own stated reasoning.
+#
+# Stopwords: the small closed-class words that carry no topical signal. Dropped so
+# "parking rules on Victoria Avenue" gates on parking/rules/Victoria/Avenue, not on
+# "on". Kept deliberately short — this is a floor, and every added word is recall we
+# might lose. English + a few Spanish function words (terms may be entered in either).
+_STOPWORDS = frozenset({
+    "the", "a", "an", "and", "or", "of", "to", "in", "on", "at", "for", "by", "with",
+    "is", "are", "be", "as", "it", "its", "this", "that", "these", "those", "from",
+    "el", "la", "los", "las", "un", "una", "de", "del", "y", "o", "en", "para", "por",
+})
+# A content word: 2+ alphanumerics (drops single letters and punctuation noise). We
+# casefold for comparison; no stemming (a floor, not a linguistics engine).
+_WORD_RE = re.compile(r"[^\W_]{2,}", re.UNICODE)
 
-    An item is a match ONLY if at least one non-empty watch term matched it. The
-    model sometimes calls record_match on an item it reasoned about and judged
-    NON-matching, passing matched_terms=[] with a reason like "...not parking." Such
-    a call is not a match regardless of the reason text. Used at exactly two trust
-    boundaries: record_match (the source, in matcher.py) and the response boundary
-    (handler.py). One rule, two placements.
+
+def _content_words(text: str) -> set[str]:
+    """Casefolded content words of `text`, stopwords removed. Deterministic, no model."""
+    return {w for w in (m.group(0).casefold() for m in _WORD_RE.finditer(text or "")) if w not in _STOPWORDS}
+
+
+def _term_overlaps_item(term: str, item_words: set[str]) -> bool:
+    """True iff at least one content word of `term` appears in the item's content words."""
+    return bool(_content_words(term) & item_words)
+
+
+def is_recordable_match(matched_terms, item_text: str = "") -> bool:
+    """The single definition of what counts as a real match (Bug 1 + Bug 8).
+
+    Two conditions, both code-checked, never trusted from the model:
+
+    1. (Bug 1) At least one non-empty watch term is claimed. The model sometimes
+       calls record_match on an item it judged NON-matching, passing matched_terms=[]
+       with a reason like "...not parking." No terms means no match, whatever the
+       reason says.
+
+    2. (Bug 8) At least one claimed term shares a content word with the item's stored
+       text. The model learned to populate matched_terms on EVERY item to pass check
+       (1) and put the truth in the reason ("No mention of dog park hours"). A term
+       with zero content-word overlap on the item it is claimed against is dropped.
+       "dog park hours" has no overlap with a salary resolution; "parking rules on
+       Victoria Avenue" overlaps a parking item on "parking" and a Victoria Avenue
+       item on "Victoria"/"Avenue".
+
+    Used at exactly two trust boundaries: record_match (the source, in matcher.py,
+    passing the item summary shown to the model) and the response boundary
+    (handler.py, passing the same item text). One rule, two placements.
+
+    `item_text` defaults to "" so a caller can still ask the pure Bug-1 question, but
+    with empty text the Bug-8 gate can never pass — callers at a trust boundary MUST
+    pass the item text.
     """
-    return any(str(t).strip() for t in (matched_terms or []))
+    terms = [str(t).strip() for t in (matched_terms or []) if str(t).strip()]
+    if not terms:
+        return False
+    item_words = _content_words(item_text)
+    return any(_term_overlaps_item(t, item_words) for t in terms)
 
 
 @dataclass
@@ -123,10 +177,13 @@ def _build_tools(session: MatchSession):
             # The model referenced an item that was not in the candidate set: ignore
             # it (we never fabricate a match for an item we did not show).
             return f"unknown item_id {item_id!r}; ignored"
-        # Bug 1, site (a): an item with no matched terms is NOT a match, whatever the
-        # reason text says. Record nothing; tell the model why.
-        if not is_recordable_match(matched_terms):
-            return f"not recorded for {iid}: no matched terms means it is not a match"
+        # Bug 1 + Bug 8, site (a): an item is a match only if it has non-empty matched
+        # terms AND at least one of those terms shares a content word with THIS item's
+        # stored text. A term the model claimed against an item it does not overlap is
+        # dropped here. Record nothing; tell the model why (no reason text can satisfy
+        # this — it is a substring question about the item, not the model's prose).
+        if not is_recordable_match(matched_terms, session.items[iid]):
+            return f"not recorded for {iid}: no watch term overlaps this item's text"
         terms = tuple(str(t).strip() for t in (matched_terms or []) if str(t).strip())
         session.matches.append(
             WatchMatch(

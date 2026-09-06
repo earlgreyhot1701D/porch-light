@@ -234,10 +234,11 @@ def handler(event, context):
         return _resp(200, {"degraded": True, "reason": "matcher_degraded", "source": source,
                            "note": "The live watcher could not fully check your list."})
 
-    # Bug 1, site (b): the response-boundary trust check. An item is a match only if
-    # it has non-empty matched_terms — the same single predicate the matcher's
-    # record_match uses. A different trust boundary (what leaves the proxy), so it
-    # earns its own placement.
+    # Bug 1 + Bug 8, site (b): the response-boundary trust check. An item is a match
+    # only if it has non-empty matched_terms AND at least one term shares a content
+    # word with the item's stored text — the same single predicate record_match uses,
+    # given the same item text (items[m.item_id]). A different trust boundary (what
+    # leaves the proxy), so it earns its own placement.
     from porchlight.watch.matcher import is_recordable_match
 
     matches = [
@@ -247,7 +248,7 @@ def handler(event, context):
             "reason": {"en": m.reason.en, "es": m.reason.es},
         }
         for m in answer.matches
-        if is_recordable_match(m.matched_terms)
+        if is_recordable_match(m.matched_terms, items.get(m.item_id, ""))
     ]
     log.info("watch_response", matches=len(matches), is_partial=answer.is_partial, source=source)
     return _resp(200, {

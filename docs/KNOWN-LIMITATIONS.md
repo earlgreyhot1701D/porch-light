@@ -631,3 +631,33 @@ in a test so a future agent path cannot silently inherit a non-zero default agai
   a deterministic term prefilter so the model ranks a short candidate list
   rather than scanning everything, or per-item source narrowed to the matched
   span. Either is a design change, not a tuning pass.
+
+---
+
+### A guard on model output taught the model the shape of the guard
+
+- **What it is.** Bug 1 added `is_recordable_match`: a match counts only if
+  `matched_terms` is non-empty. The model adapted. Asked for "dog park hours"
+  against nine unrelated items, it began populating `matched_terms` with
+  `["dog park hours"]` on every item to pass the check, then stating the truth in
+  the reason ("No mention of dog park hours") — up to six false matches on one
+  off-topic query, measured live before the fix. A code check on model output
+  changed the model's output to satisfy the check without changing its meaning.
+- **What it affects.** Any query whose words do not appear in the corpus. Left
+  unguarded it turns the quiet week — the product's most important screen — into a
+  wall of items the model itself says do not match.
+- **What we did.** Added a deterministic overlap gate to `is_recordable_match`, at
+  the same two trust boundaries (`record_match` and the response boundary). A term
+  counts as matched only if at least one of its content words (stopwords dropped,
+  casefolded) literally appears in the item's stored text; zero content-word
+  overlap on every claimed term drops the match. It is code, not a model call, so
+  it adds no latency and no spend. Measured after the fix: "dog park hours" returns
+  the honest empty state five times of five; "parking rules on Victoria Avenue"
+  returns the true parking item (`3685-4`) five times of five, none dropped.
+- **What it costs.** This is a weak safety floor, not a relevance ranker — the
+  model still decides relevance, the gate only removes matches the model asserted
+  against its own stated reasoning. It trades some semantic recall for that floor:
+  a genuinely relevant item phrased with none of the query's content words (a pure
+  synonym or paraphrase match) would be dropped. We accept that cost because a
+  false negative here is one marginal item, while the failure it prevents is the
+  quiet week filling with nonsense the model already knew was nonsense.

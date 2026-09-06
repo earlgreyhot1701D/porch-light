@@ -70,13 +70,30 @@ def test_record_match_tool_ignores_unknown_item_id():
 
 
 def test_is_recordable_match_predicate():
-    # Bug 1: the single definition of a real match. Non-empty matched terms only.
+    # Bug 1: the single definition of a real match starts with non-empty matched
+    # terms. Bug 8 adds a content-word overlap with the item text, so these cases
+    # pass item text the term actually overlaps.
     from porchlight.watch.matcher import is_recordable_match
-    assert is_recordable_match(["parking"]) is True
-    assert is_recordable_match(["parking", ""]) is True
-    assert is_recordable_match([]) is False
-    assert is_recordable_match(["", "  "]) is False
-    assert is_recordable_match(None) is False
+    assert is_recordable_match(["parking"], "parking rules downtown") is True
+    assert is_recordable_match(["parking", ""], "a parking item") is True
+    assert is_recordable_match([], "parking rules downtown") is False
+    assert is_recordable_match(["", "  "], "parking rules downtown") is False
+    assert is_recordable_match(None, "parking rules downtown") is False
+
+
+def test_is_recordable_match_overlap_gate():
+    # Bug 8: a term is only recordable against an item it shares a content word with.
+    from porchlight.watch.matcher import is_recordable_match
+    salary = "The City Council will consider a salary resolution for management staff."
+    victoria = "The City Council will consider allowing larger retail stores in the Victoria Avenue area."
+    # The model's Bug-8 trick: non-empty matched_terms on an item it does not overlap.
+    assert is_recordable_match(["dog park hours"], salary) is False
+    # A true parking/Victoria query overlaps the Victoria Avenue item on content words.
+    assert is_recordable_match(["parking rules on Victoria Avenue"], victoria) is True
+    # Stopwords alone do not create overlap ("on"/"the" are dropped).
+    assert is_recordable_match(["on the"], victoria) is False
+    # Overlap on ANY one of several claimed terms is enough (err toward showing).
+    assert is_recordable_match(["dog park hours", "retail stores"], victoria) is True
 
 
 def test_record_match_with_empty_matched_terms_is_not_recorded():
@@ -88,6 +105,33 @@ def test_record_match_with_empty_matched_terms_is_not_recorded():
     assert session.matches == []
     tools["record_match"](item_id="3685-3", matched_terms=["  "], reason_en="unrelated", reason_es="no relacionado")
     assert session.matches == []
+
+
+def test_record_match_dropped_when_no_content_word_overlap():
+    # Bug 8, site (a): the model populates matched_terms to pass the Bug-1 check, then
+    # states the truth in the reason ("No mention of dog park hours"). The overlap
+    # gate drops it — the term shares no content word with the item's stored text.
+    session = MatchSession(
+        items={"3685-6": "The City Council will consider extending the Cognizant contract."},
+        matches=[],
+    )
+    tools = {t.tool_name: t._tool_func for t in M._build_tools(session)}
+    tools["record_match"](
+        item_id="3685-6",
+        matched_terms=["dog park hours"],
+        reason_en="No mention of dog park hours.",
+        reason_es="No se mencionan horarios del parque para perros.",
+    )
+    assert session.matches == []
+    # A term that DOES overlap the same item records normally.
+    tools["record_match"](
+        item_id="3685-6",
+        matched_terms=["Cognizant contract"],
+        reason_en="Extends the Cognizant contract.",
+        reason_es="Extiende el contrato de Cognizant.",
+    )
+    assert len(session.matches) == 1
+    assert session.matches[0].item_id == "3685-6"
 
 
 # --- Live (captured items + a real model): bias-to-show, injection-as-data ---
