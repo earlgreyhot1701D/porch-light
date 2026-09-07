@@ -546,6 +546,15 @@ function createChangeCard(match) {
   action.addEventListener("click", () => {
     const opening = scaffoldOpenId !== item.id;
     scaffoldOpenId = opening ? item.id : null;
+    if (opening) {
+      // Reopen: if a draft was saved for THIS card, restore the person's words into
+      // the fields; otherwise start blank. The textareas read commentDraft, so
+      // hydrate it before renderChanged builds them.
+      const saved = drafts.find((d) => d.item_id === item.id && d.fields);
+      commentDraft.position = saved ? (saved.fields.position || "") : "";
+      commentDraft.matters = saved ? (saved.fields.matters || "") : "";
+      commentDraft.ask = saved ? (saved.fields.ask || "") : "";
+    }
     renderChanged();
     // Fix 3: on OPEN, move focus to the scaffold heading (same pattern as the
     // results heading — instant scroll so it lands before focus, preventScroll so
@@ -631,10 +640,23 @@ function createCommentScaffold(item) {
   const save = copyNode("button", "primary-button", "saveDraft");
   save.type = "button";
   save.addEventListener("click", () => {
-    drafts.push({
+    // Save the person's WORDS with the draft (the three stance fields), plus the
+    // item id so a reopened draft reattaches to the right card. One saved draft per
+    // item id: re-saving updates it in place rather than piling up duplicates.
+    const fields = {
+      position: commentDraft.position,
+      matters: commentDraft.matters,
+      ask: commentDraft.ask,
+    };
+    const entry = {
+      item_id: item.id,
       title: { en: item.heading.en.slice(0, 60), es: item.heading.es.slice(0, 60) },
-      edited: { en: COPY.en.editedNow, es: COPY.es.editedNow }
-    });
+      edited: { en: COPY.en.editedNow, es: COPY.es.editedNow },
+      fields,
+    };
+    const existing = drafts.findIndex((d) => d.item_id === item.id);
+    if (existing >= 0) drafts[existing] = entry;
+    else drafts.push(entry);
     renderDrafts();
     // Persist; only claim "saved" if the write actually landed (never.md-honest).
     const stored = saveDraftsToStorage();
