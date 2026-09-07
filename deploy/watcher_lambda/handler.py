@@ -126,6 +126,47 @@ def _aurora_items_with_timeout() -> dict[str, str] | None:
     return result["items"] or None
 
 
+def _aurora_window_with_timeout() -> dict | None:
+    """Read the corpus window the watcher actually searches — earliest/latest
+    meeting_date across stored documents + the document count — from Aurora, bounded
+    by the same 3s guard as the items read. Returns {earliest, latest,
+    document_count} (ISO date strings copied from source, never generated) or None.
+
+    The window travels AS DATA on the response so the page can name the range it
+    holds without parsing rendered text (never.md #1: dates copied, not generated).
+    None -> the page renders no window note rather than guessing one.
+    """
+    import threading
+
+    result: dict = {}
+
+    def _work():
+        try:
+            import data_api  # from db/
+            be = data_api.get_backend()
+            r = be.query(
+                "SELECT min(m.meeting_date)::text AS earliest, "
+                "max(m.meeting_date)::text AS latest, "
+                "count(DISTINCT d.document_id) AS document_count "
+                "FROM meetings m JOIN documents d ON d.meeting_id = m.meeting_id"
+            )
+            if r.rows:
+                result["window"] = r.rows[0]
+        except Exception as exc:  # logged as class name only, no message
+            result["error"] = type(exc).__name__
+
+    th = threading.Thread(target=_work, daemon=True)
+    th.start()
+    th.join(AURORA_READ_TIMEOUT_S)
+    if th.is_alive() or "window" not in result:
+        return None
+    w = result["window"] or {}
+    if not w.get("earliest") or not w.get("latest"):
+        return None
+    return {"earliest": w["earliest"], "latest": w["latest"],
+            "document_count": w.get("document_count")}
+
+
 def _budget_ok_or_paused() -> bool | None:
     """Check the real search sub-budget. FAIL CLOSED (§ answer 2):
     - True  -> budget available, proceed.
@@ -210,6 +251,11 @@ def handler(event, context):
     # Items: Aurora first (3s), baked fallback. Say which source.
     items = _aurora_items_with_timeout()
     source = "aurora"
+    corpus_window = None
+    if items:
+        # Same request, same DB: the window the watcher actually searched. Bounded by
+        # its own 3s guard; None on any failure (the page then shows no window note).
+        corpus_window = _aurora_window_with_timeout()
     if not items:
         items = _baked_items()
         source = "baked"
@@ -251,10 +297,13 @@ def handler(event, context):
         if is_recordable_match(m.matched_terms, items.get(m.item_id, ""))
     ]
     log.info("watch_response", matches=len(matches), is_partial=answer.is_partial, source=source)
-    return _resp(200, {
+    body = {
         "matches": matches,
         "is_quiet": len(matches) == 0,
         "is_partial": answer.is_partial,
         "source": source,
         "model_id": MODEL_ID,
-    })
+    }
+    if corpus_window:
+        body["window"] = corpus_window
+    return _resp(200, body)

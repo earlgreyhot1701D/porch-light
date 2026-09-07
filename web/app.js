@@ -19,6 +19,12 @@ let activeState = "quiet";
 let watches = [];          // [{text, lang}] — from localStorage / URL fragment
 let drafts = [];           // [{title:{en,es}, edited:{en,es}}]
 let changed = [];          // real items loaded from sample.json
+// The corpus window carried AS DATA by whichever engine answered: the live
+// /api/watch response (Aurora's real earliest/latest meeting_date + doc count) or,
+// on the sample/keyword-fallback path, sample.json's own `window` field. NEVER
+// parsed out of rendered receipt text, never guessed. Shape: {en, es} display
+// strings, or null when no window is available (then the note is not rendered).
+let corpusWindow = null;
 const commentDraft = { position: "", matters: "", ask: "" };
 let commentDraftSaved = false;
 let scaffoldOpenId = null; // which card's scaffold is open, if any
@@ -26,6 +32,36 @@ let scaffoldOpenId = null; // which card's scaffold is open, if any
 const WATCH_KEY = "porchlight.watches.v1";
 const MAX_TERMS = 10;
 const MAX_TERM_CHARS = 100;   // mirrors watch/validate.py (raised from 60; see there)
+// The city's authoritative pages. Both verified resolving 2026-09-06. Notify Me is
+// the city's OWN notification service — Porch Light sends nothing, so it points here.
+const CITY_AGENDA_URL = "https://www.cityofventura.ca.gov/AgendaCenter";
+const CITY_NOTIFY_URL = "https://www.cityofventura.ca.gov/list.aspx";
+// The window carried by sample.json (fallback path). Set in loadChanged from the
+// file's own `window` field — never parsed out of receipt text.
+let sampleWindow = null;
+
+/* Turn a corpus-window object {earliest, latest, document_count} (ISO date strings
+ * COPIED from source, e.g. "2026-08-17") into bilingual display strings, or null.
+ * Dates are formatted for display only; none are generated (never.md #1). Uses the
+ * browser's Intl date formatter per language, parsing the ISO date as local noon so
+ * a timezone offset can never roll it to the previous day. */
+function formatWindow(win) {
+  if (!win || !win.earliest || !win.latest) return null;
+  const fmt = (iso, loc) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+    if (!m) return null;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+    if (isNaN(d.getTime())) return null;
+    return new Intl.DateTimeFormat(loc, { year: "numeric", month: "short", day: "numeric" }).format(d);
+  };
+  const enFrom = fmt(win.earliest, "en-US"), enTo = fmt(win.latest, "en-US");
+  const esFrom = fmt(win.earliest, "es-ES"), esTo = fmt(win.latest, "es-ES");
+  if (!enFrom || !enTo || !esFrom || !esTo) return null;
+  return {
+    en: enFrom === enTo ? enFrom : `${enFrom} \u2013 ${enTo}`,
+    es: esFrom === esTo ? esFrom : `${esFrom} \u2013 ${esTo}`,
+  };
+}
 
 /* ---- copy (bilingual, verbatim strings load-bearing) ---- */
 const COPY = {
@@ -35,11 +71,12 @@ const COPY = {
     navUnavailable: "(not available in this preview)",
     sample: "Real City of Ventura agenda items, read and verified by Porch Light.",
     greeting: "Good afternoon, neighbor.", heartbeatTitle: "System heartbeat",
-    cityRead: "City read from stored agendas", readCount: "2 meetings read", nextCheck: "Next check: hourly, on schedule",
+    cityRead: "City read from stored agendas", readCount: "2 meetings read", nextCheck: "We fetch new agendas hourly.",
     quietTitle: "Nothing new for you this week.",
-    quietBody: "We read the City Council and Planning Commission agendas. Nothing matched what you're watching. We'll keep checking.",
+    quietBody: "We read the City Council and Planning Commission agendas we hold. Nothing matched what you're watching. Your watch list lives only in this browser, so check back and run it again anytime.",
+    windowNote: "The agendas we currently hold cover {window}.",
     onboardTitle: "Your week is quiet until you add a watch.",
-    onboardBody: "We read the City Council and Planning Commission agendas and broke them into items. Nothing can match until you add a watch above — Porch Light watches for you, not for everyone.",
+    onboardBody: "We read the City Council and Planning Commission agendas we hold and broke them into items. Nothing can match until you add a watch above. Your watch list lives only in this browser, and Porch Light checks it against the agendas we hold when you ask.",
     scaleNote: "Porch Light breaks each agenda into individual items and points every summary back to its page.",
     quietStateLoaded: "Quiet week view shown.", changedStateLoaded: "Changed view shown.",
     changedTitle: "Real agenda items, read and verified.",
@@ -71,17 +108,19 @@ const COPY = {
     clearConfirm: "Clear your watch list, drafts, and this link's shared terms from this device? This cannot be undone.",
     clearYes: "Clear everything", clearNo: "Keep my data", cleared: "Cleared. This device is back to a fresh start.",
     startWatching: "Start watching",
-    helper: "Porch Light re-checks this against every new agenda item and tells you when something matches.",
+    helper: "Porch Light checks this against the agenda items we hold, each time you ask. It cannot notify you, and your list stays in this browser.",
     saved: "Currently watching",
     firstRunTitle: "Start with one thing you care about.",
-    firstRunBody: "A watch can be a question (\u201cCan they put a bar next to my house?\u201d) or a phrase (\u201cstreet trees on Juniper Avenue\u201d). Porch Light checks it against every new agenda item. Type your own words above.",
+    firstRunBody: "A watch can be a question (\u201cCan they put a bar next to my house?\u201d) or a phrase (\u201cstreet trees on Juniper Avenue\u201d). Porch Light checks it against the agenda items we hold, each time you ask. Type your own words above.",
     privacy: "Your list stays on your device. We use it to answer, and never store it.",
     draftTitle: "Drafts are yours to finish and send.",
     draftExplainer: "Porch Light fills in the facts and the deadline from the source. The opinion is yours to write, and only you can send it.",
     startDraft: "\uFF0B Start a draft",
     remove: "Remove watch", added: "Watch added.", empty: "Enter something you want Porch Light to watch.",
     matchCountOne: "1 item matches what you're watching.", matchCountMany: "{n} items match what you're watching.",
-    noMatchTitle: "Nothing matches that yet.", noMatchBody: "We read the City Council and Planning Commission agendas and found nothing matching \u201C{term}\u201D. We'll keep checking.",
+    noMatchTitle: "Nothing matches that yet.", noMatchBody: "We read the agendas we hold and found nothing matching \u201C{term}\u201D. Porch Light checks only when you ask, and your watch list stays in this browser.",
+    notifyNote: "Porch Light does not send notifications. The city's own Notify Me does.",
+    notifyLink: "Sign up for the city's Notify Me",
     checkingLive: "Checking the live watcher\u2026",
     modeLive: "Matched by the live Nova Lite watcher, reading the city's agenda items.",
     modeKeyword: "Matched by keyword against agenda items Porch Light has already read and verified.",
@@ -91,7 +130,7 @@ const COPY = {
     shareConfirm: "A shared list was found in this link. Apply it? This replaces your current list.",
     shareApply: "Apply shared list", shareDismiss: "Keep my list", shareApplied: "Shared list applied.", shareDismissed: "Kept your list.",
     aboutTitle: "What this is",
-    aboutBody: "Porch Light reads the public agenda packets your city posts, breaks them into individual items, and watches for the things you care about. Every summary points back to the page it came from. It drafts. You write your position, and you decide whether to send it.",
+    aboutBody: "Porch Light reads the public agenda packets your city posts and breaks them into individual items, then checks them against your watch list when you ask. Every summary points back to the page it came from. It drafts. You write your position, and you decide whether to send it.",
     limitsTitle: "What it does not do",
     limitOne: "It never scores, grades, or ranks a public body.",
     limitTwo: "It never sends anything to a government office. There is no send button anywhere in the code.",
@@ -101,7 +140,12 @@ const COPY = {
     disclaimer: "Porch Light is an independent project. It is not affiliated with, endorsed by, or operated by any city or public agency. Always confirm dates and deadlines against the city's own posting.",
     builtTitle: "Built by", built: "Built by Shara Cordero. AI assisted. Human approved. Powered by NLP.",
     linksTitle: "Links", linkedinPending: "LinkedIn \u00B7 URL to be supplied", sourcePending: "Source code \u00B7 URL to be supplied",
-    cityAgenda: "The city's own agenda page"
+    cityAgenda: "The city's own agenda page",
+    footerProto: "Porch Light is a prototype built for the AWS Agents for Humans hackathon. It is not affiliated with or endorsed by the City of Ventura.",
+    footerRunning: "This site is running through October 2026.",
+    footerSource: "The city's Agenda Center is the authoritative source.",
+    footerSourceLink: "Open the city's Agenda Center",
+    footerRewrites: "Rewrites are AI-generated and human-approved. Check the receipt."
   },
   es: {
     skip: "Saltar al contenido principal", navLabel: "Navegaci\u00F3n principal", languageLabel: "Idioma",
@@ -109,11 +153,12 @@ const COPY = {
     navUnavailable: "(no disponible en esta vista previa)",
     sample: "Puntos reales de la agenda de la Ciudad de Ventura, le\u00EDdos y verificados por Porch Light.",
     greeting: "Buenas tardes, vecindad.", heartbeatTitle: "Estado del sistema",
-    cityRead: "Ciudad le\u00EDda de agendas almacenadas", readCount: "2 reuniones le\u00EDdas", nextCheck: "Pr\u00F3xima revisi\u00F3n: cada hora, seg\u00FAn lo programado",
+    cityRead: "Ciudad le\u00EDda de agendas almacenadas", readCount: "2 reuniones le\u00EDdas", nextCheck: "Obtenemos nuevas agendas cada hora.",
     quietTitle: "Nada nuevo para usted esta semana.",
-    quietBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n. Nada coincidi\u00F3 con lo que usted sigue. Seguiremos revisando.",
+    quietBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n que tenemos. Nada coincidi\u00F3 con lo que usted sigue. Su lista de temas vive solo en este navegador; vuelva y ej\u00E9cutela de nuevo cuando quiera.",
+    windowNote: "Las agendas que tenemos actualmente cubren {window}.",
     onboardTitle: "Su semana est\u00E1 tranquila hasta que agregue un tema.",
-    onboardBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n y las dividimos en puntos. Nada puede coincidir hasta que agregue un tema arriba: Porch Light vigila para usted, no para todos.",
+    onboardBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n que tenemos y las dividimos en puntos. Nada puede coincidir hasta que agregue un tema arriba. Su lista de temas vive solo en este navegador, y Porch Light la compara con las agendas que tenemos cuando usted lo pide.",
     scaleNote: "Porch Light divide cada agenda en puntos individuales y remite cada resumen a su p\u00E1gina.",
     quietStateLoaded: "Se muestra la vista de semana tranquila.", changedStateLoaded: "Se muestra la vista de cambios.",
     changedTitle: "Puntos reales de la agenda, le\u00EDdos y verificados.",
@@ -142,17 +187,19 @@ const COPY = {
     clearConfirm: "\u00BFBorrar su lista de temas, sus borradores y los temas compartidos de este enlace de este dispositivo? Esto no se puede deshacer.",
     clearYes: "Borrar todo", clearNo: "Conservar mis datos", cleared: "Borrado. Este dispositivo vuelve a empezar de cero.",
     startWatching: "Empezar a vigilar",
-    helper: "Porch Light lo compara con cada nuevo asunto de la agenda y le avisa cuando algo coincide.",
+    helper: "Porch Light compara esto con los asuntos de la agenda que tenemos, cada vez que usted lo pide. No puede avisarle, y su lista permanece en este navegador.",
     saved: "En seguimiento",
     firstRunTitle: "Empiece con algo que le importe.",
-    firstRunBody: "Un tema puede ser una pregunta (\u201c\u00BFPueden poner un bar al lado de mi casa?\u201D) o una frase (\u201c\u00E1rboles en la avenida Juniper\u201D). Porch Light lo compara con cada nuevo asunto de la agenda. Escriba sus propias palabras arriba.",
+    firstRunBody: "Un tema puede ser una pregunta (\u201c\u00BFPueden poner un bar al lado de mi casa?\u201D) o una frase (\u201c\u00E1rboles en la avenida Juniper\u201D). Porch Light lo compara con los asuntos de la agenda que tenemos, cada vez que usted lo pide. Escriba sus propias palabras arriba.",
     privacy: "Su lista permanece en su dispositivo. La usamos para responderle y nunca la guardamos.",
     draftTitle: "Usted termina y env\u00EDa sus borradores.",
     draftExplainer: "Porch Light completa los hechos y el plazo a partir de la fuente. La opini\u00F3n la escribe usted y solamente usted puede enviarla.",
     startDraft: "\uFF0B Iniciar un borrador",
     remove: "Eliminar tema", added: "Tema agregado.", empty: "Escriba algo que desea que Porch Light vigile.",
     matchCountOne: "1 punto coincide con lo que usted sigue.", matchCountMany: "{n} puntos coinciden con lo que usted sigue.",
-    noMatchTitle: "Todav\u00EDa no hay coincidencias.", noMatchBody: "Le\u00EDmos las agendas del Concejo Municipal y de la Comisi\u00F3n de Planificaci\u00F3n y no encontramos nada que coincida con \u201C{term}\u201D. Seguiremos revisando.",
+    noMatchTitle: "Todav\u00EDa no hay coincidencias.", noMatchBody: "Le\u00EDmos las agendas que tenemos y no encontramos nada que coincida con \u201C{term}\u201D. Porch Light revisa solo cuando usted lo pide, y su lista de temas permanece en este navegador.",
+    notifyNote: "Porch Light no env\u00EDa notificaciones. El servicio Notify Me de la ciudad s\u00ED lo hace.",
+    notifyLink: "Suscr\u00EDbase al Notify Me de la ciudad",
     checkingLive: "Consultando el watcher en vivo\u2026",
     modeLive: "Coincidencia del watcher Nova Lite en vivo, leyendo los asuntos de la agenda de la ciudad.",
     modeKeyword: "Coincidencia por palabra clave con los asuntos de la agenda que Porch Light ya ley\u00F3 y verific\u00F3.",
@@ -162,7 +209,7 @@ const COPY = {
     shareConfirm: "Se encontr\u00F3 una lista compartida en este enlace. \u00BFAplicarla? Esto reemplaza su lista actual.",
     shareApply: "Aplicar lista compartida", shareDismiss: "Conservar mi lista", shareApplied: "Lista compartida aplicada.", shareDismissed: "Conserv\u00F3 su lista.",
     aboutTitle: "Qu\u00E9 es esto",
-    aboutBody: "Porch Light lee los paquetes de agendas p\u00FAblicas que publica su ciudad, los divide en asuntos individuales y vigila lo que a usted le importa. Cada resumen remite a la p\u00E1gina de la que proviene. Prepara borradores. Usted escribe su posici\u00F3n y decide si desea enviarla.",
+    aboutBody: "Porch Light lee los paquetes de agendas p\u00FAblicas que publica su ciudad y los divide en asuntos individuales, y luego los compara con su lista de temas cuando usted lo pide. Cada resumen remite a la p\u00E1gina de la que proviene. Prepara borradores. Usted escribe su posici\u00F3n y decide si desea enviarla.",
     limitsTitle: "Qu\u00E9 no hace",
     limitOne: "Nunca punt\u00FAa, califica ni clasifica a un organismo p\u00FAblico.",
     limitTwo: "Nunca env\u00EDa nada a una oficina gubernamental. No hay ning\u00FAn bot\u00F3n para enviar en el c\u00F3digo.",
@@ -172,7 +219,12 @@ const COPY = {
     disclaimer: "Porch Light es un proyecto independiente. No est\u00E1 afiliado, respaldado ni operado por ninguna ciudad ni organismo p\u00FAblico. Confirme siempre las fechas y los plazos en la publicaci\u00F3n oficial de la ciudad.",
     builtTitle: "Creado por", built: "Creado por Shara Cordero. Con asistencia de IA. Aprobado por una persona. Impulsado por PLN.",
     linksTitle: "Enlaces", linkedinPending: "LinkedIn \u00B7 URL pendiente", sourcePending: "C\u00F3digo fuente \u00B7 URL pendiente",
-    cityAgenda: "P\u00E1gina oficial de agendas de la ciudad"
+    cityAgenda: "P\u00E1gina oficial de agendas de la ciudad",
+    footerProto: "Porch Light es un prototipo creado para el hackathon AWS Agents for Humans. No est\u00E1 afiliado ni respaldado por la Ciudad de Ventura.",
+    footerRunning: "Este sitio est\u00E1 disponible hasta octubre de 2026.",
+    footerSource: "El Agenda Center de la ciudad es la fuente autorizada.",
+    footerSourceLink: "Abrir el Agenda Center de la ciudad",
+    footerRewrites: "Las reescrituras son generadas por IA y aprobadas por una persona. Verifique el comprobante."
   }
 };
 
@@ -324,7 +376,9 @@ async function callLiveWatcher(terms) {
     if (!res.ok) return { ok: false, reason: "http_" + res.status };
     const data = await res.json();
     if (data.degraded) return { ok: false, reason: data.reason || "degraded" };
-    return { ok: true, matches: data.matches || [], source: data.source || "aurora" };
+    // `window` is the corpus window the engine actually searched, read from the DB
+    // in the same request (earliest/latest meeting_date + doc count), or absent.
+    return { ok: true, matches: data.matches || [], source: data.source || "aurora", window: data.window || null };
   } catch (err) {
     clearTimeout(timer);
     return { ok: false, reason: "network_or_cors" };
@@ -601,10 +655,16 @@ async function runWatch(addedTerm) {
       liveResult = { key: _watchKey(), matches: r.matches, source: r.source };
       mode = "live";
       source = r.source;
+      // Show the window the LIVE engine actually searched (Aurora's), not the
+      // sample's. If the response carried none, fall back to the sample window
+      // rather than inventing one.
+      corpusWindow = formatWindow(r.window) || sampleWindow;
     } else {
       liveResult = null;   // fall back to keyword
       mode = "keyword";
       source = "keyword-fallback";
+      // Keyword fallback searches the sample corpus, so name the sample's window.
+      corpusWindow = sampleWindow;
     }
   }
   watchMode = mode;
@@ -671,12 +731,89 @@ function announceResult(term) {
       bodyEl.textContent = t("noMatchBody").replace("{term}", term);
       bodyEl.lang = language;
     }
+    // Zero-match: show the corpus window we hold + the Notify Me pointer.
+    renderQuietExtras(true);
     // Bug 3 (zero case): the visible line says so too.
     setStatus("watch-status", t("added") + " " + t("noMatchTitle"));
     if (status) { status.textContent = t("noMatchTitle"); status.lang = language; }
     // Bug 4 (zero-match case): focus the quiet-state heading, defined behavior.
     if (titleEl) { titleEl.scrollIntoView({ block: "start", behavior: "instant" }); titleEl.focus({ preventScroll: true }); }
   }
+}
+
+/* Rebuild the quiet-copy extras: the corpus-window note (when a window is known)
+ * and, in the zero-match case, the Notify Me pointer. Built fresh each call with
+ * createElement/textContent (no innerHTML, never.md #12). `showNotify` is true only
+ * on a zero-match result, so the "we don't notify, the city does" line lands where a
+ * resident just searched and found nothing. */
+function renderQuietExtras(showNotify) {
+  const quietCopy = document.querySelector("#quiet-state .quiet-copy");
+  if (!quietCopy) return;
+  const old = quietCopy.querySelector(".state-copy-extra");
+  if (old) old.remove();
+  const extra = document.createElement("div");
+  extra.className = "state-copy-extra";
+
+  // Window note — only when a window is available; never guess one.
+  if (corpusWindow && corpusWindow[language]) {
+    const win = document.createElement("p");
+    win.className = "window-note";
+    win.textContent = t("windowNote").replace("{window}", corpusWindow[language]);
+    win.lang = language;
+    extra.appendChild(win);
+  }
+
+  // Notify Me pointer (zero-match only): one sentence + a real link to the city's
+  // own notification service. Porch Light sends nothing; the city does.
+  if (showNotify) {
+    const note = document.createElement("p");
+    note.className = "notify-note";
+    note.textContent = t("notifyNote");
+    note.lang = language;
+    const link = document.createElement("a");
+    link.href = CITY_NOTIFY_URL;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = t("notifyLink");
+    link.lang = language;
+    note.append(" ", link);
+    extra.appendChild(note);
+  }
+
+  if (extra.childNodes.length) quietCopy.appendChild(extra);
+}
+
+/* The site footer: four honest lines on EVERY state, both languages. Rendered into
+ * #site-footer (a landmark present in all states), rebuilt on language change.
+ * createElement/textContent only; the Agenda Center line carries a real link. */
+function renderSiteFooter() {
+  const footer = document.getElementById("site-footer");
+  if (!footer) return;
+  footer.replaceChildren();
+  footer.lang = language;
+
+  const mk = (key) => {
+    const p = document.createElement("p");
+    p.textContent = t(key);
+    p.lang = language;
+    return p;
+  };
+  footer.appendChild(mk("footerProto"));
+  footer.appendChild(mk("footerRunning"));
+
+  const src = document.createElement("p");
+  src.textContent = t("footerSource") + " ";
+  src.lang = language;
+  const link = document.createElement("a");
+  link.href = CITY_AGENDA_URL;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.textContent = t("footerSourceLink");
+  link.lang = language;
+  src.appendChild(link);
+  footer.appendChild(src);
+
+  footer.appendChild(mk("footerRewrites"));
 }
 
 function setQuietCopyForState(hasTerms) {
@@ -692,6 +829,8 @@ function setQuietCopyForState(hasTerms) {
   }
   titleEl.lang = language;
   if (bodyEl) bodyEl.lang = language;
+  // Window note on the quiet/onboard states; no Notify Me here (not a zero-match).
+  renderQuietExtras(false);
 }
 function renderWatches() {
   const list = document.getElementById("watch-list");
@@ -780,7 +919,7 @@ function setLanguage(next) {
   const toggle = document.getElementById("history-toggle");
   const expanded = toggle.getAttribute("aria-expanded") === "true";
   toggle.textContent = expanded ? t("historyClose") : t("history");
-  renderChecks(); renderWatches(); renderDrafts();
+  renderChecks(); renderWatches(); renderDrafts(); renderSiteFooter();
   deriveAndRenderState(false);   // re-render cards/quiet/onboard in the new language
   setStatus("watch-status", ""); setStatus("draft-status", "");
 }
@@ -921,6 +1060,10 @@ async function loadChanged() {
     if (!res.ok) throw new Error("http " + res.status);
     const view = await res.json();
     changed = Array.isArray(view.changed) ? view.changed : [];
+    // The sample's own window field (data, not parsed from receipts). Used on the
+    // keyword-fallback path and as the initial window before any live call.
+    sampleWindow = formatWindow(view.window);
+    corpusWindow = sampleWindow;
   } catch (err) {
     // Honest empty state, never a blank screen (security.md).
     changed = [];

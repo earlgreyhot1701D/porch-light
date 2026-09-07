@@ -661,3 +661,61 @@ in a test so a future agent path cannot silently inherit a non-zero default agai
   synonym or paraphrase match) would be dropped. We accept that cost because a
   false negative here is one marginal item, while the failure it prevents is the
   quiet week filling with nonsense the model already knew was nonsense.
+
+---
+
+### Spanish clears verification on only 2 of 10 stored items
+
+- **What it is.** Verified Spanish exists for 2 of the 10 stored items (3685-7 and
+  3685-8). The other 8 have empty `es_text` and `es_verified = false`, so each renders
+  the honest fallback "A verified Spanish version was not produced for this item. / No
+  se pudo producir una versión verificada en español para este punto." English clears
+  on 9 of 10. The Spanish stage ran and was rejected by the verifier twice per item
+  (`es_attempts = 2`); this is a verifier rejection, not a translation crash, a skipped
+  stage, or a swallowed exception, and the database write path is faithful (it stores
+  `es_text` only when `es_verified` is true).
+- **What it affects.** The Spanish half of every card except those two. English is
+  unaffected. Nothing shown is fabricated: an item with no verified Spanish shows the
+  verified English plus the fallback note, never an unverified translation.
+- **Why we accepted it.** The root cause is in `verify/entities.py`: when the model
+  faithfully translates an English descriptive phrase into Spanish ("Single-Family
+  Residential" → "residencial unifamiliar", "Acting Senior Planner" → "planificador
+  senior interino", "Environmental Quality Act" → "calidad ambiental"), the entity
+  extractor captures the Spanish phrase as a raw-compare proper name, which is then
+  absent from the English source, so checks 2 (entity preservation), 3 (no new
+  entities), and 6 (both languages) fire together on both attempts. The `_ROLE_OR_BODY`
+  allow-list and the `_is_lookup_name` / `_HAS_CODE` / `_ORG_SUFFIX` predicates are too
+  narrow: they admit only a hardcoded set of previously observed Spanish phrases and
+  treat any phrase carrying a digit or hyphen, or an org/district suffix, as a lookup
+  name. This is the same failure class that an earlier calibration (task 9) patched by
+  appending observed strings; a new body's planning and zoning vocabulary surfaced a
+  fresh batch of it. Fixing it means loosening a verifier, and loosening a verifier in
+  the last week before submission is how a check quietly stops catching anything. The
+  honest empty string is better than an unverified translation carrying a receipt.
+- **v2.** Widen the raw-compare rule to exclude descriptive common-noun phrases
+  generally (not a per-run word list), so only genuine proper names — street/place,
+  person, company, identifier — are raw-compared. Then re-run the full golden-set
+  calibration and confirm both adversarials still bite, in particular golden-002/es
+  (the translated street name "Victoria Avenue" → "Avenida Victoria" must still be
+  rejected). Secondary finding: the 64.0 ES reading-level floor fires as a secondary
+  rejection on some attempts (scores near 60–63) but is not the load-bearing failure —
+  even lowered, the entity-check rejection would stand. Separate case: item 3687-2's
+  English failed twice on reading level (scores 18.9 then 12.8 vs the 33.8 EN floor) —
+  abstract policy prose the model faithfully kept dense, correctly fell back to
+  original text, and is not part of this Spanish issue.
+
+---
+
+### Footer and the About block say overlapping things
+
+- **What it is.** The site footer (added this round, on every state) states that
+  Porch Light is an independent hackathon prototype not affiliated with the City of
+  Ventura, and the About section carries a similar independent-project disclaimer.
+  Both are true; they overlap in wording.
+- **What it affects.** Copy only — a resident reading top to bottom sees the
+  not-affiliated point twice.
+- **Why we accepted it.** Reconciling the two into one canonical disclaimer would
+  grow the change set in the final week for no correctness gain. Mild redundancy is
+  the safer trade before submission.
+- **v2.** Reconcile the footer and the About disclaimer into a single source of
+  truth for the affiliation and authoritative-source language.

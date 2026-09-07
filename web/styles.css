@@ -455,6 +455,27 @@ h3 { margin: 0; font-size: 1.25rem; }
 .about-closing { grid-column: 1 / -1; padding-top: 1rem; border-top: 1px solid var(--line); font-family: var(--mono); font-size: .8rem; color: var(--primary) !important; }
 .link-pending { color: var(--muted); }
 
+/* Honest-promises footer band: on every state, above the About footer. Restrained,
+   muted, existing tokens only (no new colour token; the reserved amber is never
+   used here). Four short lines; the third carries the Agenda Center link. */
+.site-footer {
+  margin-top: 14px;
+  padding: 1.1rem 1.5rem;
+  background: linear-gradient(145deg, rgba(31,27,21,.94), rgba(26,23,18,.97));
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+.site-footer p { margin: .3rem 0; color: var(--muted); }
+.site-footer a { color: var(--link); }
+
+/* Window note + Notify Me pointer inside the quiet/zero-match copy. */
+.state-copy-extra { margin-top: .75rem; }
+.state-copy-extra .window-note { margin: .6rem 0 0; color: var(--muted); font-size: .92rem; }
+.state-copy-extra .notify-note { margin: .55rem 0 0; color: var(--ink); max-width: 54ch; }
+
 @media (max-width: 1400px) {
   main { grid-template-columns: minmax(560px, 1fr) 320px; }
   .quiet-state { grid-template-columns: minmax(0, 225px) minmax(0, 1fr); gap: 1.6rem; }

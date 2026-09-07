@@ -1,6 +1,11 @@
 {
   "is_quiet": false,
   "synthetic": false,
+  "window": {
+    "earliest": "2026-08-25",
+    "latest": "2026-08-26",
+    "document_count": 2
+  },
   "heartbeat": {
     "city_read": {
       "en": "City read from stored agendas",
