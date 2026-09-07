@@ -95,7 +95,7 @@ const COPY = {
     changedIntro: "Items Porch Light read from the city's agendas, each pointing back to its source page.",
     changesRegion: "Agenda items read from the city record",
     fallbackNote: "Shown as published by the city — a verified plain summary could not be produced.",
-    startComment: "Start a comment",
+    startComment: "Start a comment", continueComment: "Continue your comment", openDraft: "Open draft",
     scaffoldRegion: "Comment draft scaffold", scaffoldTitle: "Porch Light fills in the facts. The words are yours.",
     scaffoldIntro: "Review the sourced facts, then write only the parts that belong to you.",
     filledTitle: "Filled in for you, from the source",
@@ -181,7 +181,7 @@ const COPY = {
     changedIntro: "Puntos que Porch Light ley\u00F3 de las agendas de la ciudad, cada uno con enlace a su p\u00E1gina de origen.",
     changesRegion: "Puntos de la agenda le\u00EDdos del registro de la ciudad",
     fallbackNote: "Mostrado tal como lo public\u00F3 la ciudad: no se pudo producir un resumen verificado.",
-    startComment: "Iniciar un comentario",
+    startComment: "Iniciar un comentario", continueComment: "Contin\u00FAe su comentario", openDraft: "Abrir borrador",
     scaffoldRegion: "Estructura del borrador de comentario", scaffoldTitle: "Porch Light completa los hechos. Las palabras son suyas.",
     scaffoldIntro: "Revise los hechos obtenidos de la fuente y luego escriba solamente las partes que le corresponden.",
     filledTitle: "Completado para usted, a partir de la fuente",
@@ -542,7 +542,9 @@ function createChangeCard(match) {
   const action = document.createElement("button");
   action.type = "button";
   action.className = "primary-button card-action";
-  action.textContent = t("startComment");
+  // "Continue your comment" when this card already has a saved draft.
+  const hasDraft = drafts.some((d) => d.item_id === item.id && d.fields);
+  action.textContent = t(hasDraft ? "continueComment" : "startComment");
   action.addEventListener("click", () => {
     const opening = scaffoldOpenId !== item.id;
     scaffoldOpenId = opening ? item.id : null;
@@ -653,6 +655,7 @@ function createCommentScaffold(item) {
       title: { en: item.heading.en.slice(0, 60), es: item.heading.es.slice(0, 60) },
       edited: { en: COPY.en.editedNow, es: COPY.es.editedNow },
       fields,
+      item,   // the full card payload, so the draft reopens even with no active watch
     };
     const existing = drafts.findIndex((d) => d.item_id === item.id);
     if (existing >= 0) drafts[existing] = entry;
@@ -947,6 +950,18 @@ function renderDrafts() {
     const li = document.createElement("li");
     li.className = "draft-item";
     li.lang = language;
+    // The row IS the open control: a button that reopens the draft with the
+    // person's words restored, independent of whether the source card is rendered
+    // (a saved draft outlives the watch that surfaced it). Rows without a saved item
+    // (older/blank drafts) stay non-interactive text.
+    const openable = !!(draft.item && draft.fields);
+    const inner = document.createElement(openable ? "button" : "span");
+    inner.className = "draft-item-open";
+    if (openable) {
+      inner.type = "button";
+      inner.setAttribute("aria-label", t("openDraft") + ": " + draft.title[language]);
+      inner.addEventListener("click", () => openDraftInPanel(draft));
+    }
     const icon = document.createElement("span");
     icon.className = "doc-icon";
     icon.setAttribute("aria-hidden", "true");
@@ -955,10 +970,26 @@ function renderDrafts() {
     const edited = document.createElement("small");
     edited.textContent = draft.edited[language];
     text.appendChild(edited);
-    li.append(icon, text);
+    inner.append(icon, text);
+    li.append(inner);
     return li;
   });
   document.getElementById("draft-list").replaceChildren(...nodes);
+}
+
+/* Reopen a saved draft in the drafts panel: restore the person's words into
+ * commentDraft, render the scaffold from the draft's stored item, focus its
+ * heading. Works with no active watch (the item travels with the draft). */
+function openDraftInPanel(draft) {
+  commentDraft.position = (draft.fields && draft.fields.position) || "";
+  commentDraft.matters = (draft.fields && draft.fields.matters) || "";
+  commentDraft.ask = (draft.fields && draft.fields.ask) || "";
+  scaffoldOpenId = draft.item_id;   // keep card + panel in sync if the card is shown
+  const host = document.getElementById("draft-scaffold-host");
+  if (!host) return;
+  host.replaceChildren(createCommentScaffold(draft.item));
+  const h = document.getElementById("scaffold-title");
+  if (h) { h.scrollIntoView({ block: "start", behavior: "instant" }); h.focus({ preventScroll: true }); }
 }
 function renderChecks() {
   const list = document.getElementById("check-list");

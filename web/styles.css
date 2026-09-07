@@ -433,8 +433,16 @@ h3 { margin: 0; font-size: 1.25rem; }
 .lock::before { content: ""; position: absolute; width: 9px; height: 8px; border: 1.7px solid currentColor; border-bottom: 0; border-radius: 8px 8px 0 0; left: 2.6px; top: -8px; }
 .draft-list { margin-top: .75rem; }
 .draft-explainer { margin: .15rem 0 .75rem; color: var(--muted); font-size: .8rem; }
-.draft-item { grid-template-columns: 26px 1fr; min-height: 62px; }
+.draft-item { grid-template-columns: 1fr; min-height: 62px; padding: 0; }
 .draft-item small { display: block; color: var(--muted); }
+/* The row content (icon + title) is a full-width control that reopens the draft. */
+.draft-item-open {
+  display: grid; grid-template-columns: 26px 1fr; gap: .55rem; align-items: center;
+  width: 100%; padding: .7rem .85rem; border: 0; background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.draft-item-open:hover { background: rgba(94, 211, 180, .06); }
+span.draft-item-open { cursor: default; }
 .doc-icon { display: inline-block; width: 18px; height: 22px; border: 1.5px solid var(--ink); border-radius: 2px; position: relative; }
 .doc-icon::before, .doc-icon::after { content: ""; position: absolute; left: 4px; width: 8px; border-top: 1px solid var(--muted); }
 .doc-icon::before { top: 8px; }
