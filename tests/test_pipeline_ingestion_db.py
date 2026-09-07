@@ -57,11 +57,22 @@ def _fake_fetch(monkeypatch, body: bytes | None, status: int = 200,
     monkeypatch.setattr(vfetch, "fetch", fake)
 
 
+def _fake_pages(monkeypatch, pages: list[str]):
+    """Control what extract_pages returns, independent of the (fake) fetched bytes.
+
+    The idempotency tests use placeholder bytes that pypdf cannot parse; they are
+    about the content-hash upsert, not PDF parsing, so we inject the page text
+    directly. `pages=[]` or all-blank simulates an unreadable PDF (the swallow bug).
+    """
+    monkeypatch.setattr(changedetect, "extract_pages", lambda _b: list(pages))
+
+
 URL = "https://www.cityofventura.ca.gov/AgendaCenter/ViewFile/Agenda/_02102026-m1"
 
 
 def test_first_record_writes_one_row(backend, monkeypatch):
     _fake_fetch(monkeypatch, b"agenda bytes v1")
+    _fake_pages(monkeypatch, ["Item 1. A real agenda item with text."])
     out = changedetect.record_document(backend, URL, "m1", "agenda", "run1")
     assert out.changed is True
     r = backend.query("SELECT count(*) AS c FROM documents")
@@ -71,6 +82,7 @@ def test_first_record_writes_one_row(backend, monkeypatch):
 def test_identical_bytes_are_idempotent(backend, monkeypatch):
     """Property (pass gate): recording the same bytes twice yields one row, not two."""
     _fake_fetch(monkeypatch, b"agenda bytes v1")
+    _fake_pages(monkeypatch, ["Item 1. A real agenda item with text."])
     changedetect.record_document(backend, URL, "m1", "agenda", "run1")
     out2 = changedetect.record_document(backend, URL, "m1", "agenda", "run2")
     assert out2.changed is False
@@ -92,6 +104,7 @@ def test_second_run_unchanged_writes_nothing(backend, monkeypatch):
 
 
 def test_changed_bytes_record_new_document(backend, monkeypatch):
+    _fake_pages(monkeypatch, ["Item 1. A real agenda item with text."])
     _fake_fetch(monkeypatch, b"agenda bytes v1")
     changedetect.record_document(backend, URL, "m1", "agenda", "run1")
     _fake_fetch(monkeypatch, b"agenda bytes v2 AMENDED")
@@ -105,6 +118,7 @@ def test_changed_bytes_record_new_document(backend, monkeypatch):
 def test_crash_restart_double_writes_nothing(backend, monkeypatch):
     """Pass gate 2: simulate a crash after recording, then a restart over the same
     input. The content-hash upsert means the restart adds no duplicate row."""
+    _fake_pages(monkeypatch, ["Item 1. A real agenda item with text."])
     _fake_fetch(monkeypatch, b"agenda bytes v1")
     changedetect.record_document(backend, URL, "m1", "agenda", "run1")  # "before crash"
     # "restart": same bytes seen again
@@ -112,6 +126,49 @@ def test_crash_restart_double_writes_nothing(backend, monkeypatch):
     changedetect.record_document(backend, URL, "m1", "agenda", "run1_restart")
     r = backend.query("SELECT count(*) AS c FROM documents")
     assert int(r.rows[0]["c"]) == 1
+
+
+# --- zero-page swallow (the bug this test would have caught) ---
+
+def test_empty_extraction_does_not_reach_done(backend, monkeypatch):
+    """extract_pages returns [] (unparseable PDF) -> the document must NOT be 'done',
+    must carry a fail_reason, and the outcome must report failed. Zero pages is never
+    indistinguishable from success."""
+    _fake_fetch(monkeypatch, b"agenda bytes v1")
+    _fake_pages(monkeypatch, [])  # nothing extracted
+    out = changedetect.record_document(backend, URL, "m1", "agenda", "run1")
+
+    assert out.failed is True
+    assert out.changed is False
+    assert out.fail_reason == "no_text_layer"
+
+    row = backend.query(
+        "SELECT status, fail_reason, attempts FROM documents WHERE document_id = %s",
+        [out.document_id],
+    ).rows[0]
+    assert row["status"] != "done"                 # the core assertion: not success
+    assert row["status"] == "permanent_fail"       # no_text_layer classifies permanent
+    assert row["fail_reason"] == "no_text_layer"   # distinguishable, diagnosable
+    assert int(row["attempts"]) == 1
+    # And no page rows were written for a document with no text.
+    pages = backend.query(
+        "SELECT count(*) AS c FROM document_pages WHERE document_id = %s", [out.document_id]
+    ).rows[0]
+    assert int(pages["c"]) == 0
+
+
+def test_all_blank_pages_do_not_reach_done(backend, monkeypatch):
+    """A PDF that parses to pages with NO text layer (image-only scan) is also not
+    'done' — all-blank pages are not usable text."""
+    _fake_fetch(monkeypatch, b"agenda bytes v1")
+    _fake_pages(monkeypatch, ["", "   ", "\n"])  # parsed, but no text on any page
+    out = changedetect.record_document(backend, URL, "m1", "agenda", "run1")
+    assert out.failed is True
+    row = backend.query(
+        "SELECT status, fail_reason FROM documents WHERE document_id = %s", [out.document_id]
+    ).rows[0]
+    assert row["status"] != "done"
+    assert row["fail_reason"] == "no_text_layer"
 
 
 # --- ledger ---

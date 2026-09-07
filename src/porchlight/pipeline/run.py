@@ -82,12 +82,22 @@ def run_ingestion(backend, *, index_url: str = AGENDA_CENTER_URL) -> str:
                 outcome = changedetect.record_document(
                     backend, item.document_url, item.meeting_id, item.role, run_id
                 )
-                if outcome.changed:
-                    read += 1
-                elif outcome.unchanged:
-                    skipped += 1
-                if item.body_id:
-                    touched_bodies.add(item.body_id)
+                if outcome.failed:
+                    # Fetched but extracted nothing usable (e.g. no_text_layer). The
+                    # document was recorded NOT as 'done' with a fail_reason; count it
+                    # as a failure so the run log and circuit breaker see it honestly.
+                    failed += 1
+                    if item.body_id:
+                        failed_bodies.add(item.body_id)
+                    log.warning("doc_unreadable_counted", url=item.document_url,
+                                fail_reason=outcome.fail_reason)
+                else:
+                    if outcome.changed:
+                        read += 1
+                    elif outcome.unchanged:
+                        skipped += 1
+                    if item.body_id:
+                        touched_bodies.add(item.body_id)
             except Exception as e:  # noqa: BLE001 - classify, count, never swallow
                 failed += 1
                 if item.body_id:

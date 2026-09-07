@@ -25,9 +25,20 @@ log = get_logger("porchlight.pipeline.changedetect")
 @dataclass(frozen=True)
 class RecordOutcome:
     document_id: str | None
-    changed: bool     # True if new bytes were recorded this run
+    changed: bool     # True if new bytes were recorded this run WITH usable text
     unchanged: bool   # True if a 304 / identical-hash skip
     url: str
+    failed: bool = False          # True if fetched-but-extracted-nothing (not 'done')
+    fail_reason: str | None = None  # attached on failed; e.g. 'no_text_layer'
+
+
+def _has_usable_text(pages: list[str]) -> bool:
+    """True iff extraction produced at least one page with non-blank text.
+
+    An empty list (malformed/unparseable PDF) or all-blank pages (image-only scan
+    with no text layer) is NOT usable text — the document must not reach 'done'.
+    """
+    return any((p or "").strip() for p in pages)
 
 
 def record_document(backend, url: str, meeting_id: str, role: str, run_id: str) -> RecordOutcome:
@@ -75,17 +86,39 @@ def record_document(backend, url: str, meeting_id: str, role: str, run_id: str) 
         log.info("doc_hash_seen", url=url, document_id=doc_id)
         return RecordOutcome(document_id=doc_id, changed=False, unchanged=True, url=url)
 
+    # Extract FIRST, then decide status. Zero pages must never be indistinguishable
+    # from success: 'done' is reached only when extraction produced usable text.
+    # `pdftext.extract_pages` never raises — it returns [] for an unparseable PDF and
+    # "" for a page with no text layer (image-only scan). Its docstring says the
+    # caller marks such a document unreadable; THIS is that caller doing so (the bug
+    # was that it did not — it wrote 'done' before extracting and no-oped on []).
+    pages = extract_pages(result.body)
+
+    if not _has_usable_text(pages):
+        # No usable text: record the document, but NOT as 'done'. `no_text_layer`
+        # classifies as PERMANENT (image-only scan needs OCR — a human/v2 path, not
+        # an hourly retry that will fail identically). Stored with a fail_reason and
+        # attempts=1 so it is distinguishable from success and from an untried doc.
+        # fail_reason is diagnostic only; never rendered as "late/overdue" (§16b).
+        fail_reason = "no_text_layer"
+        backend.execute(
+            "INSERT INTO documents (document_id, meeting_id, url, role, status, last_modified, "
+            "etag, fail_reason, attempts, first_seen_run) "
+            "VALUES (%s, %s, %s, %s, 'permanent_fail', %s, %s, %s, 1, %s)",
+            [doc_id, meeting_id, url, role, result.last_modified, result.etag, fail_reason, run_id],
+        )
+        log.warning("doc_unreadable", url=url, document_id=doc_id, meeting_id=meeting_id,
+                    pages=len(pages), fail_reason=fail_reason)
+        return RecordOutcome(document_id=doc_id, changed=False, unchanged=False, url=url,
+                             failed=True, fail_reason=fail_reason)
+
+    # Usable text: record the document as 'done' and persist per-page text from the
+    # SAME fetched bytes (no re-fetch, §40b). Idempotent on the content-hash id.
     backend.execute(
         "INSERT INTO documents (document_id, meeting_id, url, role, status, last_modified, etag, "
         "first_seen_run) VALUES (%s, %s, %s, %s, 'done', %s, %s, %s)",
         [doc_id, meeting_id, url, role, result.last_modified, result.etag, run_id],
     )
-
-    # R2: persist per-page text from the SAME fetched bytes (no re-fetch, §40b), so
-    # extraction and the rewrite stage read source text from storage. A page with no
-    # text layer stores "" — the extractor then marks that document unreadable rather
-    # than guessing (R1.6). Idempotent on the content-hash document_id.
-    pages = extract_pages(result.body)
     for page_number, page_text in enumerate(pages, start=1):
         backend.execute(
             "INSERT INTO document_pages (document_id, page_number, text) VALUES (%s, %s, %s) "
