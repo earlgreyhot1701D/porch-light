@@ -23,6 +23,59 @@ Spec 0 proved invocation on: Amazon Nova Lite (`amazon.nova-lite-v1:0`), us-east
 
 Production model selection is deferred to Spec 3 and will be decided by two numbers: verifier rejection rate on the same real packets, and measured cost per packet. Later specs must not assume a model provider that was never proven at invocation time.
 
+## Architecture
+
+Thick borders are the two agents. Dashed borders are deterministic code doing work a model could have done and deliberately isn't. A standalone rendering is in [`architecture-preview.html`](architecture-preview.html).
+
+```mermaid
+flowchart TB
+    USER(["Resident<br/>asks in plain words"])
+
+    subgraph CITY["City of Ventura, public web"]
+        AC["AgendaCenter (CivicEngage)<br/>agendas published as PDFs"]
+        GR["Granicus host<br/>robots.txt: Disallow /<br/>NEVER FETCHED"]
+    end
+
+    subgraph EDGE["Vercel"]
+        WEB["Static page<br/>HTML / CSS / JS, no framework<br/>watch list stays in this browser"]
+        PROXY["/api/watch<br/>same-origin proxy<br/>holds the only long-lived credential"]
+    end
+
+    subgraph AWS["AWS"]
+        EB["EventBridge Scheduler<br/>hourly"]
+        HUN["HUNTER — Lambda<br/>no model, pure function<br/>conditional GET + content hash<br/>classifies agenda / minutes /<br/>cancellation / Spanish edition"]
+        EXT["EXTRACTOR — agent<br/>Strands + Nova Lite on AgentCore<br/>no network egress<br/>reads stored page text only"]
+        VER["VERIFIER<br/>no model<br/>entities, numbers, street names,<br/>reading level, checked vs source"]
+        WAT["WATCHER — agent<br/>Strands + Nova Lite, Lambda<br/>decides relevance at request time"]
+        GATE["overlap gate<br/>no model<br/>drops any match with no<br/>literal content-word overlap"]
+        DB[("Aurora Serverless v2<br/>Postgres + pgvector<br/>meetings, documents,<br/>document_pages, item_rewrites")]
+    end
+
+    EB -->|"every hour"| HUN
+    HUN -->|"one request at a time,<br/>backoff, contact user-agent"| AC
+    AC -.->|"PDF bytes, hashed,<br/>never stored"| HUN
+    GR -.-x HUN
+    HUN -->|"page text + metadata.<br/>empty extraction is a<br/>recorded failure, not 'done'"| DB
+
+    DB -->|"stored page text"| EXT
+    EXT -->|"items + EN/ES rewrites"| VER
+    VER -->|"verified rewrites only.<br/>a rejected rewrite is stored<br/>as absent, never as unverified"| DB
+
+    USER -->|"one question"| WEB
+    WEB --> PROXY
+    PROXY --> WAT
+    DB -->|"stored items"| WAT
+    WAT --> GATE
+    GATE -->|"matches, reasons,<br/>corpus window"| PROXY
+    PROXY --> WEB
+    WEB -->|"plain-language item,<br/>EN + ES, with the page<br/>it came from"| USER
+
+    classDef agent stroke-width:3px
+    classDef det stroke-dasharray:4 3
+    class EXT,WAT agent
+    class HUN,VER,GATE det
+```
+
 ## What it watches, and its honest limits
 
 Porch Light watches the City of Ventura's public meeting agendas. It is built as
