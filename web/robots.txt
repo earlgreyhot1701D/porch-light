@@ -1,0 +1,12 @@
+# Porch Light — public read-only site.
+# The public surface is the site and its read-only search. The watchlist and
+# drafts live only in the visitor's browser (localStorage + URL fragment) and are
+# never in any crawlable HTML, so there is nothing private to disallow here.
+# We ask crawlers to skip the API proxy path (it answers POST only; there is
+# nothing to index there).
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://porch-light-ventura.vercel.app/sitemap.xml

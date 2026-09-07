@@ -5,8 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#14120E">
-  <title>Porch Light</title>
-  <meta name="description" content="A calm, privacy first watcher for public meeting agendas.">
+  <title>Porch Light — plain-language City of Ventura agenda watcher</title>
+  <meta name="description" content="Porch Light reads the City of Ventura's public meeting agendas, turns each item into plain English and Spanish with a receipt back to the source page, and helps you draft a public comment. Your watch list stays in your browser. A prototype, not affiliated with the City of Ventura.">
+  <link rel="canonical" href="https://porch-light-ventura.vercel.app/">
+
+  <!-- Open Graph (link previews on iMessage, Slack, LinkedIn, Facebook). The image
+       is /og-image.png (1200x630); text below works immediately, the card image
+       lights up once that file exists at the site root. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Porch Light">
+  <meta property="og:title" content="Porch Light — plain-language City of Ventura agenda watcher">
+  <meta property="og:description" content="Reads Ventura's public meeting agendas, translates each item into plain English and Spanish with a receipt to the source page, and helps you draft a public comment. Your watch list stays in your browser.">
+  <meta property="og:url" content="https://porch-light-ventura.vercel.app/">
+  <meta property="og:image" content="https://porch-light-ventura.vercel.app/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Porch Light: a calm agenda watcher for the City of Ventura, in English and Spanish.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+
+  <!-- Twitter / X card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Porch Light — plain-language City of Ventura agenda watcher">
+  <meta name="twitter:description" content="Reads Ventura's public meeting agendas, translates each item into plain English and Spanish with a receipt to the source page, and helps you draft a public comment.">
+  <meta name="twitter:image" content="https://porch-light-ventura.vercel.app/og-image.png">
+  <meta name="twitter:image:alt" content="Porch Light: a calm agenda watcher for the City of Ventura, in English and Spanish.">
+
+  <!-- Structured data: WebApplication + WebSite. Public, no PII, no watch list. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Porch Light",
+        "url": "https://porch-light-ventura.vercel.app/",
+        "description": "Reads the City of Ventura's public meeting agendas, turns each item into plain English and Spanish with a receipt back to the source page, and helps a resident draft a public comment. The watch list stays in the visitor's browser and is never stored.",
+        "applicationCategory": "GovernmentApplication",
+        "operatingSystem": "Any modern web browser",
+        "browserRequirements": "Requires JavaScript.",
+        "inLanguage": ["en", "es"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "creator": { "@type": "Person", "name": "Shara Cordero" },
+        "about": "City of Ventura, California public meeting agendas",
+        "disclaimer": "A prototype built for the AWS Agents for Humans hackathon. Not affiliated with or endorsed by the City of Ventura."
+      },
+      {
+        "@type": "WebSite",
+        "name": "Porch Light",
+        "url": "https://porch-light-ventura.vercel.app/",
+        "inLanguage": ["en", "es"]
+      }
+    ]
+  }
+  </script>
+
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiA5NiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJQb3JjaCBMaWdodCI+CiAgPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiByeD0iMTgiIGZpbGw9IiMxNDEyMEUiLz4KICA8cGF0aCBkPSJNMTcgMjVoMTlNNjAgMjVoMTRsMTAgMTB2NDZIMTdWMjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y3RjJFNyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNzQgMjV2MTBoMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y3RjJFNyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNNDggN3YxMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxyZWN0IHg9IjQzIiB5PSIxNyIgd2lkdGg9IjEwIiBoZWlnaHQ9IjYiIHJ4PSIyIiBmaWxsPSIjNUVEM0I0Ii8+CiAgPGNpcmNsZSBjeD0iNDgiIGN5PSIyOSIgcj0iOCIgZmlsbD0iI0Y3RjJFNyIvPgogIDxwYXRoIGQ9Ik00OCA0MXY0TTM4LjUgMzguNWwtMy41IDMuNU01Ny41IDM4LjVsMy41IDMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOSA1MmgzOE0yOSA3MmgzOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjdGMkU3IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik0yOCA2Mmg0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNUVEM0I0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

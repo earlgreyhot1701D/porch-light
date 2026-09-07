@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Porch Light social preview card. 1200x630 (the Open Graph / Twitter summary_large_image size).
+
+  TO SHIP THE PREVIEW IMAGE: export this SVG to PNG at 1200x630 and save it at the
+  site root as  web/og-image.png  (that path is what index.html's og:image /
+  twitter:image already point to). Ways to export:
+    - Open og-card.svg in a browser, screenshot at 1200x630; or
+    - npx sharp-cli -i web/og-card.svg -o web/og-image.png resize 1200 630 ; or
+    - any vector editor (Inkscape/Figma): File > Export > PNG, 1200x630.
+  Brand tokens match styles.css: ground #14120E, ink #F7F2E7, primary #5ED3B4,
+  muted #B6AB98, line #2E2A22.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Porch Light: a calm agenda watcher for the City of Ventura, in English and Spanish.">
+  <defs>
+    <radialGradient id="glow" cx="30%" cy="34%" r="60%">
+      <stop offset="0%" stop-color="#5ED3B4" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#5ED3B4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#14120E"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect x="24" y="24" width="1152" height="582" rx="20" fill="none" stroke="#2E2A22" stroke-width="2"/>
+
+  <!-- Porch Light glyph (the favicon mark, scaled) -->
+  <g transform="translate(96,104) scale(1.35)">
+    <rect width="96" height="96" rx="18" fill="#1F1B15"/>
+    <path d="M17 25h19M60 25h14l10 10v46H17V25" fill="none" stroke="#F7F2E7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M74 25v10h10" fill="none" stroke="#F7F2E7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M48 7v11" fill="none" stroke="#5ED3B4" stroke-width="5" stroke-linecap="round"/>
+    <rect x="43" y="17" width="10" height="6" rx="2" fill="#5ED3B4"/>
+    <circle cx="48" cy="29" r="8" fill="#F7F2E7"/>
+    <path d="M48 41v4M38.5 38.5l-3.5 3.5M57.5 38.5l3.5 3.5" fill="none" stroke="#5ED3B4" stroke-width="4" stroke-linecap="round"/>
+    <path d="M29 52h38M29 72h38" fill="none" stroke="#F7F2E7" stroke-width="5" stroke-linecap="round"/>
+    <path d="M28 62h40" fill="none" stroke="#5ED3B4" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <text x="260" y="180" font-family="Georgia, 'Times New Roman', serif" font-size="34" letter-spacing="6" fill="#5ED3B4">PORCH LIGHT</text>
+
+  <text x="96" y="330" font-family="Georgia, 'Times New Roman', serif" font-size="66" font-weight="600" fill="#F7F2E7">A calm watcher for Ventura's</text>
+  <text x="96" y="406" font-family="Georgia, 'Times New Roman', serif" font-size="66" font-weight="600" fill="#F7F2E7">public meeting agendas.</text>
+
+  <text x="96" y="474" font-family="'DejaVu Sans', Arial, sans-serif" font-size="30" fill="#B6AB98">Plain English and Spanish, with a receipt on every claim.</text>
+  <text x="96" y="516" font-family="'DejaVu Sans', Arial, sans-serif" font-size="30" fill="#B6AB98">Inglés y español claros, con un comprobante en cada dato.</text>
+
+  <line x1="96" y1="556" x2="1104" y2="556" stroke="#2E2A22" stroke-width="2"/>
+  <text x="96" y="590" font-family="'DejaVu Sans', Arial, sans-serif" font-size="22" fill="#8FD8FF">porch-light-ventura.vercel.app</text>
+  <text x="1104" y="590" text-anchor="end" font-family="'DejaVu Sans', Arial, sans-serif" font-size="20" fill="#B6AB98">Prototype · not affiliated with the City of Ventura</text>
+</svg>
