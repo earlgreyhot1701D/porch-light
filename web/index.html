@@ -116,11 +116,16 @@
         </div>
         <form class="watch-form" id="watch-form">
           <label for="watch-input" data-i18n="watchLabel">Ask a question, or name a thing you want watched</label>
+          <!-- Example chips are HAND-PICKED to match the current corpus: each was run
+               through the deployed /api/watch and returns at least one match
+               (2026-09-07). They go STALE as the meeting window rotates — a chip that
+               matched this week can return nothing next week once its meeting ages out.
+               Re-verify against /api/watch when the corpus changes. See KNOWN-LIMITATIONS. -->
           <p class="watch-examples">
             <span data-i18n="exampleIntro">For example:</span>
-            <button type="button" class="example-chip" data-example="q">&#8220;Can they put a bar next to my house?&#8221;</button>
+            <button type="button" class="example-chip" data-example="q">&#8220;Are they adding paid parking downtown?&#8221;</button>
             <span class="example-and" data-i18n="exampleAnd">or</span>
-            <button type="button" class="example-chip" data-example="p">&#8220;street trees on Juniper Avenue&#8221;</button>
+            <button type="button" class="example-chip" data-example="p">&#8220;Is my neighborhood getting historic landmark status?&#8221;</button>
           </p>
           <div class="watch-entry">
             <div class="input-wrap"><input id="watch-input" name="watch" type="text" maxlength="100" required autocomplete="off" placeholder="Can they put a bar next to my house?" data-placeholder-i18n="watchPlaceholder" aria-describedby="watch-count watch-helper"></div>

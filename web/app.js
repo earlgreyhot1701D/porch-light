@@ -30,6 +30,7 @@ let commentDraftSaved = false;
 let scaffoldOpenId = null; // which card's scaffold is open, if any
 
 const WATCH_KEY = "porchlight.watches.v1";
+const DRAFTS_KEY = "porchlight.drafts.v1";
 const MAX_TERMS = 10;
 const MAX_TERM_CHARS = 100;   // mirrors watch/validate.py (raised from 60; see there)
 // The city's authoritative pages. Both verified resolving 2026-09-06. Notify Me is
@@ -102,6 +103,7 @@ const COPY = {
     yoursTitle: "Yours to write", positionLabel: "Your position", mattersLabel: "Why this matters to you", askLabel: "What you are asking for",
     scaffoldNote: "Porch Light never writes your opinion and cannot send anything. When you're done, you copy this and send it yourself.",
     saveDraft: "Save draft", closeScaffold: "Close", draftSavedFromChange: "Draft saved in your drafts panel.",
+    draftNotStored: "Added to this session, but your browser blocked storage, so it will not survive a reload.",
     recentChecks: "Recent checks", checksRegion: "Recent checks and source status",
     history: "See full check history", historyClose: "Hide full check history",
     historyLines: ["Hourly checks run on schedule.", "Change detection has fired on a real changed document."],
@@ -187,6 +189,7 @@ const COPY = {
     yoursTitle: "Para que usted lo escriba", positionLabel: "Su posici\u00F3n", mattersLabel: "Por qu\u00E9 esto le importa", askLabel: "Lo que est\u00E1 solicitando",
     scaffoldNote: "Porch Light nunca escribe su opini\u00F3n y no puede enviar nada. Cuando termine, copie el texto y env\u00EDelo usted mismo.",
     saveDraft: "Guardar borrador", closeScaffold: "Cerrar", draftSavedFromChange: "El borrador se guard\u00F3 en su panel de borradores.",
+    draftNotStored: "Se agreg\u00F3 en esta sesi\u00F3n, pero su navegador bloque\u00F3 el almacenamiento, as\u00ED que no sobrevivir\u00E1 a una recarga.",
     recentChecks: "Revisiones recientes", checksRegion: "Revisiones recientes y estado de las fuentes",
     history: "Ver historial completo", historyClose: "Ocultar historial completo",
     historyLines: ["Las revisiones por hora se ejecutan seg\u00FAn lo programado.", "La detecci\u00F3n de cambios se activ\u00F3 en un documento real modificado."],
@@ -259,6 +262,34 @@ function loadWatchesFromStorage() {
 function saveWatchesToStorage() {
   try { localStorage.setItem(WATCH_KEY, JSON.stringify(watches)); } catch { /* storage may be blocked; the list still lives in memory */ }
   syncFragment();
+}
+
+/* Drafts persist to localStorage, per-device, versioned like the watchlist. A draft
+ * holds what the person wrote; it NEVER goes server-side (never.md #8), same as the
+ * watch list. Every read/write is wrapped: a browser with storage blocked still
+ * renders and still lets someone write a draft this session — but saveDraftsToStorage
+ * returns whether the write actually landed, so the UI can tell the truth instead of
+ * claiming a save that did not happen. */
+function loadDraftsFromStorage() {
+  try {
+    const raw = localStorage.getItem(DRAFTS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    // Keep only well-formed rows: {title:{en,es}, edited:{en,es}}.
+    return Array.isArray(arr)
+      ? arr.filter((d) => d && d.title && typeof d.title.en === "string" && typeof d.title.es === "string")
+      : [];
+  } catch { return []; }
+}
+function saveDraftsToStorage() {
+  try {
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+    return true;
+  } catch {
+    // Storage blocked/full: the draft still lives in memory for this session, but we
+    // did NOT persist it. Return false so the caller does not claim it saved.
+    return false;
+  }
 }
 /* The share link carries terms in the URL FRAGMENT (never a query string, never
  * sent to a server). It is only WRITTEN here; applying an incoming one is always
@@ -513,8 +544,20 @@ function createChangeCard(match) {
   action.className = "primary-button card-action";
   action.textContent = t("startComment");
   action.addEventListener("click", () => {
-    scaffoldOpenId = (scaffoldOpenId === item.id) ? null : item.id;
+    const opening = scaffoldOpenId !== item.id;
+    scaffoldOpenId = opening ? item.id : null;
     renderChanged();
+    // Fix 3: on OPEN, move focus to the scaffold heading (same pattern as the
+    // results heading — instant scroll so it lands before focus, preventScroll so
+    // focus doesn't fight it). Keyboard users land in the draft, not back on the
+    // results heading. On close, no focus move.
+    if (opening) {
+      const h = document.getElementById("scaffold-title");
+      if (h) {
+        h.scrollIntoView({ block: "start", behavior: "instant" });
+        h.focus({ preventScroll: true });
+      }
+    }
   });
   card.appendChild(action);
 
@@ -558,6 +601,7 @@ function createCommentScaffold(item) {
   s.setAttribute("aria-label", t("scaffoldRegion"));
   s.lang = language;
   const title = copyNode("h3", "", "scaffoldTitle");
+  title.id = "scaffold-title";
   title.tabIndex = -1;
   const intro = copyNode("p", "", "scaffoldIntro");
 
@@ -592,7 +636,9 @@ function createCommentScaffold(item) {
       edited: { en: COPY.en.editedNow, es: COPY.es.editedNow }
     });
     renderDrafts();
-    setStatus("draft-status", t("draftSavedFromChange"));
+    // Persist; only claim "saved" if the write actually landed (never.md-honest).
+    const stored = saveDraftsToStorage();
+    setStatus("draft-status", t(stored ? "draftSavedFromChange" : "draftNotStored"));
   });
   const close = copyNode("button", "secondary-button", "closeScaffold");
   close.type = "button";
@@ -1024,8 +1070,9 @@ function wireEvents() {
       title: { en: COPY.en.untitledDraft, es: COPY.es.untitledDraft },
       edited: { en: COPY.en.editedNow, es: COPY.es.editedNow }
     });
-    setStatus("draft-status", t("draftAdded"));
     renderDrafts();
+    const stored = saveDraftsToStorage();
+    setStatus("draft-status", t(stored ? "draftAdded" : "draftNotStored"));
   });
   document.getElementById("lang-en").addEventListener("click", () => setLanguage("en"));
   document.getElementById("lang-es").addEventListener("click", () => setLanguage("es"));
@@ -1062,6 +1109,7 @@ function clearEverything() {
   watchMode = "keyword";
   commentDraft.position = commentDraft.matters = commentDraft.ask = "";
   try { localStorage.removeItem(WATCH_KEY); } catch (e) { /* storage may be blocked */ }
+  try { localStorage.removeItem(DRAFTS_KEY); } catch (e) { /* storage may be blocked */ }
   // Wipe the URL fragment (shared terms) without reloading.
   history.replaceState(null, "", location.pathname + location.search);
   const modeEl = document.getElementById("watch-mode");
@@ -1095,10 +1143,12 @@ async function boot() {
   // Watchlist: an incoming shared link is shown-and-confirmed; otherwise localStorage.
   const shared = parseFragmentTerms();
   watches = loadWatchesFromStorage();
+  drafts = loadDraftsFromStorage();   // per-device, never server-side
   await loadChanged();
   setLanguage("en");
   updateCharCount();
   renderWatches();
+  renderDrafts();                // show any drafts restored from localStorage
   deriveAndRenderState(false);   // new user (no terms) -> onboarding + reading log, ZERO cards
   if (shared && shared.length) offerSharedList(shared);
 }

@@ -776,3 +776,44 @@ in a test so a future agent path cannot silently inherit a non-zero default agai
 - **What remains for v2.** Extraction model spend is still absent from the
   ledger (§27 attribution incomplete on that path), and meeting 3688 holds 6
   duplicate rows on one URL, the same shape as the Block One duplicate bug.
+
+---
+
+### The example chips are hand-picked against the current corpus
+
+- **What it is.** The two example questions under the watch box ("Are they adding
+  paid parking downtown?", "Is my neighborhood getting historic landmark status?")
+  were each run through the deployed `/api/watch` and confirmed to return at least
+  one match against the corpus as of 2026-09-07. They are illustrative starters, not
+  guaranteed hits.
+- **What it affects.** A first-time visitor's first click. A chip that matches today
+  can return the empty state once its meeting ages out of the window — the same
+  content rotation the corpus window describes.
+- **Why we accepted it.** Hand-picking against the live corpus is honest for a PoC
+  and gives a new visitor a question that works right now. The alternative — deriving
+  chips from the corpus at load time — is real work not worth it before submission.
+- **v2.** Generate example questions from the current corpus (or verify the fixed set
+  on a schedule) so they never point at a meeting that has rotated out.
+
+---
+
+### Search is English-only; Spanish is a reading surface, not a query surface
+
+- **What it is.** Querying in Spanish returns nothing. Measured on the deployed
+  path: "crossing guards" returns item 3685-8; "guardias de cruce escolar",
+  "guardia de cruce" and "acuerdo con Cognizant" all return 0 matches with
+  source "aurora". "guardia de cruce" appears verbatim in the Spanish rewrite
+  Porch Light itself produced for that item.
+- **What it affects.** The Spanish-speaking resident the bilingual design
+  exists for. They can read an item in Spanish once it is found; they cannot
+  find it by asking in Spanish.
+- **Why we accepted it.** Found in user-style testing days before submission,
+  and the cause is not yet isolated. Two candidates: the matcher may be handed
+  Spanish item text when only 6 of 44 items have any, or the deterministic
+  overlap gate does literal content-word matching with no stemming, which
+  Spanish inflection defeats immediately ("guardias" vs "guardia"). Guessing
+  and patching a relevance path in the final week is how a check gets loosened
+  until it stops catching anything.
+- **v2.** Isolate which of the two it is by logging what text the matcher
+  receives per language, then either match against both language surfaces or
+  give the gate language-aware normalization. Re-run the golden set after.
