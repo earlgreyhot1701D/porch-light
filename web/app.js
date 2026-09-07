@@ -28,6 +28,7 @@ let corpusWindow = null;
 const commentDraft = { position: "", matters: "", ask: "" };
 let commentDraftSaved = false;
 let scaffoldOpenId = null; // which card's scaffold is open, if any
+let scaffoldSourceId = null; // the saved-draft id the open scaffold writes to (fallback: draft identity is its own, not the item's)
 
 const WATCH_KEY = "porchlight.watches.v1";
 const DRAFTS_KEY = "porchlight.drafts.v1";
@@ -275,9 +276,10 @@ function loadDraftsFromStorage() {
     const raw = localStorage.getItem(DRAFTS_KEY);
     if (!raw) return [];
     const arr = JSON.parse(raw);
-    // Keep only well-formed rows: {title:{en,es}, edited:{en,es}}.
+    // Keep rows that carry the person's fields (the current shape). Tolerate older
+    // title-shaped rows too, so a pre-existing draft still loads.
     return Array.isArray(arr)
-      ? arr.filter((d) => d && d.title && typeof d.title.en === "string" && typeof d.title.es === "string")
+      ? arr.filter((d) => d && (d.fields || (d.title && typeof d.title.en === "string")))
       : [];
   } catch { return []; }
 }
@@ -542,20 +544,16 @@ function createChangeCard(match) {
   const action = document.createElement("button");
   action.type = "button";
   action.className = "primary-button card-action";
-  // "Continue your comment" when this card already has a saved draft.
-  const hasDraft = drafts.some((d) => d.item_id === item.id && d.fields);
-  action.textContent = t(hasDraft ? "continueComment" : "startComment");
+  action.textContent = t("startComment");
   action.addEventListener("click", () => {
     const opening = scaffoldOpenId !== item.id;
     scaffoldOpenId = opening ? item.id : null;
     if (opening) {
-      // Reopen: if a draft was saved for THIS card, restore the person's words into
-      // the fields; otherwise start blank. The textareas read commentDraft, so
-      // hydrate it before renderChanged builds them.
-      const saved = drafts.find((d) => d.item_id === item.id && d.fields);
-      commentDraft.position = saved ? (saved.fields.position || "") : "";
-      commentDraft.matters = saved ? (saved.fields.matters || "") : "";
-      commentDraft.ask = saved ? (saved.fields.ask || "") : "";
+      // Opening from a card starts a fresh draft (blank fields, new id on first save).
+      // We intentionally do NOT auto-restore by item id here — that was the path that
+      // captured the wrong item. Reopen a saved draft from its row in the drafts panel.
+      commentDraft.position = commentDraft.matters = commentDraft.ask = "";
+      scaffoldSourceId = null;
     }
     renderChanged();
     // Fix 3: on OPEN, move focus to the scaffold heading (same pattern as the
@@ -616,16 +614,22 @@ function createCommentScaffold(item) {
   title.tabIndex = -1;
   const intro = copyNode("p", "", "scaffoldIntro");
 
-  const filled = document.createElement("section");
-  filled.className = "scaffold-group scaffold-filled";
-  const facts = document.createElement("dl");
-  facts.className = "fact-list";
-  facts.append(
-    factRow("factAboutLabel", item.heading ? item.heading[language] : ""),
-    factRow("factMeetingLabel", item.receipt ? item.receipt.line[language] : ""),
-    factRow("factReceiptLabel", item.receipt ? item.receipt.line[language] : "")
-  );
-  filled.append(copyNode("h4", "", "filledTitle"), facts);
+  // The sourced-facts block renders only when we have a trustworthy item (opening
+  // from a live card). A draft reopened from the panel has no stored item — we do
+  // not fabricate a receipt (a wrong receipt is worse than none), so it is omitted.
+  let filled = null;
+  if (item) {
+    filled = document.createElement("section");
+    filled.className = "scaffold-group scaffold-filled";
+    const facts = document.createElement("dl");
+    facts.className = "fact-list";
+    facts.append(
+      factRow("factAboutLabel", item.heading ? item.heading[language] : ""),
+      factRow("factMeetingLabel", item.receipt ? item.receipt.line[language] : ""),
+      factRow("factReceiptLabel", item.receipt ? item.receipt.line[language] : "")
+    );
+    filled.append(copyNode("h4", "", "filledTitle"), facts);
+  }
 
   const yours = document.createElement("section");
   yours.className = "scaffold-group scaffold-yours";
@@ -642,24 +646,26 @@ function createCommentScaffold(item) {
   const save = copyNode("button", "primary-button", "saveDraft");
   save.type = "button";
   save.addEventListener("click", () => {
-    // Save the person's WORDS with the draft (the three stance fields), plus the
-    // item id so a reopened draft reattaches to the right card. One saved draft per
-    // item id: re-saving updates it in place rather than piling up duplicates.
+    // MVP-honest fallback: save ONLY the person's three fields. We do NOT store the
+    // item's title or receipt on the draft — the client was capturing the wrong item
+    // at save time (backend pairing is correct; the client-side scaffold resolved a
+    // stale item), and a draft with the WRONG receipt is worse than one with none.
+    // Label the row by the person's own first line. `scaffoldSourceId` remembers which
+    // scaffold is open so re-saving updates in place instead of duplicating.
     const fields = {
       position: commentDraft.position,
       matters: commentDraft.matters,
       ask: commentDraft.ask,
     };
     const entry = {
-      item_id: item.id,
-      title: { en: item.heading.en.slice(0, 60), es: item.heading.es.slice(0, 60) },
+      draft_id: scaffoldSourceId || ("draft_" + Date.now()),
       edited: { en: COPY.en.editedNow, es: COPY.es.editedNow },
       fields,
-      item,   // the full card payload, so the draft reopens even with no active watch
     };
-    const existing = drafts.findIndex((d) => d.item_id === item.id);
+    const existing = drafts.findIndex((d) => d.draft_id === entry.draft_id);
     if (existing >= 0) drafts[existing] = entry;
     else drafts.push(entry);
+    scaffoldSourceId = entry.draft_id;   // subsequent saves of this open scaffold update it
     renderDrafts();
     // Persist; only claim "saved" if the write actually landed (never.md-honest).
     const stored = saveDraftsToStorage();
@@ -667,10 +673,16 @@ function createCommentScaffold(item) {
   });
   const close = copyNode("button", "secondary-button", "closeScaffold");
   close.type = "button";
-  close.addEventListener("click", () => { scaffoldOpenId = null; renderChanged(); });
+  close.addEventListener("click", () => {
+    scaffoldOpenId = null;
+    scaffoldSourceId = null;
+    const host = document.getElementById("draft-scaffold-host");
+    if (host) host.replaceChildren();   // clear a panel-hosted (reopened) scaffold
+    renderChanged();                     // clear a card-hosted scaffold
+  });
   // Deliberately NO send button here (never.md #4).
   actions.append(save, close);
-  s.append(title, intro, filled, yours, note, actions);
+  s.append(...[title, intro, filled, yours, note, actions].filter(Boolean));
   return s;
 }
 
@@ -950,25 +962,26 @@ function renderDrafts() {
     const li = document.createElement("li");
     li.className = "draft-item";
     li.lang = language;
-    // The row IS the open control: a button that reopens the draft with the
-    // person's words restored, independent of whether the source card is rendered
-    // (a saved draft outlives the watch that surfaced it). Rows without a saved item
-    // (older/blank drafts) stay non-interactive text.
-    const openable = !!(draft.item && draft.fields);
+    // The row IS the open control. We label it by the PERSON'S OWN first line (no
+    // item title, no receipt — those were captured wrong, so we don't show them).
+    // A draft with fields is reopenable; anything else stays plain text.
+    const openable = !!(draft.fields && draftFirstLine(draft));
     const inner = document.createElement(openable ? "button" : "span");
     inner.className = "draft-item-open";
+    const label = draftFirstLine(draft) || t("untitledDraft");
     if (openable) {
       inner.type = "button";
-      inner.setAttribute("aria-label", t("openDraft") + ": " + draft.title[language]);
+      inner.setAttribute("aria-label", t("openDraft") + ": " + label);
       inner.addEventListener("click", () => openDraftInPanel(draft));
     }
     const icon = document.createElement("span");
     icon.className = "doc-icon";
     icon.setAttribute("aria-hidden", "true");
     const text = document.createElement("span");
-    text.textContent = draft.title[language];
+    text.textContent = label;
+    text.lang = language;
     const edited = document.createElement("small");
-    edited.textContent = draft.edited[language];
+    edited.textContent = draft.edited ? draft.edited[language] : t("editedNow");
     text.appendChild(edited);
     inner.append(icon, text);
     li.append(inner);
@@ -977,17 +990,27 @@ function renderDrafts() {
   document.getElementById("draft-list").replaceChildren(...nodes);
 }
 
-/* Reopen a saved draft in the drafts panel: restore the person's words into
- * commentDraft, render the scaffold from the draft's stored item, focus its
- * heading. Works with no active watch (the item travels with the draft). */
+/* The person's own first non-empty line, trimmed for the row label. No item title,
+ * no receipt — a draft is labeled by what the person wrote, which is always theirs
+ * and always correct. */
+function draftFirstLine(draft) {
+  const f = draft.fields || {};
+  const first = [f.position, f.matters, f.ask].map((s) => (s || "").trim()).find(Boolean) || "";
+  return first.length > 60 ? first.slice(0, 60) + "\u2026" : first;
+}
+
+/* Reopen a saved draft in the drafts panel: restore the person's words into the
+ * scaffold. The scaffold renders WITHOUT a sourced-facts block (no stored item —
+ * we do not show a receipt we cannot vouch for). Works with no active watch. */
 function openDraftInPanel(draft) {
   commentDraft.position = (draft.fields && draft.fields.position) || "";
   commentDraft.matters = (draft.fields && draft.fields.matters) || "";
   commentDraft.ask = (draft.fields && draft.fields.ask) || "";
-  scaffoldOpenId = draft.item_id;   // keep card + panel in sync if the card is shown
+  scaffoldOpenId = null;
+  scaffoldSourceId = draft.draft_id;   // re-saving updates THIS draft in place
   const host = document.getElementById("draft-scaffold-host");
   if (!host) return;
-  host.replaceChildren(createCommentScaffold(draft.item));
+  host.replaceChildren(createCommentScaffold(null));   // null item -> no facts block
   const h = document.getElementById("scaffold-title");
   if (h) { h.scrollIntoView({ block: "start", behavior: "instant" }); h.focus({ preventScroll: true }); }
 }
@@ -1120,8 +1143,9 @@ function wireEvents() {
   });
   document.getElementById("start-draft").addEventListener("click", () => {
     drafts.push({
-      title: { en: COPY.en.untitledDraft, es: COPY.es.untitledDraft },
-      edited: { en: COPY.en.editedNow, es: COPY.es.editedNow }
+      draft_id: "draft_" + Date.now(),
+      edited: { en: COPY.en.editedNow, es: COPY.es.editedNow },
+      fields: { position: "", matters: "", ask: "" },
     });
     renderDrafts();
     const stored = saveDraftsToStorage();

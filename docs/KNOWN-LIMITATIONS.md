@@ -817,3 +817,38 @@ in a test so a future agent path cannot silently inherit a non-zero default agai
 - **v2.** Isolate which of the two it is by logging what text the matcher
   receives per language, then either match against both language surfaces or
   give the gate language-aware normalization. Re-run the golden set after.
+
+---
+
+### The heartbeat count and the coverage line are not the same number
+
+- **What it is.** The heartbeat reads "2 meetings read" (a static copy string from the
+  accepted mock) while the corpus-window line reads "11 of 14 meetings with a readable
+  agenda" (computed from the live response). Same page, two numbers with different
+  provenance.
+- **What it affects.** A careful reader sees an inconsistency; neither number is
+  false, but they are not sourced from the same place.
+- **Why we accepted it.** The heartbeat string is a mock artifact and the coverage
+  number is live data; unifying them is more than a one-line change and lands after
+  MVP scope.
+- **v2.** Drive the heartbeat count from the same corpus-window source the coverage
+  line uses, so the page states one meeting count.
+
+---
+
+### Saved drafts store the person's words only, not a receipt
+
+- **What it is.** A saved draft stores the three fields the person wrote and is
+  labeled by their own first line. It does NOT store or show the source item's title
+  or receipt. This is a deliberate MVP fallback: the client was capturing the wrong
+  item at save time (the backend pairs match id to item correctly, but the client-side
+  scaffold resolved a stale item), so a saved draft could render the wrong receipt —
+  e.g. a Bowker House / Historic Preservation draft showing a Planning Commission
+  receipt. A draft with the wrong receipt is worse than one with none.
+- **What it affects.** A reopened draft shows the writer's words but not a "this is
+  about X, meeting Y" receipt block. Drafts opened live from a card still show the
+  correct sourced facts in that session.
+- **Why we accepted it.** Honest and shippable in minutes; the alternative (chasing
+  the client-side stale-item capture) was not obviously small before submission.
+- **v2.** Fix the capture so a draft can carry a verified receipt, then restore the
+  sourced-facts block on reopen.
