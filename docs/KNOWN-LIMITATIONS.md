@@ -197,17 +197,21 @@ stating these plainly is the product working, not an apology.
 - **v2.** Widen `cost_usd` to `NUMERIC(12,8)` (or store micro-dollars as an integer)
   so per-call cost is recoverable from the ledger directly.
 
-### The stored corpus is 15 documents, not the 152 the site enumeration found
+### The stored corpus is 23 documents across 14 meetings, not the 152 the site enumeration found
 
-- **What it is.** Aurora `porchlight-dev` holds 15 documents (11 agendas, 4
-  minutes, Aug 17-Sep 2 2026), not the ~152 the live-site enumeration counted.
+- **What it is.** Aurora `porchlight-dev` holds 23 documents across 14 meetings
+  (Aug 17 - Sep 10 2026), not the ~152 the live-site enumeration counted. Of the 14
+  meetings, 11 have a readable agenda with extracted items; the other 3 are
+  cancellation notices with nothing to extract. That 11-of-14 is the honest coverage
+  number the page window, README, and video state — not the 23-document count.
 - **What it affects.** Any cost-per-agenda or posting-time-distribution claim: it
-  must state which number it rests on. A per-agenda cost measured over these 15 is
-  not a claim about all 152.
+  must state which number it rests on. A per-agenda cost measured over these meetings
+  is not a claim about all 152.
 - **Why we accepted it.** The deployed ingestion has run a limited window; the PoC
   demonstrates the pipeline, not a full-corpus backfill.
-- **v2.** Backfill the full enumerated set once ingestion persists content (see the
-  root-cause task); state corpus size next to every derived number.
+- **v2.** Backfill the full enumerated set as ingestion runs (extraction is now wired
+  and no longer marks empty documents complete — see the extraction entry below);
+  state corpus size next to every derived number.
 
 ### section 36b (city Spanish edition skip) is implemented and unit-tested but never exercised on real data
 
@@ -664,19 +668,23 @@ in a test so a future agent path cannot silently inherit a non-zero default agai
 
 ---
 
-### Spanish clears verification on only 2 of 10 stored items
+### Verification coverage is partial, and much thinner in Spanish than English
 
-- **What it is.** Verified Spanish exists for 2 of the 10 stored items (3685-7 and
-  3685-8). The other 8 have empty `es_text` and `es_verified = false`, so each renders
-  the honest fallback "A verified Spanish version was not produced for this item. / No
-  se pudo producir una versión verificada en español para este punto." English clears
-  on 9 of 10. The Spanish stage ran and was rejected by the verifier twice per item
-  (`es_attempts = 2`); this is a verifier rejection, not a translation crash, a skipped
-  stage, or a swallowed exception, and the database write path is faithful (it stores
-  `es_text` only when `es_verified` is true).
-- **What it affects.** The Spanish half of every card except those two. English is
-  unaffected. Nothing shown is fabricated: an item with no verified Spanish shows the
-  verified English plus the fallback note, never an unverified translation.
+- **What it is.** Across the 44 stored items, 28 have a verified English rewrite and
+  6 have a verified Spanish rewrite. So 16 items fall back to the original English
+  staff text (shown with a note), and 38 items have no verified Spanish and render the
+  honest fallback "A verified Spanish version was not produced for this item. / No se
+  pudo producir una versión verificada en español para este punto." The Spanish stage
+  ran and was rejected by the verifier (typically twice per item, `es_attempts = 2`) —
+  a verifier rejection, not a translation crash, a skipped stage, or a swallowed
+  exception. The database write path is faithful: it stores `en_text`/`es_text` only
+  when the matching `*_verified` flag is true.
+- **What it affects.** English: a reader may see the original staff text on 16 of 44
+  items rather than a plain-language rewrite (a paragraph the model produced but the
+  reading-level or entity checks rejected). Spanish: most cards show the fallback note
+  rather than a translation. Nothing shown is fabricated — an unverified rewrite is
+  never displayed as if it were verified; the reader always sees either a verified
+  rewrite or the source text with a note saying so.
 - **Why we accepted it.** The root cause is in `verify/entities.py`: when the model
   faithfully translates an English descriptive phrase into Spanish ("Single-Family
   Residential" → "residencial unifamiliar", "Acting Senior Planner" → "planificador
@@ -719,3 +727,52 @@ in a test so a future agent path cannot silently inherit a non-zero default agai
   the safer trade before submission.
 - **v2.** Reconcile the footer and the About disclaimer into a single source of
   truth for the affiliation and authoritative-source language.
+
+---
+
+### The re-rendered watch and draft lists carry no `aria-live` (a deliberate agent-audit finding we did not chase)
+
+- **What it is.** An agent-readiness audit (Agentis Lux, 85/100 "Agent-Ready", five of
+  six categories maxed) leaves one open finding, ARIA-005: the `watch-list` and
+  `draft-list` `<ul>` elements are rebuilt wholesale by the frontend and have no
+  `aria-live` attribute or live-region role, so an agent monitoring the DOM for
+  updates has no announced signal on those two regions.
+- **What it affects.** The single 0/15 category in that audit (ARIA). Nothing a human
+  reader experiences as broken.
+- **Why we accepted it.** Our own accessibility rule says never wrap a large,
+  wholesale-re-rendered region in `aria-live`, because a screen reader would then read
+  the entire list aloud on every change. The actual change events are already
+  announced as a delta through dedicated polite status regions (`watch-status`,
+  `draft-status`) — the correct pattern for assistive technology. Adding `aria-live`
+  to the lists themselves would trade a genuine screen-reader best practice for a
+  marginal agent-heuristic score and would violate that rule. A real screen-reader
+  user is better served by the current design than by the change that would score the
+  point, so this is a documented, reasoned choice, not an oversight.
+- **v2.** If a future agent-consumption path genuinely needs it, add a small dedicated
+  live region that announces the list-length delta (e.g. "3 watches") rather than
+  marking the re-rendered list itself as live — preserving both behaviors.
+
+---
+
+### Extraction marked documents complete with no text, and the pipeline could not retry them
+
+- **What it is.** `changedetect.record_document` wrote `status='done'` and then
+  called `extract_pages`. An empty extraction no-opped, so a failed extraction
+  and a successful one left identical rows: `done`, `fail_reason` null,
+  `attempts` 0. Content-hash idempotency then made it permanent, and every
+  hourly run skipped documents it had already marked complete. 21 of 23
+  documents were in this state; only 2 meetings were searchable.
+- **What it affects.** Coverage, silently. The corpus advertised 23 documents
+  and could search 2. A query about a topic in an unextracted meeting returned
+  a correct "no match" over a corpus that had never been read.
+- **Why it happened.** 178 passing tests all fed the extractor a PDF that
+  parses. `pdftext`'s docstring says the caller marks an unreadable document;
+  the caller did not. The contract was written down and never enforced.
+- **The fix.** A document reaches `done` only when extraction produced usable
+  text. An empty result records `permanent_fail` with `fail_reason`
+  `no_text_layer` and increments `attempts`. Two regression tests assert it.
+  Re-running the 9 real agendas took coverage from 2 meetings to 11 of 14; the
+  other 3 are cancellations with nothing to extract.
+- **What remains for v2.** Extraction model spend is still absent from the
+  ledger (§27 attribution incomplete on that path), and meeting 3688 holds 6
+  duplicate rows on one URL, the same shape as the Block One duplicate bug.
