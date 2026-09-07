@@ -38,36 +38,66 @@ DEPS = ["strands-agents", "structlog", "tzdata"]
 
 
 def bake_items() -> tuple[int, str]:
-    """Write items.json = [{item_id, en_text}, ...] of verified items.
+    """Write items.json = a list of CARD-SHAPED item dicts (Option A) for verified
+    items — the same shape /api/watch returns per match, so the baked fallback path
+    renders identically to the live path.
 
-    Aurora first (the live record); web/sample.json fallback so the build never
-    hard-fails. Returns (count, source) for the build log.
+    Aurora first (the live record), shaped via the shared build_fixture.shape_item;
+    web/sample.json's `changed` list is the fallback (already card-shaped) so the
+    build never hard-fails. Returns (count, source) for the build log.
     """
-    rows: list[dict] = []
+    cards: list[dict] = []
     source = "aurora"
     if os.environ.get("AURORA_CLUSTER_ARN") and os.environ.get("AURORA_SECRET_ARN"):
         try:
             sys.path.insert(0, str(ROOT))
             sys.path.insert(0, str(ROOT / "src"))
             from db import data_api
+            from porchlight.web.build_fixture import _fmt_date, shape_item
 
             be = data_api.get_backend()
             r = be.query(
-                "SELECT i.item_id, ir.en_text FROM item_rewrites ir "
+                "SELECT i.item_id, i.item_number, i.page_start, i.page_end, "
+                "ir.en_text, ir.es_text, ir.en_verified, ir.es_verified, "
+                "ir.note_en, ir.es_absent_note, "
+                "m.meeting_id, m.meeting_date::text AS meeting_date, "
+                "b.name_en AS body_en, d.url "
+                "FROM item_rewrites ir "
                 "JOIN items i ON i.item_id = ir.item_id "
+                "JOIN documents d ON d.document_id = i.document_id "
+                "JOIN meetings m ON m.meeting_id = d.meeting_id "
+                "JOIN bodies b ON b.body_id = m.body_id "
                 "WHERE ir.en_verified = true AND ir.en_text IS NOT NULL"
             )
-            rows = [{"item_id": row["item_id"], "en_text": row["en_text"]} for row in r.rows]
+            for row in r.rows:
+                meta = {
+                    "meeting_id": row["meeting_id"],
+                    "body_en": row.get("body_en") or "",
+                    "body_es": None,  # no stored ES body name; English name used in both
+                    "meeting_date_en": _fmt_date(str(row.get("meeting_date") or ""), "en"),
+                    "meeting_date_es": _fmt_date(str(row.get("meeting_date") or ""), "es"),
+                    "url": row.get("url") or "",
+                }
+                cards.append(shape_item(
+                    {
+                        "num": row["item_number"], "ps": row["page_start"], "pe": row["page_end"],
+                        "env": row["en_verified"], "esv": row["es_verified"],
+                        "en": row["en_text"], "es": row.get("es_text"),
+                        "note_en": row.get("note_en") or "",
+                        "es_absent": row.get("es_absent_note") or "",
+                    },
+                    meta,
+                ))
         except Exception as exc:
             print(f"  (Aurora bake failed: {type(exc).__name__}; falling back to web/sample.json)")
-            rows = []
-    if not rows:
+            cards = []
+    if not cards:
         source = "web/sample.json"
         sample = json.loads((ROOT / "web" / "sample.json").read_text(encoding="utf-8"))
-        # sample.json's heading.en IS the verified summary text the matcher reads.
-        rows = [{"item_id": c["id"], "en_text": c["heading"]["en"]} for c in sample.get("changed", [])]
-    ITEMS.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-    return len(rows), source
+        # sample.json's `changed` list is already card-shaped.
+        cards = list(sample.get("changed", []))
+    ITEMS.write_text(json.dumps(cards, ensure_ascii=False, indent=2), encoding="utf-8")
+    return len(cards), source
 
 
 def main() -> None:

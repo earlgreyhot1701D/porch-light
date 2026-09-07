@@ -45,8 +45,31 @@ def _pages(ps: int, pe: int) -> str:
     return f"p. {ps}" if ps == pe else f"pp. {ps}-{pe}"
 
 
+# English + Spanish short month names, for the receipt date copied from the record.
+# A DATE is not translated content — it is copied (never.md #1); we only localize the
+# month WORD so the bilingual receipt reads naturally in each language.
+_MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
+def _fmt_date(iso: str, lang: str) -> str:
+    """Format an ISO date (YYYY-MM-DD, copied from the meeting record) as a short
+    localized date. Returns the raw string unchanged if it is not ISO."""
+    import re
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", str(iso or ""))
+    if not m:
+        return str(iso or "")
+    y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if lang == "es":
+        return f"{d} {_MONTHS_ES[mo - 1]} {y}"
+    return f"{_MONTHS_EN[mo - 1]} {d}, {y}"
+
+
 def _receipt_line(m: dict, num: str, ps: int, pe: int, lang: str) -> str:
-    body = m["body_en"] if lang == "en" else m["body_es"]
+    # Body name is a proper NAME: copied raw, never translated (never.md #1,
+    # model-authority). When no separate ES name is stored, the English name stands
+    # in both languages — a name is a name, not translatable content.
+    body = m["body_en"] if lang == "en" else m.get("body_es") or m["body_en"]
     date = m["meeting_date_en"] if lang == "en" else m["meeting_date_es"]
     item = f"Item {num}" if lang == "en" else f"Punto {num}"
     return f"{body} · {date} · {item} · {_pages(ps, pe)}"
@@ -57,64 +80,76 @@ def _source_href(m: dict, ps: int) -> str:
     return f"{m['url']}{sep}page={ps}"
 
 
+def shape_item(r: dict, m: dict) -> dict:
+    """Shape ONE stored item row + its meeting metadata into the card dict the site
+    renders (web/contract ChangedItem shape). Pure; no I/O.
+
+    `r` carries the rewrite row: num, ps, pe, env(en_verified), esv(es_verified),
+    en, es, note_en, es_absent. `m` carries meeting metadata: meeting_id, body_en,
+    body_es (optional), meeting_date_en, meeting_date_es, url.
+
+    ONE source of truth for the card shape, used by both the offline fixture builder
+    (build_view) and the live /api/watch handler, so an item is rendered identically
+    however it reaches the page (§25 — the render path does not care about source).
+    """
+    num = str(r["num"]).rstrip(".")
+    ps, pe = int(r["ps"]), int(r["pe"])
+    en_verified = bool(r["env"])
+    es_verified = bool(r["esv"])
+
+    # Shown summary: verified EN, or the honest EN fallback text (never.md #7).
+    heading_en = r["en"]
+    # ES: verified ES, or the honest ES-absent note (never fabricated).
+    summary_es = r["es"] if es_verified and r["es"] else r["es_absent"]
+
+    status_en = "New material added" if en_verified else _FALLBACK_STATUS["en"]
+    status_es = "Material nuevo agregado" if en_verified else _FALLBACK_STATUS["es"]
+    body_en = m["body_en"]
+    body_es = m.get("body_es") or m["body_en"]
+
+    return {
+        "id": f"{m['meeting_id']}-{num}",
+        "tone": "calm",  # none of these carry an actionable deadline -> never hot
+        "mark": "added",
+        "status": {"en": status_en, "es": status_es},
+        "official_term": {
+            "en": f"{body_en} agenda item {num}",
+            "es": f"{body_es}, punto {num}",
+        },
+        "heading": {"en": heading_en, "es": summary_es},
+        "match_reason": {
+            "en": "Shown from the city's real agenda record.",
+            "es": "Mostrado desde el registro real de la agenda de la ciudad.",
+        },
+        "scale_note": {
+            "en": f"This item is on {_pages(ps, pe)} of the agenda.",
+            "es": f"Este punto esta en {_pages(ps, pe)} de la agenda.",
+        },
+        "receipt": {
+            "line": {
+                "en": _receipt_line(m, num, ps, pe, "en"),
+                "es": _receipt_line(m, num, ps, pe, "es"),
+            },
+            "source_href": _source_href(m, ps),
+            "source_label": {
+                "en": f"open the agenda at page {ps}",
+                "es": f"abrir la agenda en la pagina {ps}",
+            },
+        },
+        "deadline": None,        # copied from source or None (never.md #1)
+        "deadline_actionable": False,
+        "fallback_note": (
+            {"en": r["note_en"], "es": r["es_absent"]}
+            if (r["note_en"] or not es_verified) else None
+        ),
+        "en_verified": en_verified,
+        "es_verified": es_verified,
+    }
+
+
 def build_view(rows: list[dict]) -> dict:
     """Shape stored item rows into the View contract dict the site renders."""
-    changed = []
-    for r in rows:
-        m = MEETINGS[r["doc"]]
-        num = str(r["num"]).rstrip(".")
-        ps, pe = int(r["ps"]), int(r["pe"])
-        en_verified = bool(r["env"])
-        es_verified = bool(r["esv"])
-
-        # Shown summary: verified EN, or the honest EN fallback text (never.md #7).
-        heading_en = r["en"]
-        # ES: verified ES, or the honest ES-absent note (never fabricated).
-        summary_es = r["es"] if es_verified and r["es"] else r["es_absent"]
-
-        status_en = "New material added" if en_verified else _FALLBACK_STATUS["en"]
-        status_es = "Material nuevo agregado" if en_verified else _FALLBACK_STATUS["es"]
-
-        changed.append({
-            "id": f"{m['meeting_id']}-{num}",
-            "tone": "calm",  # none of these carry an actionable deadline -> never hot
-            "mark": "added",
-            "status": {"en": status_en, "es": status_es},
-            "official_term": {
-                "en": f"{m['body_en']} agenda item {num}",
-                "es": f"{m['body_es']}, punto {num}",
-            },
-            "heading": {"en": heading_en, "es": summary_es},
-            "match_reason": {
-                # No live watchlist on the static page: the "why" line explains the
-                # item is shown as a real stored record, never a fabricated match.
-                "en": "Shown from the city's real agenda record.",
-                "es": "Mostrado desde el registro real de la agenda de la ciudad.",
-            },
-            "scale_note": {
-                "en": f"This item is on {_pages(ps, pe)} of the agenda.",
-                "es": f"Este punto esta en {_pages(ps, pe)} de la agenda.",
-            },
-            "receipt": {
-                "line": {
-                    "en": _receipt_line(m, num, ps, pe, "en"),
-                    "es": _receipt_line(m, num, ps, pe, "es"),
-                },
-                "source_href": _source_href(m, ps),
-                "source_label": {
-                    "en": f"open the agenda at page {ps}",
-                    "es": f"abrir la agenda en la pagina {ps}",
-                },
-            },
-            "deadline": None,        # copied from source or None (never.md #1)
-            "deadline_actionable": False,
-            "fallback_note": (
-                {"en": r["note_en"], "es": r["es_absent"]}
-                if (r["note_en"] or not es_verified) else None
-            ),
-            "en_verified": en_verified,
-            "es_verified": es_verified,
-        })
+    changed = [shape_item(r, MEETINGS[r["doc"]]) for r in rows]
 
     return {
         "is_quiet": False,  # we have real changed items to show

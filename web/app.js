@@ -57,10 +57,19 @@ function formatWindow(win) {
   const enFrom = fmt(win.earliest, "en-US"), enTo = fmt(win.latest, "en-US");
   const esFrom = fmt(win.earliest, "es-ES"), esTo = fmt(win.latest, "es-ES");
   if (!enFrom || !enTo || !esFrom || !esTo) return null;
-  return {
-    en: enFrom === enTo ? enFrom : `${enFrom} \u2013 ${enTo}`,
-    es: esFrom === esTo ? esFrom : `${esFrom} \u2013 ${esTo}`,
-  };
+  const enRange = enFrom === enTo ? enFrom : `${enFrom} \u2013 ${enTo}`;
+  const esRange = esFrom === esTo ? esFrom : `${esFrom} \u2013 ${esTo}`;
+  // Honest coverage: meetings with a READABLE agenda over meetings in the window
+  // (the gap is cancellations, which have nothing to extract). Appended only when
+  // both counts are present — never a document count, never guessed.
+  const wi = win.meetings_with_items, mt = win.meetings_total;
+  if (Number.isFinite(wi) && Number.isFinite(mt) && mt > 0) {
+    return {
+      en: `${enRange} (${wi} of ${mt} meetings with a readable agenda)`,
+      es: `${esRange} (${wi} de ${mt} reuniones con una agenda legible)`,
+    };
+  }
+  return { en: enRange, es: esRange };
 }
 
 /* ---- copy (bilingual, verbatim strings load-bearing) ---- */
@@ -339,10 +348,14 @@ function _watchKey() {
 function matchedItems() {
   if (!watches.length) return [];
   if (watchMode === "live" && liveResult && liveResult.key === _watchKey()) {
+    // Option A: the live response carries the full card-shaped item WITH each match
+    // (m.item), so ANY extracted item renders — not just the two seeded into
+    // sample.json. Fall back to the sample join only if a match somehow arrived
+    // without its item payload (older Lambda), so we never crash a match to a card.
     const byId = new Map(changed.map((it) => [it.id, it]));
     const out = [];
     for (const m of liveResult.matches) {
-      const item = byId.get(m.item_id);
+      const item = m.item || byId.get(m.item_id);
       if (item) out.push({ item, terms: m.matched_terms || [], liveReason: m.reason });
     }
     return out;

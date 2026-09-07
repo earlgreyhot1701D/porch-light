@@ -84,24 +84,64 @@ def _resp(status: int, body: dict) -> dict:
     return {"statusCode": status, "headers": _cors_headers(), "body": json.dumps(body, ensure_ascii=False)}
 
 
-def _baked_items() -> dict[str, str]:
-    """The verified items baked into the zip at build time (fallback source)."""
+def _baked_items():
+    """The verified items baked into the zip at build time (fallback source).
+
+    Returns (text_map, card_map). items.json is a list of card-shaped dicts (Option
+    A): each carries `id`, `heading.en` (the text the matcher reads), plus the full
+    render fields. Tolerates the older {item_id, en_text} shape so an old zip still
+    works (text only, empty cards)."""
     try:
         with open(os.path.join(os.path.dirname(__file__), "items.json"), encoding="utf-8") as f:
             data = json.load(f)
-        return {row["item_id"]: row["en_text"] for row in data if row.get("en_text")}
+        text_map: dict = {}
+        card_map: dict = {}
+        for row in data:
+            if "heading" in row and isinstance(row.get("heading"), dict):
+                iid = row.get("id")
+                en = (row["heading"].get("en") or "").strip()
+                if iid and en:
+                    text_map[iid] = en
+                    card_map[iid] = row
+            elif row.get("en_text"):  # legacy shape
+                text_map[row["item_id"]] = row["en_text"]
+        return (text_map or None, card_map)
     except Exception:
-        return {}
+        return (None, {})
 
 
-def _aurora_items_with_timeout() -> dict[str, str] | None:
+def _shape_meeting_meta(row: dict) -> dict:
+    """Meeting metadata for shape_item, from a joined row. Body name is a proper
+    NAME (copied raw, not translated); no ES body name is stored, so the English
+    name stands in both languages. The meeting date is copied from the record and
+    only its month word is localized by shape_item."""
+    from porchlight.web.build_fixture import _fmt_date
+
+    mdate = str(row.get("meeting_date") or "")
+    return {
+        "meeting_id": row["meeting_id"],
+        "body_en": row.get("body_en") or row.get("body_id") or "",
+        "body_es": None,  # no stored ES body name -> English name used in both
+        "meeting_date_en": _fmt_date(mdate, "en"),
+        "meeting_date_es": _fmt_date(mdate, "es"),
+        "url": row.get("url") or "",
+    }
+
+
+def _aurora_items_with_timeout():
     """Read verified items from Aurora, but never block longer than 3s (§ answer 1).
 
-    Returns the item map on success, or None on timeout/error (caller falls back to
-    baked). Runs the query in a worker thread and abandons it after the timeout so a
-    paused-cluster resume can never hang the request.
+    Returns (text_map, card_map) on success, or None on timeout/error (caller falls
+    back to baked). `text_map` is {item_id: en_text} — the text the matcher reads.
+    `card_map` is {item_id: card_dict} — the full card-shaped payload the page
+    renders (Option A), assembled from the SAME request via the shared shape_item so
+    any extracted item is renderable, not just the two seeded into sample.json.
+    Runs in a worker thread and is abandoned after the timeout so a paused-cluster
+    resume can never hang the request.
     """
     import threading
+
+    from porchlight.web.build_fixture import shape_item
 
     result: dict = {}
 
@@ -110,30 +150,56 @@ def _aurora_items_with_timeout() -> dict[str, str] | None:
             import data_api  # from db/
             be = data_api.get_backend()
             r = be.query(
-                "SELECT i.item_id, ir.en_text FROM item_rewrites ir "
+                "SELECT i.item_id, i.item_number, i.page_start, i.page_end, "
+                "ir.en_text, ir.es_text, ir.en_verified, ir.es_verified, "
+                "ir.note_en, ir.es_absent_note, "
+                "m.meeting_id, m.meeting_date::text AS meeting_date, "
+                "b.name_en AS body_en, d.url "
+                "FROM item_rewrites ir "
                 "JOIN items i ON i.item_id = ir.item_id "
+                "JOIN documents d ON d.document_id = i.document_id "
+                "JOIN meetings m ON m.meeting_id = d.meeting_id "
+                "JOIN bodies b ON b.body_id = m.body_id "
                 "WHERE ir.en_verified = true AND ir.en_text IS NOT NULL"
             )
-            result["items"] = {row["item_id"]: row["en_text"] for row in r.rows}
+            text_map = {}
+            card_map = {}
+            for row in r.rows:
+                iid = row["item_id"]
+                text_map[iid] = row["en_text"]
+                shaped = shape_item(
+                    {
+                        "num": row["item_number"], "ps": row["page_start"], "pe": row["page_end"],
+                        "env": row["en_verified"], "esv": row["es_verified"],
+                        "en": row["en_text"], "es": row.get("es_text"),
+                        "note_en": row.get("note_en") or "",
+                        "es_absent": row.get("es_absent_note") or "",
+                    },
+                    _shape_meeting_meta(row),
+                )
+                card_map[iid] = shaped
+            result["text"] = text_map
+            result["cards"] = card_map
         except Exception as exc:  # logged as class name only, no message
             result["error"] = type(exc).__name__
 
     th = threading.Thread(target=_work, daemon=True)
     th.start()
     th.join(AURORA_READ_TIMEOUT_S)
-    if th.is_alive() or "items" not in result:
+    if th.is_alive() or "text" not in result:
         return None
-    return result["items"] or None
+    return (result["text"] or None, result["cards"] or {})
 
 
 def _aurora_window_with_timeout() -> dict | None:
-    """Read the corpus window the watcher actually searches — earliest/latest
-    meeting_date across stored documents + the document count — from Aurora, bounded
-    by the same 3s guard as the items read. Returns {earliest, latest,
-    document_count} (ISO date strings copied from source, never generated) or None.
-
-    The window travels AS DATA on the response so the page can name the range it
-    holds without parsing rendered text (never.md #1: dates copied, not generated).
+    """Read the corpus window the watcher actually searches, from Aurora, bounded by
+    the same 3s guard as the items read. Returns:
+      - earliest, latest: the meeting-date range (ISO, copied from source, never
+        generated — never.md #1);
+      - meetings_total: meetings in the window;
+      - meetings_with_items: meetings that have a READABLE agenda with extracted
+        items (the honest coverage number — 11 of 14 today, NOT a document count).
+        The gap is the cancellations, which correctly have nothing to extract.
     None -> the page renders no window note rather than guessing one.
     """
     import threading
@@ -147,8 +213,12 @@ def _aurora_window_with_timeout() -> dict | None:
             r = be.query(
                 "SELECT min(m.meeting_date)::text AS earliest, "
                 "max(m.meeting_date)::text AS latest, "
-                "count(DISTINCT d.document_id) AS document_count "
-                "FROM meetings m JOIN documents d ON d.meeting_id = m.meeting_id"
+                "count(DISTINCT m.meeting_id) AS meetings_total, "
+                "count(DISTINCT m.meeting_id) FILTER (WHERE i.item_id IS NOT NULL) "
+                "  AS meetings_with_items "
+                "FROM meetings m "
+                "LEFT JOIN documents d ON d.meeting_id = m.meeting_id "
+                "LEFT JOIN items i ON i.document_id = d.document_id"
             )
             if r.rows:
                 result["window"] = r.rows[0]
@@ -163,8 +233,11 @@ def _aurora_window_with_timeout() -> dict | None:
     w = result["window"] or {}
     if not w.get("earliest") or not w.get("latest"):
         return None
-    return {"earliest": w["earliest"], "latest": w["latest"],
-            "document_count": w.get("document_count")}
+    return {
+        "earliest": w["earliest"], "latest": w["latest"],
+        "meetings_total": w.get("meetings_total"),
+        "meetings_with_items": w.get("meetings_with_items"),
+    }
 
 
 def _budget_ok_or_paused() -> bool | None:
@@ -248,28 +321,31 @@ def handler(event, context):
         return _resp(200, {"degraded": True, "reason": "paused", "source": "none",
                            "note": "The live watcher is paused right now."})
 
-    # Items: Aurora first (3s), baked fallback. Say which source.
-    items = _aurora_items_with_timeout()
+    # Items: Aurora first (3s), baked fallback. Say which source. `text_items` is
+    # {item_id: en_text} for the matcher; `card_items` is {item_id: card_dict} for
+    # the response (Option A — the page renders from the response, not sample.json).
+    aurora = _aurora_items_with_timeout()
     source = "aurora"
     corpus_window = None
-    if items:
+    if aurora:
+        text_items, card_items = aurora
         # Same request, same DB: the window the watcher actually searched. Bounded by
         # its own 3s guard; None on any failure (the page then shows no window note).
         corpus_window = _aurora_window_with_timeout()
-    if not items:
-        items = _baked_items()
+    else:
+        text_items, card_items = _baked_items()
         source = "baked"
-    if not items:
+    if not text_items:
         return _resp(200, {"degraded": True, "reason": "no_items", "source": "none",
                            "note": "No agenda items are available right now."})
 
-    log.info("watch_request", term_count=len(terms), item_count=len(items), source=source)
+    log.info("watch_request", term_count=len(terms), item_count=len(text_items), source=source)
 
     # Run the REAL matcher (allowlist hook + turn cap enforced inside).
     try:
         from porchlight.watch.matcher import match_watchlist
 
-        answer = match_watchlist(terms, items, model_id=MODEL_ID, log=log)
+        answer = match_watchlist(terms, text_items, model_id=MODEL_ID, log=log)
     except Exception as exc:
         # Static error only — never the traceback, never the message, never terms.
         log.error("watch_handler_error", error_type=type(exc).__name__)
@@ -287,15 +363,23 @@ def handler(event, context):
     # leaves the proxy), so it earns its own placement.
     from porchlight.watch.matcher import is_recordable_match
 
-    matches = [
-        {
+    matches = []
+    for m in answer.matches:
+        if not is_recordable_match(m.matched_terms, text_items.get(m.item_id, "")):
+            continue
+        entry = {
             "item_id": m.item_id,
             "matched_terms": list(m.matched_terms),
             "reason": {"en": m.reason.en, "es": m.reason.es},
         }
-        for m in answer.matches
-        if is_recordable_match(m.matched_terms, items.get(m.item_id, ""))
-    ]
+        # Option A: the full card-shaped item travels WITH the match so the page
+        # renders any extracted item, not just the two seeded into sample.json. If a
+        # card is somehow missing (shouldn't happen — same source as the text), the
+        # match still returns without it and the page falls back to its sample join.
+        card = card_items.get(m.item_id)
+        if card:
+            entry["item"] = card
+        matches.append(entry)
     log.info("watch_response", matches=len(matches), is_partial=answer.is_partial, source=source)
     body = {
         "matches": matches,

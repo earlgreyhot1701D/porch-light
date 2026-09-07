@@ -4,7 +4,8 @@
   "window": {
     "earliest": "2026-08-25",
     "latest": "2026-08-26",
-    "document_count": 2
+    "meetings_total": 2,
+    "meetings_with_items": 2
   },
   "heartbeat": {
     "city_read": {
