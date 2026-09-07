@@ -211,6 +211,9 @@ h3 { margin: 0; font-size: 1.25rem; }
 .quiet-copy > p { margin: .75rem 0 0; max-width: 54ch; color: var(--ink); }
 .quiet-copy .scale-note { color: var(--muted); font-size: .9rem; }
 .changed-state { padding: 1.2rem 1.25rem 1.35rem; }
+/* The changed-view title is an h2 (region label, not the page h1 — SEM-004) but
+   keeps the h1 display size so the visual is unchanged. */
+.changed-intro .state-title { font-size: clamp(2.55rem, 4vw, 3.75rem); line-height: 1.03; letter-spacing: -.035em; }
 .changed-intro { margin-bottom: 1rem; }
 .changed-intro p { margin: .45rem 0 0; color: var(--muted); }
 .change-list { display: grid; gap: 1rem; }

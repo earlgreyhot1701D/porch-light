@@ -168,7 +168,11 @@
 
           <div class="changed-state" id="changed-state" role="region" aria-labelledby="changed-title" hidden>
             <div class="changed-intro">
-              <h1 id="changed-title" data-i18n="changedTitle" tabindex="-1">Real agenda items, read and verified.</h1>
+              <!-- h2, not h1: this panel is a region (aria-labelledby) within the
+                   page, not the page title. The quiet panel's #quiet-title is the
+                   single page h1. Keeping two h1s made an agent unable to tell the
+                   primary heading apart (SEM-004). Visual size preserved in CSS. -->
+              <h2 id="changed-title" class="state-title" data-i18n="changedTitle" tabindex="-1">Real agenda items, read and verified.</h2>
               <p id="changed-intro" data-i18n="changedIntro">Items Porch Light read from the city's agendas, each pointing back to its source page.</p>
             </div>
             <div class="change-list" id="change-list" aria-label="Agenda items read from the city record" data-aria-i18n="changesRegion"></div>
