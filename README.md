@@ -54,7 +54,7 @@ flowchart TB
     EB -->|"every hour"| HUN
     HUN -->|"one request at a time,<br/>backoff, contact user-agent"| AC
     AC -.->|"PDF bytes, hashed,<br/>never stored"| HUN
-    GR -.-x HUN
+    GR -.->|"blocked, never fetched"| HUN
     HUN -->|"page text + metadata.<br/>empty extraction is a<br/>recorded failure, not 'done'"| DB
 
     DB -->|"stored page text"| EXT
