@@ -44,11 +44,11 @@ flowchart TB
     subgraph AWS["AWS"]
         EB["EventBridge Scheduler<br/>hourly"]
         HUN["HUNTER — Lambda<br/>no model, pure function<br/>conditional GET + content hash<br/>classifies agenda / minutes /<br/>cancellation / Spanish edition"]
-        EXT["EXTRACTOR — agent<br/>Strands + Nova Lite on AgentCore<br/>no network egress<br/>reads stored page text only"]
+        EXT["EXTRACTOR — agent<br/>Strands + Nova Lite on AgentCore<br/>tool-allowlisted, no-egress designed<br/>not yet deployed<br/>reads stored page text only"]
         VER["VERIFIER<br/>no model<br/>entities, numbers, street names,<br/>reading level, checked vs source"]
         WAT["WATCHER — agent<br/>Strands + Nova Lite, Lambda<br/>decides relevance at request time"]
         GATE["overlap gate<br/>no model<br/>drops any match with no<br/>literal content-word overlap"]
-        DB[("Aurora Serverless v2<br/>Postgres + pgvector<br/>meetings, documents,<br/>document_pages, item_rewrites")]
+        DB[("Aurora Serverless v2<br/>Postgres<br/>meetings, documents,<br/>document_pages, item_rewrites")]
     end
 
     EB -->|"every hour"| HUN
@@ -166,7 +166,7 @@ Use `uv sync --extra dev`, not plain `uv sync`. Plain `uv sync` installs only
 runtime dependencies and leaves the clone with no test runner, so `make test`
 would fail on a fresh checkout. The `--extra dev` group brings in pytest and
 hypothesis. (Verified from a clean clone into a temp directory: plain sync →
-pytest absent; `--extra dev` → 57 tests pass.)
+pytest absent; `--extra dev` → 178 tests pass.)
 
 Before deploying to AgentCore, copy the deployment target template and fill in your own 12-digit AWS account ID (same pattern as `.env.example`):
 
