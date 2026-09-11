@@ -197,13 +197,16 @@ stating these plainly is the product working, not an apology.
 - **v2.** Widen `cost_usd` to `NUMERIC(12,8)` (or store micro-dollars as an integer)
   so per-call cost is recoverable from the ledger directly.
 
-### The stored corpus is 23 documents across 14 meetings, not the 152 the site enumeration found
+### The stored corpus is 27 documents across 17 meetings, not the 152 the site enumeration found
 
-- **What it is.** Aurora `porchlight-dev` holds 23 documents across 14 meetings
-  (Aug 17 - Sep 10 2026), not the ~152 the live-site enumeration counted. Of the 14
-  meetings, 11 have a readable agenda with extracted items; the other 3 are
-  cancellation notices with nothing to extract. That 11-of-14 is the honest coverage
-  number the page window, README, and video state — not the 23-document count.
+- **What it is.** Measured 2026-09-11. Aurora `porchlight-dev` holds 27 documents
+  across 17 meetings (Aug 17 - Sep 16 2026), not the ~152 the live-site enumeration
+  counted. Of the 17 meetings, 11 have a readable agenda with extracted items; the
+  rest are cancellation notices or meetings whose agenda is not yet posted. That
+  11-of-17 is the honest coverage number — not the 27-document count.
+  This denominator moves: the hourly hunter keeps ingesting, so any figure here is a
+  timestamped snapshot, not a constant. Item counts at the same timestamp: 44 items,
+  28 with a verified English rewrite, 6 with a verified Spanish rewrite.
 - **What it affects.** Any cost-per-agenda or posting-time-distribution claim: it
   must state which number it rests on. A per-agenda cost measured over these meetings
   is not a claim about all 152.
